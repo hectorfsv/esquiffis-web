@@ -634,12 +634,12 @@
 
     /* ─── MOBILE ─── */
     @media (max-width: 640px) {
-      /* Use --app-height (set by JS) so the layout tracks the visual
-         viewport when the soft keyboard opens. Override bottom: auto so
-         height wins over the inset: 0 shorthand. */
+      /* 100dvh = dynamic viewport height — natively shrinks when the
+         iOS soft keyboard opens (iOS 16+). bottom: auto lets height
+         win over the bottom: 0 from inset: 0. */
       #auth-screen, #chat-screen {
         bottom: auto;
-        height: var(--app-height, 100svh);
+        height: 100dvh;
       }
       /* Auth screen */
       .auth-glow { width: 260px; height: 260px; }
@@ -972,21 +972,14 @@
 
     sendBtn.addEventListener('click', sendMessage);
 
-    // ─── iOS KEYBOARD FIX ───
-    // Sets --app-height CSS var to the visual viewport height so the
-    // layout shrinks correctly when the soft keyboard opens.
-    // bottom: auto in CSS lets height win over inset: 0's bottom: 0.
-    function updateAppHeight() {
-      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      document.documentElement.style.setProperty('--app-height', h + 'px');
-    }
-    updateAppHeight();
+    // ─── iOS KEYBOARD: scroll to bottom when keyboard opens ───
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', () => {
-        updateAppHeight();
-        scrollToBottom();
-      });
+      window.visualViewport.addEventListener('resize', scrollToBottom);
     }
+    // Belt-and-suspenders: scroll to bottom when input is focused on mobile
+    messageInput.addEventListener('focus', () => {
+      if (window.innerWidth <= 640) setTimeout(scrollToBottom, 350);
+    });
   </script>
 </body>
 </html>
