@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>ESQUIFFIS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -631,6 +631,48 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+
+    /* ─── MOBILE ─── */
+    @media (max-width: 640px) {
+      /* Auth screen */
+      .auth-glow { width: 260px; height: 260px; }
+      .auth-card { padding: 40px 24px; gap: 24px; }
+      .auth-wordmark { font-size: 52px; letter-spacing: 5px; }
+      .auth-input-wrap { width: min(300px, 82vw); }
+      /* 16px min prevents iOS Safari from zooming on input focus */
+      #password-input { font-size: 16px; letter-spacing: 3px; }
+
+      /* Header */
+      .chat-header { padding: 0 16px; height: 50px; }
+      .header-wordmark { font-size: 21px; letter-spacing: 3px; }
+      .header-diamond { width: 8px; height: 8px; }
+
+      /* Messages */
+      .messages-wrap { padding: 16px 0 8px; }
+      .messages-inner { padding: 0 12px; gap: 16px; }
+      .message { gap: 10px; }
+      .msg-content { max-width: 90%; }
+      .msg-avatar { width: 28px; height: 28px; }
+      .user-avatar-letter { font-size: 13px; }
+      .msg-bubble { font-size: 14px; padding: 11px 13px; }
+      .msg-bubble h1 { font-size: 19px; }
+      .msg-bubble h2 { font-size: 16px; }
+      .msg-bubble pre { padding: 12px; }
+
+      /* Empty state */
+      .empty-title { font-size: 26px; letter-spacing: 4px; }
+      .empty-diamond { width: 32px; height: 32px; }
+
+      /* Input — safe-area-inset-bottom handles iPhone home bar */
+      .input-area {
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      }
+      /* 16px prevents iOS zoom on textarea focus */
+      #message-input { font-size: 16px; padding: 12px 14px; }
+      #send-btn { width: 44px; height: 44px; }
+      /* "Enter to send" hint irrelevant on soft keyboard */
+      .input-hint { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -915,6 +957,17 @@
     });
 
     sendBtn.addEventListener('click', sendMessage);
+
+    // ─── iOS KEYBOARD FIX ───
+    // When the soft keyboard opens on iOS, the visual viewport shrinks.
+    // Pinning chat-screen height to visualViewport.height keeps the
+    // input bar from being buried under the keyboard.
+    if (window.visualViewport) {
+      const chatScreen = document.getElementById('chat-screen');
+      window.visualViewport.addEventListener('resize', () => {
+        chatScreen.style.height = window.visualViewport.height + 'px';
+      });
+    }
   </script>
 </body>
 </html>
