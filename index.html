@@ -634,6 +634,13 @@
 
     /* ─── MOBILE ─── */
     @media (max-width: 640px) {
+      /* Use --app-height (set by JS) so the layout tracks the visual
+         viewport when the soft keyboard opens. Override bottom: auto so
+         height wins over the inset: 0 shorthand. */
+      #auth-screen, #chat-screen {
+        bottom: auto;
+        height: var(--app-height, 100svh);
+      }
       /* Auth screen */
       .auth-glow { width: 260px; height: 260px; }
       .auth-card { padding: 40px 24px; gap: 24px; }
@@ -720,7 +727,7 @@
 
     <div class="input-area">
       <div class="input-wrap">
-        <textarea id="message-input" placeholder="Ask anything..." rows="1"></textarea>
+        <textarea id="message-input" placeholder="Ask anything..." rows="1" enterkeyhint="send"></textarea>
         <button id="send-btn" title="Send">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -955,17 +962,29 @@
         sendMessage();
       }
     });
+    // iOS soft keyboard fires keydown unreliably — keyup as fallback
+    messageInput.addEventListener('keyup', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
 
     sendBtn.addEventListener('click', sendMessage);
 
     // ─── iOS KEYBOARD FIX ───
-    // When the soft keyboard opens on iOS, the visual viewport shrinks.
-    // Pinning chat-screen height to visualViewport.height keeps the
-    // input bar from being buried under the keyboard.
+    // Sets --app-height CSS var to the visual viewport height so the
+    // layout shrinks correctly when the soft keyboard opens.
+    // bottom: auto in CSS lets height win over inset: 0's bottom: 0.
+    function updateAppHeight() {
+      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', h + 'px');
+    }
+    updateAppHeight();
     if (window.visualViewport) {
-      const chatScreen = document.getElementById('chat-screen');
       window.visualViewport.addEventListener('resize', () => {
-        chatScreen.style.height = window.visualViewport.height + 'px';
+        updateAppHeight();
+        scrollToBottom();
       });
     }
   </script>
