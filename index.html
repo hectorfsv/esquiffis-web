@@ -634,12 +634,10 @@
 
     /* ─── MOBILE ─── */
     @media (max-width: 640px) {
-      /* 100dvh = dynamic viewport height — natively shrinks when the
-         iOS soft keyboard opens (iOS 16+). bottom: auto lets height
-         win over the bottom: 0 from inset: 0. */
+      /* bottom: auto lets JS-set height win over bottom: 0 from inset: 0.
+         Height and translateY are set by the syncToViewport() JS handler. */
       #auth-screen, #chat-screen {
         bottom: auto;
-        height: 100dvh;
       }
       /* Auth screen */
       .auth-glow { width: 260px; height: 260px; }
@@ -972,14 +970,29 @@
 
     sendBtn.addEventListener('click', sendMessage);
 
-    // ─── iOS KEYBOARD: scroll to bottom when keyboard opens ───
+    // ─── iOS KEYBOARD FIX ───
+    // When the iOS soft keyboard opens, Safari scrolls the visual viewport
+    // to try to center the focused input. This makes position:fixed elements
+    // appear to drift upward. Fix: translate the screens by offsetTop to
+    // counteract the scroll, and set height to vp.height so content
+    // doesn't extend under the keyboard.
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', scrollToBottom);
+      const authEl = document.getElementById('auth-screen');
+      const chatEl = document.getElementById('chat-screen');
+
+      function syncToViewport() {
+        const vp = window.visualViewport;
+        [authEl, chatEl].forEach(el => {
+          el.style.transform = `translateY(${vp.offsetTop}px)`;
+          el.style.height = vp.height + 'px';
+        });
+        scrollToBottom();
+      }
+
+      window.visualViewport.addEventListener('resize', syncToViewport);
+      window.visualViewport.addEventListener('scroll', syncToViewport);
+      syncToViewport(); // set correct initial state
     }
-    // Belt-and-suspenders: scroll to bottom when input is focused on mobile
-    messageInput.addEventListener('focus', () => {
-      if (window.innerWidth <= 640) setTimeout(scrollToBottom, 350);
-    });
   </script>
 </body>
 </html>
