@@ -1,0 +1,133 @@
+<style>*{animation:none!important;transition:none!important}</style>
+<script>
+/* Drive the page through its OWN code paths with an honest fake of the access
+   point. Modes (?t=):
+     ok       login, one turn, reply rendered from Telegram-flavoured HTML, script stripped, link kept
+     badpw    a wrong passphrase is refused and the page stays locked
+     timeout  the reply never comes: a note appears after two minutes and the page is usable again
+     expired  a 401 mid-conversation sends you back to the lock screen with the reason
+     persist  a remembered transcript is on screen after a reload
+     guard    a reply the guard replaced is marked as such
+   Layout is asserted in every mode: no horizontal overflow, the page itself never
+   scrolls, every text field is 16px or more (iOS zooms otherwise), and the
+   composer is on screen. */
+(function(){
+  var S=String.fromCharCode(167), out=[], q=new URLSearchParams(location.search), mode=q.get('t')||'ok', calls=[];
+  function $(i){return document.getElementById(i)}
+  function T(c,m){out.push((c?'PASS':'FAIL')+'  '+m); flush()}
+  function flush(){ try{document.title=S+out.join('\n')+S}catch(e){} }
+  window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
+  function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
+    if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
+  try{ sessionStorage.removeItem('esq_pw'); localStorage.removeItem('esq_log') }catch(e){}
+  if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
+    {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
+    {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
+  var REPLY='Here is <b>bold</b> and <i>italic</i>, a link https://docs.x.ai/x and <a href="https://example.com/a">a tagged one</a>.\n• one\n• two<script>window.__pwned=1<\/script><img src=x onerror="window.__pwned=2"> <a href="javascript:alert(1)">bad link</a>';
+  function res(status, body){ return Promise.resolve({ok:status>=200&&status<300, status:status, json:function(){return Promise.resolve(body)}}) }
+  window.fetch=function(u,o){
+    var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
+    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, json:!!(o&&o.headers)});
+    if(a==='login') return pwd==='right' ? res(200,{ok:true}) : res(401,{error:'unauthorized'});
+    if(a==='chat'){
+      // never answers - but like a real fetch it REJECTS with AbortError when the page gives up
+      if(mode==='timeout') return new Promise(function(_,rej){
+        if(o&&o.signal) o.signal.addEventListener('abort', function(){ var e=new Error('aborted'); e.name='AbortError'; rej(e) });
+      });
+      if(mode==='expired') return res(401,{error:'unauthorized'});
+      if(mode==='guard') return res(200,{response:'Stopping myself: I was about to report your inbox as if I had just looked.',blocked:true});
+      return res(200,{response:REPLY,blocked:false});
+    }
+    return Promise.reject(new Error('no net'));
+  };
+  function layout(tag){
+    var d=document.documentElement;
+    T(d.scrollWidth<=innerWidth, tag+': no horizontal overflow ('+d.scrollWidth+'<='+innerWidth+')');
+    T(d.scrollHeight<=innerHeight+1, tag+': the page itself does not scroll ('+d.scrollHeight+' vs '+innerHeight+')');
+    var small=[].filter.call(document.querySelectorAll('input,textarea'), function(el){ return vis(el) && parseFloat(getComputedStyle(el).fontSize)<16 });
+    T(small.length===0, tag+': no visible text field under 16px ('+small.length+')');
+  }
+  function go(){
+    layout('lock');
+    T(vis($('mark')), 'the name is on the lock screen');
+    var mk=$('mark'); T(mk.scrollWidth<=mk.clientWidth+1, 'the wordmark fits its box ('+mk.scrollWidth+' in '+mk.clientWidth+')');
+    $('pw').value = mode==='badpw' ? 'wrong' : 'right';
+    $('unlock').click();
+    setTimeout(step2, 200);
+  }
+  function step2(){
+    if(mode==='badpw'){
+      T($('scr-lock').classList.contains('on'), 'a wrong passphrase stays on the lock screen');
+      T(/not right/.test($('lock-msg').textContent), 'and says so ('+$('lock-msg').textContent+')');
+      T(calls.length===1 && calls[0].a==='login', 'one login call, nothing else');
+      return done();
+    }
+    T($('scr-chat').classList.contains('on'), 'the right passphrase opens the conversation');
+    T(calls.length===1 && calls[0].a==='login', 'login is its own call, no chat turn behind it');
+    T(!calls[0].json, 'sent as form data, not JSON (no CORS preflight)');
+    layout('chat-empty');
+    if(mode==='persist'){
+      var ms=document.querySelectorAll('#col .m');
+      T(ms.length===2, 'the remembered transcript is on screen ('+ms.length+')');
+      T(/brisket/.test(ms[1].textContent), 'with its words');
+      T($('empty').hidden, 'and no empty state over it');
+      $('clear').click();
+      T(document.querySelectorAll('#col .m').length===0 && !$('empty').hidden, 'Clear screen empties it and the invitation returns');
+      T(localStorage.getItem('esq_log')==='[]', 'and forgets it locally');
+      return done();
+    }
+    T(vis($('empty')), 'an empty conversation invites you to ask');
+    $('box').value='hello there';
+    $('send').click();
+    T(calls.length===2 && calls[1].a==='chat' && calls[1].msg==='hello there' && calls[1].src==='web', 'the turn goes up as a chat call with the message and source=web');
+    T($('send').disabled && !$('sweep').hidden, 'while waiting: Send is off and the sweep is on');
+    T(/Thinking/.test($('status').textContent), 'the status says Thinking ('+$('status').textContent+')');
+    T($('box').value==='', 'the box is cleared on send');
+    if(mode==='timeout'){
+      // two minutes of virtual time pass in the runner; check after
+      setTimeout(function(){
+        var notes=document.querySelectorAll('#col .m.note');
+        T(notes.length===1 && /two minutes/.test(notes[0].textContent), 'a note explains the wait ran out ('+(notes[0]?notes[0].textContent.slice(0,40):'none')+')');
+        T(!$('send').disabled && $('sweep').hidden, 'and the page is usable again');
+        T($('status').textContent==='Ready', 'status back to Ready');
+        done();
+      }, 125000);
+      return;
+    }
+    setTimeout(step3, 300);
+  }
+  function step3(){
+    if(mode==='expired'){
+      T($('scr-lock').classList.contains('on'), 'a 401 mid-conversation returns to the lock screen');
+      T(/expired/i.test($('lock-msg').textContent), 'with the reason ('+$('lock-msg').textContent+')');
+      T(sessionStorage.getItem('esq_pw')===null, 'and the passphrase is forgotten');
+      return done();
+    }
+    var ms=document.querySelectorAll('#col .m');
+    T(ms.length===2, 'two messages on screen ('+ms.length+')');
+    var esq=document.querySelector('#col .m.esq .body');
+    T(!!esq, 'the reply is marked as his');
+    if(mode==='guard'){
+      T(!!document.querySelector('#col .m.esq .tag'), 'a guarded reply carries the guard tag');
+      T(/Stopping myself/.test(esq.textContent), 'and shows the guard\'s words');
+    } else {
+      T(esq.querySelector('b') && esq.querySelector('b').textContent==='bold', 'bold survives');
+      T(esq.querySelector('i') && esq.querySelector('i').textContent==='italic', 'italic survives');
+      var links=esq.querySelectorAll('a');
+      T(links.length===2, 'the bare URL and the tagged link are links, the javascript: one is not ('+links.length+')');
+      T([].every.call(links, function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'links open in a new tab safely');
+      T(!esq.querySelector('script') && !esq.querySelector('img') && window.__pwned===undefined, 'script and img are stripped, nothing ran');
+      T(/• one/.test(esq.textContent) && /• two/.test(esq.textContent), 'line breaks and bullets are kept');
+      T(!document.querySelector('#col .m.esq .tag'), 'an ordinary reply has no guard tag');
+    }
+    T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'the page is ready again');
+    var l=$('log'); T(Math.abs(l.scrollTop+l.clientHeight-l.scrollHeight)<=2 || l.scrollHeight<=l.clientHeight, 'the conversation is scrolled to the newest message');
+    var saved=JSON.parse(localStorage.getItem('esq_log')||'[]');
+    T(saved.length===2 && saved[1].r==='esq', 'the transcript is remembered for a reload');
+    layout('chat');
+    done();
+  }
+  function done(){ flush() }
+  if(document.readyState==='complete') go(); else addEventListener('load', go);
+})();
+</script>

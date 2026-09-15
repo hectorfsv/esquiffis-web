@@ -1,998 +1,392 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>ESQUIFFIS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <style>
-    :root {
-      --bg-void: #080808;
-      --bg-surface: #111111;
-      --bg-elevated: #1a1a1a;
-      --border: #1f1f1f;
-      --border-bright: #2a2a2a;
-      --text-primary: #f0f0f0;
-      --text-muted: #3a3a3a;
-      --text-dim: #555;
-      --red: #cc1a1a;
-      --red-bright: #e02020;
-      --red-dim: #8a1010;
-      --red-glow: rgba(204, 26, 26, 0.12);
-      --red-glow-bright: rgba(204, 26, 26, 0.25);
-      --gold: #b8952a;
-      --code-bg: #0d0d0d;
-      --font-display: 'Bebas Neue', sans-serif;
-      --font-mono: 'DM Mono', monospace;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      height: 100%;
-      width: 100%;
-      background: var(--bg-void);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-size: 14px;
-      line-height: 1.6;
-      overflow: hidden;
-    }
-
-    /* ─── NOISE OVERLAY ─── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-      opacity: 0.03;
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    /* ─── AUTH SCREEN ─── */
-    #auth-screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 0;
-      animation: fadeIn 0.6s ease;
-    }
-
-    #auth-screen.hidden { display: none; }
-
-    .auth-glow {
-      position: absolute;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, var(--red-glow) 0%, transparent 70%);
-      pointer-events: none;
-      animation: breathe 4s ease-in-out infinite;
-    }
-
-    @keyframes breathe {
-      0%, 100% { opacity: 0.6; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.1); }
-    }
-
-    .auth-card {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 32px;
-      padding: 60px 48px;
-      z-index: 1;
-    }
-
-    .auth-logo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .auth-diamond {
-      width: 28px;
-      height: 28px;
-      background: var(--red);
-      transform: rotate(45deg);
-      box-shadow: 0 0 20px var(--red-glow-bright), 0 0 40px var(--red-glow);
-    }
-
-    .auth-wordmark {
-      font-family: var(--font-display);
-      font-size: 72px;
-      letter-spacing: 8px;
-      color: var(--text-primary);
-      line-height: 1;
-    }
-
-    .auth-line {
-      width: 100%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--red), transparent);
-    }
-
-    .auth-subtitle {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-
-    .auth-input-wrap {
-      position: relative;
-      width: 280px;
-    }
-
-    #password-input {
-      width: 100%;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-bright);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-size: 15px;
-      padding: 14px 48px 14px 18px;
-      outline: none;
-      letter-spacing: 4px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    #password-input:focus {
-      border-color: var(--red);
-      box-shadow: 0 0 0 1px var(--red), 0 0 16px var(--red-glow);
-    }
-
-    #password-input.error {
-      border-color: var(--red-bright);
-      box-shadow: 0 0 0 1px var(--red-bright), 0 0 20px var(--red-glow-bright);
-      animation: shake 0.4s ease;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-8px); }
-      40% { transform: translateX(8px); }
-      60% { transform: translateX(-5px); }
-      80% { transform: translateX(5px); }
-    }
-
-    #auth-submit {
-      position: absolute;
-      right: 0;
-      top: 0;
-      height: 100%;
-      width: 48px;
-      background: transparent;
-      border: none;
-      border-left: 1px solid var(--border-bright);
-      color: var(--text-dim);
-      font-size: 18px;
-      cursor: pointer;
-      transition: color 0.2s, background 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #auth-submit:hover:not(:disabled) { color: var(--red); background: var(--red-glow); }
-    #auth-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .auth-spinner {
-      width: 14px;
-      height: 14px;
-      border: 1.5px solid var(--text-muted);
-      border-top-color: var(--red);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      display: none;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #auth-submit.loading .auth-arrow { display: none; }
-    #auth-submit.loading .auth-spinner { display: block; }
-
-    .auth-error {
-      font-size: 11px;
-      color: var(--red-bright);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      height: 16px;
-      text-align: center;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .auth-error.visible { opacity: 1; }
-
-    /* ─── CHAT SCREEN ─── */
-    #chat-screen {
-      position: fixed;
-      inset: 0;
-      display: none;
-      flex-direction: column;
-    }
-
-    #chat-screen.visible { display: flex; }
-
-    /* Header */
-    .chat-header {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 28px;
-      height: 56px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(8, 8, 8, 0.95);
-      backdrop-filter: blur(12px);
-      z-index: 10;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .header-diamond {
-      width: 10px;
-      height: 10px;
-      background: var(--red);
-      transform: rotate(45deg);
-      flex-shrink: 0;
-    }
-
-    .header-wordmark {
-      font-family: var(--font-display);
-      font-size: 26px;
-      letter-spacing: 4px;
-      color: var(--text-primary);
-      line-height: 1;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #22c55e;
-      box-shadow: 0 0 8px rgba(34,197,94,0.5);
-      animation: pulse-green 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse-green {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .status-label {
-      font-size: 11px;
-      color: var(--text-dim);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    /* Messages */
-    .messages-wrap {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 32px 0 16px;
-      scroll-behavior: smooth;
-    }
-
-    .messages-wrap::-webkit-scrollbar { width: 4px; }
-    .messages-wrap::-webkit-scrollbar-track { background: transparent; }
-    .messages-wrap::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
-    .messages-wrap::-webkit-scrollbar-thumb:hover { background: var(--red-dim); }
-
-    .messages-inner {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    /* Empty state */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 60vh;
-      gap: 16px;
-      opacity: 0;
-      animation: fadeIn 0.8s 0.3s ease forwards;
-    }
-
-    .empty-diamond {
-      width: 40px;
-      height: 40px;
-      border: 1px solid var(--border-bright);
-      transform: rotate(45deg);
-      position: relative;
-    }
-
-    .empty-diamond::after {
-      content: '';
-      position: absolute;
-      inset: 6px;
-      background: var(--red);
-      opacity: 0.3;
-    }
-
-    .empty-title {
-      font-family: var(--font-display);
-      font-size: 36px;
-      letter-spacing: 6px;
-      color: var(--text-muted);
-    }
-
-    .empty-sub {
-      font-size: 11px;
-      color: var(--text-muted);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    /* Message bubbles */
-    .message {
-      display: flex;
-      gap: 14px;
-      animation: slideUp 0.3s ease;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .message.user {
-      flex-direction: row-reverse;
-    }
-
-    .msg-avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      overflow: hidden;
-      flex-shrink: 0;
-      border: 1px solid var(--border-bright);
-      background: var(--bg-surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 2px;
-    }
-
-    .msg-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center center;
-    }
-
-    .user-avatar-letter {
-      font-family: var(--font-display);
-      font-size: 16px;
-      color: var(--red);
-      letter-spacing: 0;
-    }
-
-    .msg-content {
-      flex: 1;
-      max-width: 85%;
-    }
-
-    .message.user .msg-content { display: flex; justify-content: flex-end; }
-
-    .msg-bubble {
-      display: inline-block;
-      padding: 14px 18px;
-      font-family: var(--font-mono);
-      font-size: 14px;
-      line-height: 1.7;
-      max-width: 100%;
-    }
-
-    .message.user .msg-bubble {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-bright);
-      color: var(--text-primary);
-      text-align: right;
-    }
-
-    .message.agent .msg-bubble {
-      background: transparent;
-      border-left: 2px solid var(--red);
-      padding-left: 16px;
-      color: var(--text-primary);
-    }
-
-    /* Markdown styles inside agent bubbles */
-    .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 {
-      font-family: var(--font-display);
-      letter-spacing: 2px;
-      margin: 16px 0 8px;
-      color: var(--text-primary);
-    }
-    .msg-bubble h1 { font-size: 22px; }
-    .msg-bubble h2 { font-size: 18px; }
-    .msg-bubble h3 { font-size: 15px; color: var(--text-dim); }
-
-    .msg-bubble p { margin: 0 0 10px; }
-    .msg-bubble p:last-child { margin-bottom: 0; }
-
-    .msg-bubble ul {
-      padding-left: 0;
-      margin: 10px 0;
-      list-style: none;
-    }
-    .msg-bubble ul li {
-      margin: 6px 0;
-      padding-left: 16px;
-      position: relative;
-    }
-    .msg-bubble ul li::before {
-      content: '—';
-      position: absolute;
-      left: 0;
-      color: var(--red-dim);
-    }
-
-    .msg-bubble ol {
-      padding-left: 0;
-      margin: 10px 0;
-      list-style: none;
-      counter-reset: esq-counter;
-    }
-    .msg-bubble ol li {
-      counter-increment: esq-counter;
-      display: flex;
-      gap: 10px;
-      margin: 6px 0;
-      align-items: baseline;
-    }
-    .msg-bubble ol li::before {
-      content: counter(esq-counter) ".";
-      color: var(--red);
-      font-size: 11px;
-      letter-spacing: 0.5px;
-      min-width: 22px;
-      flex-shrink: 0;
-      text-align: right;
-      opacity: 0.8;
-    }
-
-    .msg-bubble strong { color: var(--text-primary); font-weight: 500; }
-    .msg-bubble em { color: var(--gold); font-style: italic; }
-
-    .msg-bubble a {
-      color: var(--red-bright);
-      text-decoration: none;
-      border-bottom: 1px solid var(--red-dim);
-    }
-    .msg-bubble a:hover { color: var(--text-primary); }
-
-    .msg-bubble code {
-      background: var(--code-bg);
-      border: 1px solid var(--border-bright);
-      padding: 1px 6px;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--gold);
-    }
-
-    .msg-bubble pre {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      padding: 16px;
-      overflow-x: auto;
-      margin: 12px 0;
-    }
-
-    .msg-bubble pre code {
-      background: none;
-      border: none;
-      padding: 0;
-      color: var(--text-primary);
-      font-size: 13px;
-    }
-
-    .msg-bubble hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 12px 0;
-    }
-
-    /* Typing indicator */
-    .typing-indicator {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 0;
-      animation: slideUp 0.3s ease;
-    }
-
-    .typing-dots {
-      display: flex;
-      gap: 5px;
-      padding: 16px 18px;
-      border-left: 2px solid var(--red);
-    }
-
-    .typing-dot {
-      width: 5px;
-      height: 5px;
-      background: var(--red);
-      border-radius: 50%;
-      animation: dot-pulse 1.4s ease-in-out infinite;
-    }
-
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes dot-pulse {
-      0%, 60%, 100% { opacity: 0.2; transform: scale(1); }
-      30% { opacity: 1; transform: scale(1.3); }
-    }
-
-    /* Input area */
-    .input-area {
-      flex-shrink: 0;
-      padding: 16px 24px 24px;
-      background: rgba(8, 8, 8, 0.95);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid var(--border);
-    }
-
-    .input-wrap {
-      max-width: 760px;
-      margin: 0 auto;
-      position: relative;
-      display: flex;
-      align-items: flex-end;
-      gap: 0;
-      border: 1px solid var(--border-bright);
-      transition: border-color 0.2s, box-shadow 0.2s;
-      background: var(--bg-surface);
-    }
-
-    .input-wrap:focus-within {
-      border-color: var(--red);
-      box-shadow: 0 0 0 1px var(--red), 0 0 20px var(--red-glow);
-    }
-
-    #message-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-size: 14px;
-      line-height: 1.6;
-      padding: 14px 16px;
-      resize: none;
-      outline: none;
-      max-height: 180px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-    }
-
-    #message-input::placeholder { color: var(--text-muted); letter-spacing: 1px; }
-
-    #send-btn {
-      width: 48px;
-      height: 48px;
-      flex-shrink: 0;
-      background: transparent;
-      border: none;
-      border-left: 1px solid var(--border-bright);
-      color: var(--text-muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color 0.2s, background 0.2s;
-      align-self: stretch;
-    }
-
-    #send-btn:hover:not(:disabled) { color: var(--red); background: var(--red-glow); }
-    #send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    .input-hint {
-      text-align: center;
-      font-size: 10px;
-      color: var(--text-muted);
-      letter-spacing: 1.5px;
-      margin-top: 8px;
-      text-transform: uppercase;
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    /* ─── MOBILE ─── */
-    @media (max-width: 640px) {
-      /* bottom: auto lets JS-set height win over bottom: 0 from inset: 0.
-         Height and translateY are set by the syncToViewport() JS handler. */
-      #auth-screen, #chat-screen {
-        bottom: auto;
-      }
-      /* Auth screen */
-      .auth-glow { width: 260px; height: 260px; }
-      .auth-card { padding: 40px 24px; gap: 24px; }
-      .auth-wordmark { font-size: 52px; letter-spacing: 5px; }
-      .auth-input-wrap { width: min(300px, 82vw); }
-      /* 16px min prevents iOS Safari from zooming on input focus */
-      #password-input { font-size: 16px; letter-spacing: 3px; }
-
-      /* Header */
-      .chat-header { padding: 0 16px; height: 50px; }
-      .header-wordmark { font-size: 21px; letter-spacing: 3px; }
-      .header-diamond { width: 8px; height: 8px; }
-
-      /* Messages */
-      .messages-wrap { padding: 16px 0 8px; }
-      .messages-inner { padding: 0 12px; gap: 16px; }
-      .message { gap: 10px; }
-      .msg-content { max-width: 90%; }
-      .msg-avatar { width: 28px; height: 28px; }
-      .user-avatar-letter { font-size: 13px; }
-      .msg-bubble { font-size: 14px; padding: 11px 13px; }
-      .msg-bubble h1 { font-size: 19px; }
-      .msg-bubble h2 { font-size: 16px; }
-      .msg-bubble pre { padding: 12px; }
-
-      /* Empty state */
-      .empty-title { font-size: 26px; letter-spacing: 4px; }
-      .empty-diamond { width: 32px; height: 32px; }
-
-      /* Input — safe-area-inset-bottom handles iPhone home bar */
-      .input-area {
-        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-      }
-      /* 16px prevents iOS zoom on textarea focus */
-      #message-input { font-size: 16px; padding: 12px 14px; }
-      #send-btn { width: 44px; height: 44px; }
-      /* "Enter to send" hint irrelevant on soft keyboard */
-      .input-hint { display: none; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0708">
+<title>Esquiffis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+/* Esquiffis, the web door. One assistant, three ways in: Telegram on the phone,
+   this page, and the desktop pet. This page talks to the SAME agent (memory,
+   tools, guard) through the access point on the Esquiffis workflow.
+
+   Design notes (2026-09-14 redesign): the conversation is the product, so
+   nothing competes with the words. Two faces only - Bebas Neue for the name,
+   Barlow for everything read. One red, one rule. The wordmark on the lock
+   screen is the single loud element; the sweep under the header is the only
+   motion, and it answers a send. Nothing is position:fixed, so iOS Safari's
+   moving address bar and keyboard have nothing to break. */
+:root{
+  --void:#0A0708;
+  --panel:#171214;
+  --rule:rgba(255,120,110,.14);
+  --ink:#F2EAE8;
+  --smoke:#928789;
+  --red:#E01B1B;
+  --red-deep:#9E1212;
+  --disp:'Bebas Neue','Arial Narrow',Impact,sans-serif;
+  --text:'Barlow','Helvetica Neue',Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--void);color:var(--ink);font-family:var(--text);
+  font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit;background:none;border:0;border-radius:0}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+
+/* the app is one column the height of the visible viewport; the keyboard
+   handler below sets an explicit height when iOS shrinks the visual viewport */
+.app{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.screen{display:none;flex:1;min-height:0}
+.screen.on{display:flex}
+
+/* ---------- lock ---------- */
+.lock{align-items:center;justify-content:center;padding:24px}
+.lock-form{width:min(100%,480px);display:flex;flex-direction:column;align-items:flex-start;gap:26px}
+/* The name is the one loud thing. Its size is fitted to the form in JS after the
+   font lands (fitMark), because a vw clamp cannot know the glyph widths of the
+   face that actually loaded - at 168px it ran 516px wide in a 420px form. */
+.mark{font-family:var(--disp);font-weight:400;font-size:clamp(72px,22vw,150px);line-height:.86;
+  letter-spacing:.01em;color:var(--ink);text-transform:uppercase;white-space:nowrap;
+  padding-bottom:.08em;border-bottom:6px solid var(--red);width:100%}
+.slot{display:flex;width:100%;border:1px solid var(--rule);background:var(--panel)}
+.slot input{flex:1;min-width:0;padding:14px 16px;font-size:17px;letter-spacing:.04em}
+.slot input::placeholder{color:var(--smoke)}
+.slot button{padding:0 22px;background:var(--red);color:#fff;font-weight:600;font-size:16px;letter-spacing:.01em}
+.slot button:disabled{background:var(--red-deep);color:rgba(255,255,255,.7);cursor:default}
+.msg{min-height:1.4em;color:var(--smoke);font-size:15px}
+.msg.err{color:#FF6B6B}
+
+/* ---------- chat ---------- */
+.chat{flex-direction:column}
+.top{position:relative;flex:none;display:flex;align-items:center;gap:14px;
+  padding:10px max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));
+  padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--rule)}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.face{width:30px;height:30px;object-fit:cover;flex:none;display:block}
+.name{font-family:var(--disp);font-size:26px;line-height:1;letter-spacing:.03em;text-transform:uppercase;padding-top:2px}
+.status{flex:1;min-width:0;color:var(--smoke);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-variant-numeric:tabular-nums}
+.status.busy{color:var(--ink)}
+.status.bad{color:#FF6B6B}
+.ghost{color:var(--smoke);font-size:15px;padding:6px 2px;border-bottom:1px solid transparent;white-space:nowrap}
+.ghost:hover{color:var(--ink);border-bottom-color:var(--ink)}
+/* the one motion: a red sweep under the header while Esquiffis is thinking */
+.sweep{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--red);
+  transform-origin:left;transform:scaleX(0);animation:sweep 1.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes sweep{0%{transform:scaleX(0);transform-origin:left}55%{transform:scaleX(1);transform-origin:left}
+  56%{transform-origin:right}100%{transform:scaleX(0);transform-origin:right}}
+@media (prefers-reduced-motion:reduce){.sweep{animation:none;transform:none}}
+
+.log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:18px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
+.col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.empty{color:var(--smoke);padding:12px 0 0;max-width:36ch}
+.empty .lead{color:var(--ink);font-size:22px;font-weight:500;line-height:1.2;margin-bottom:6px}
+
+.m{display:flex;flex-direction:column;max-width:100%}
+.m .body{white-space:pre-wrap;overflow-wrap:anywhere}
+.m .when{color:var(--smoke);font-size:13px;margin-top:4px;font-variant-numeric:tabular-nums}
+/* Hector: a panel, on the right, no ornament */
+.m.me{align-self:flex-end;max-width:min(78%,52ch);align-items:flex-end}
+.m.me .body{background:var(--panel);padding:10px 14px;border-radius:2px}
+/* Esquiffis: his words on the void, marked by the red rule */
+.m.esq{align-self:flex-start;max-width:min(100%,68ch)}
+.m.esq .body{border-left:3px solid var(--red);padding:2px 0 2px 14px}
+.m.esq .body b,.m.esq .body strong{font-weight:600}
+.m.esq .body code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;background:var(--panel);padding:1px 5px}
+.m.esq .body pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--panel);
+  padding:12px 14px;overflow-x:auto;white-space:pre;margin:6px 0}
+.m.esq .body pre code{background:none;padding:0}
+.m.esq .body a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
+.m .tag{color:var(--smoke);font-size:13px;margin-top:4px}
+/* a note from the page itself (never from Esquiffis) */
+.m.note{align-self:flex-start;max-width:60ch}
+.m.note .body{color:var(--smoke);border-left:3px solid var(--rule);padding:2px 0 2px 14px}
+
+.composer{flex:none;display:flex;gap:10px;align-items:flex-end;border-top:1px solid var(--rule);
+  padding:10px max(16px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.composer .in{flex:1;min-width:0;display:flex;background:var(--panel);border:1px solid var(--rule)}
+.composer textarea{flex:1;min-width:0;resize:none;padding:11px 14px;font-size:17px;line-height:1.4;max-height:160px}
+.composer textarea::placeholder{color:var(--smoke)}
+.send{flex:none;width:46px;height:46px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center}
+.send:disabled{background:var(--red-deep);cursor:default}
+.send svg{width:20px;height:20px;fill:currentColor}
+
+@media (min-width:900px){
+  .top{padding-left:max(28px,env(safe-area-inset-left));padding-right:max(28px,env(safe-area-inset-right))}
+  .log{padding:28px 28px 16px}
+  .composer{padding-left:28px;padding-right:28px;justify-content:center}
+  .composer .in{max-width:704px}
+}
+</style>
 </head>
 <body>
+<div id="app" class="app">
 
-  <!-- AUTH SCREEN -->
-  <div id="auth-screen">
-    <div class="auth-glow"></div>
-    <div class="auth-card">
-      <div class="auth-logo">
-        <div class="auth-diamond"></div>
-        <div class="auth-wordmark">ESQUIFFIS</div>
-        <div class="auth-line"></div>
-        <div class="auth-subtitle">Secure Access</div>
+  <section id="scr-lock" class="screen lock on" aria-labelledby="mark">
+    <form id="lock-form" class="lock-form" autocomplete="on">
+      <h1 id="mark" class="mark">Esquiffis</h1>
+      <label class="sr" for="pw">Passphrase</label>
+      <div class="slot">
+        <input id="pw" type="password" placeholder="Passphrase" autocomplete="current-password" autocapitalize="off" spellcheck="false">
+        <button id="unlock" type="submit">Unlock</button>
       </div>
-      <div class="auth-input-wrap">
-        <input type="password" id="password-input" placeholder="••••••••••" autocomplete="current-password" autofocus>
-        <button id="auth-submit"><span class="auth-arrow">→</span><span class="auth-spinner"></span></button>
-      </div>
-      <div class="auth-error" id="auth-error">ACCESS DENIED</div>
-    </div>
-  </div>
+      <p id="lock-msg" class="msg" role="alert"></p>
+    </form>
+  </section>
 
-  <!-- CHAT SCREEN -->
-  <div id="chat-screen">
-    <header class="chat-header">
-      <div class="header-left">
-        <div class="header-diamond"></div>
-        <span class="header-wordmark">ESQUIFFIS</span>
+  <section id="scr-chat" class="screen chat" aria-label="Conversation">
+    <header class="top">
+      <div class="who">
+        <img class="face" id="face" alt="" width="30" height="30">
+        <span class="name">Esquiffis</span>
       </div>
-      <div class="header-right">
-        <div class="status-dot"></div>
-        <span class="status-label">Online</span>
-      </div>
+      <div id="status" class="status" aria-live="polite">Ready</div>
+      <button id="clear" class="ghost" type="button">Clear screen</button>
+      <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
     </header>
-
-    <div class="messages-wrap" id="messages-wrap">
-      <div class="messages-inner" id="messages-inner">
-        <div class="empty-state" id="empty-state">
-          <div class="empty-diamond"></div>
-          <div class="empty-title">WHAT DO YOU NEED?</div>
-          <div class="empty-sub">Grok 4.20 · All tools active</div>
+    <main id="log" class="log">
+      <div class="col" id="col">
+        <div id="empty" class="empty">
+          <p class="lead">Ask anything.</p>
+          <p>Same Esquiffis as on your phone. He remembers both.</p>
         </div>
       </div>
-    </div>
+    </main>
+    <form id="composer" class="composer">
+      <label class="sr" for="box">Message</label>
+      <div class="in"><textarea id="box" rows="1" placeholder="Message Esquiffis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
+      <button id="send" class="send" type="submit" aria-label="Send">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 8h-5v10H9V11H4z"/></svg>
+      </button>
+    </form>
+  </section>
 
-    <div class="input-area">
-      <div class="input-wrap">
-        <textarea id="message-input" placeholder="Ask anything..." rows="1" enterkeyhint="send"></textarea>
-        <button id="send-btn" title="Send">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-        </button>
-      </div>
-      <div class="input-hint">Enter to send · Shift+Enter for new line</div>
-    </div>
-  </div>
+</div>
+<script>
+(function(){
+  'use strict';
+  /* ---------- where Esquiffis answers ----------
+     The access point on the Esquiffis workflow. Form data on purpose: a JSON
+     body is not a CORS "simple" request and would fire a preflight the webhook
+     cannot answer. ?dev=1 talks to the DEV copy. */
+  var PROD='https://hectorfsv.app.n8n.cloud/webhook/esquiffis-access';
+  var BASE=/[?&]dev=1(&|$)/.test(location.search) ? PROD+'-dev' : PROD;
+  var K_PW='esq_pw', K_LOG='esq_log';
+  var PW_TTL_MS=2*60*60*1000;   // sessionStorage never expires on iOS by itself: timestamp it
+  var LOG_MAX=80;               // what a reload shows; Esquiffis's own memory lives on the server
+  var WAIT_MS=120*1000;         // real turns run 6-78 s; the webhook connection is cut near 100 s
+  var FACE='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QKORXhpZgAATU0AKgAAAAgAAwEOAAIAAAD4AAAAMgE7AAIAAAAlAAABKodpAAQAAAABAAABUAAAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AGNhZTYyMWY4LTVmN2QtNGFhNC1iZDMwLTI0YzFhMGE5NWI0NgAAAASShgAHAAAA/wAAAYagAQADAAAAAQABAACgAgAEAAAAAQAAACqgAwAEAAAAAQAAAFAAAAAAQVNDSUkAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AP/tADhQaG90b3Nob3AgMy4wADhCSU0EBAAAAAAAADhCSU0EJQAAAAAAENQdjNmPALIE6YAJmOz4Qn7/wAARCABQACoDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAD/9oADAMBAAIRAxEAPwD+f+iiigAooooAKKUqw5IpKAP/0P5/6KKKACtCxtDcPgVTiTzHCk4HfvXsvwv8Cap418VaV4W0SIz3mq3EcEK9t0jADJ9B1J7CoqTUU2zrwWFlWqxpQ3Zgal4K1TTtFtNau7SSK0vt4glZSEkMeA+0ng7SRnHSuDMKgkYr68/aZ8YaReeI7fwX4UlEnhvwbbrpViy9JvJJM9x9Z5i8n0IHavkMzqSTWWGqSlDmkehnuEo0MQ6VJ3S0+fX8T//R/n/q5p9jPqV5DY2w3STMqKOOSxwOuB+ZqnXTeHNT/s3U7GW0tlnuI5Q4DgENID8gIJAKg8kHg9+2BAdvoXgR410nUrieK40/WlAikUHcsynDRsDjG08EjIr7C+F+lw/CL4Y+KPjTOQmo3vmaD4fPGftFxH/plwv/AFwgbYCOjyKeoryTwZZXXi9NC8JaLqiXniC8vNk9g8aQRRTGZhGYJDIyyFjKxbaseBwVYjcO4/aw8W6Raa5p3wm8JXCzeH/h9a/2ZC6H5Li7B3Xtzx182ctg/wBxVHavNxc3OSpI+54fpQw1CePk9UrR9X/X59j4v8RXzXE7ZOdxrk6t3cpllZjVSvRirKx8XWqOUnJn/9L+f+nI7RsHQlWU5BHBBHpTaKAPSPDfi64bxBeazqgNxf3MUjRuh8qT7SR8rpsGN5Iyemee5rltQ1i4vSzzOXZuSSckn1rCR3jdZI2KuhBBHBBHQimkk8mlZbmntZcvLfQUnJzSUUUzM//T/n/ooooAKKKKACiiigD/2Q==';
 
-  <script>
-    // ─── CONFIG ───
-    const API_URL = 'https://hectorfsv.app.n8n.cloud/webhook/esquiffis-chat';
-    const AVATAR_SRC = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QKORXhpZgAATU0AKgAAAAgAAwEOAAIAAAD4AAAAMgE7AAIAAAAlAAABKodpAAQAAAABAAABUAAAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AGNhZTYyMWY4LTVmN2QtNGFhNC1iZDMwLTI0YzFhMGE5NWI0NgAAAASShgAHAAAA/wAAAYagAQADAAAAAQABAACgAgAEAAAAAQAAACqgAwAEAAAAAQAAAFAAAAAAQVNDSUkAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AP/tADhQaG90b3Nob3AgMy4wADhCSU0EBAAAAAAAADhCSU0EJQAAAAAAENQdjNmPALIE6YAJmOz4Qn7/wAARCABQACoDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAD/9oADAMBAAIRAxEAPwD+f+iiigAooooAKKUqw5IpKAP/0P5/6KKKACtCxtDcPgVTiTzHCk4HfvXsvwv8Cap418VaV4W0SIz3mq3EcEK9t0jADJ9B1J7CoqTUU2zrwWFlWqxpQ3Zgal4K1TTtFtNau7SSK0vt4glZSEkMeA+0ng7SRnHSuDMKgkYr68/aZ8YaReeI7fwX4UlEnhvwbbrpViy9JvJJM9x9Z5i8n0IHavkMzqSTWWGqSlDmkehnuEo0MQ6VJ3S0+fX8T//R/n/q5p9jPqV5DY2w3STMqKOOSxwOuB+ZqnXTeHNT/s3U7GW0tlnuI5Q4DgENID8gIJAKg8kHg9+2BAdvoXgR410nUrieK40/WlAikUHcsynDRsDjG08EjIr7C+F+lw/CL4Y+KPjTOQmo3vmaD4fPGftFxH/plwv/AFwgbYCOjyKeoryTwZZXXi9NC8JaLqiXniC8vNk9g8aQRRTGZhGYJDIyyFjKxbaseBwVYjcO4/aw8W6Raa5p3wm8JXCzeH/h9a/2ZC6H5Li7B3Xtzx182ctg/wBxVHavNxc3OSpI+54fpQw1CePk9UrR9X/X59j4v8RXzXE7ZOdxrk6t3cpllZjVSvRirKx8XWqOUnJn/9L+f+nI7RsHQlWU5BHBBHpTaKAPSPDfi64bxBeazqgNxf3MUjRuh8qT7SR8rpsGN5Iyemee5rltQ1i4vSzzOXZuSSckn1rCR3jdZI2KuhBBHBBHQimkk8mlZbmntZcvLfQUnJzSUUUzM//T/n/ooooAKKKKACiiigD/2Q==';
+  function $(id){return document.getElementById(id)}
+  var pw='', log=[], busy=false, tick=null, t0=0, aborter=null;
 
-    // ─── STATE ───
-    let isLoading = false;
-    let sessionId = sessionStorage.getItem('esq_session') || (() => {
-      const id = 'web-' + Math.random().toString(36).substr(2, 9);
-      sessionStorage.setItem('esq_session', id);
-      return id;
-    })();
+  /* ---------- remembered things ---------- */
+  function savePw(v){ try{ sessionStorage.setItem(K_PW, JSON.stringify({v:v,t:Date.now()})) }catch(e){} }
+  function loadPw(){
+    try{ var s=JSON.parse(sessionStorage.getItem(K_PW)||'null');
+      if(s && s.v && s.t && Date.now()-s.t < PW_TTL_MS) return s.v; }catch(e){}
+    return '';
+  }
+  function clearPw(){ try{ sessionStorage.removeItem(K_PW) }catch(e){} }
+  function saveLog(){ try{ localStorage.setItem(K_LOG, JSON.stringify(log.slice(-LOG_MAX))) }catch(e){} }
+  function loadLog(){
+    try{ var a=JSON.parse(localStorage.getItem(K_LOG)||'[]'); if(Array.isArray(a)) log=a.filter(function(m){return m&&m.r&&typeof m.m==='string'}); }catch(e){ log=[] }
+  }
 
-    // ─── DOM ───
-    const authScreen   = document.getElementById('auth-screen');
-    const chatScreen   = document.getElementById('chat-screen');
-    const passwordInput = document.getElementById('password-input');
-    const authSubmit   = document.getElementById('auth-submit');
-    const authError    = document.getElementById('auth-error');
-    const messagesWrap = document.getElementById('messages-wrap');
-    const messagesInner = document.getElementById('messages-inner');
-    const emptyState   = document.getElementById('empty-state');
-    const messageInput = document.getElementById('message-input');
-    const sendBtn      = document.getElementById('send-btn');
+  /* ---------- the transport ---------- */
+  function post(fields, signal){
+    var fd=new FormData();
+    Object.keys(fields).forEach(function(k){ fd.append(k, fields[k]) });
+    return fetch(BASE,{method:'POST',body:fd,signal:signal});
+  }
 
-    // ─── MARKED CONFIG ───
-    marked.setOptions({ breaks: true, gfm: true });
+  /* ---------- lock ---------- */
+  function lockMsg(t, bad){ var el=$('lock-msg'); el.textContent=t||''; el.classList.toggle('err', !!bad); }
+  function unlock(e){
+    if(e) e.preventDefault();
+    var v=$('pw').value.trim();
+    if(!v){ lockMsg('Enter the passphrase.', true); return }
+    $('unlock').disabled=true; lockMsg('');
+    post({action:'login', password:v})
+      .then(function(r){
+        if(r.status===401){ lockMsg('That passphrase is not right.', true); return }
+        if(!r.ok){ lockMsg('Esquiffis did not answer ('+r.status+'). Try again.', true); return }
+        pw=v; savePw(v); enter();
+      })
+      .catch(function(){ lockMsg("Can't reach Esquiffis. Check your connection.", true) })
+      .finally(function(){ $('unlock').disabled=false });
+  }
+  function lockOut(why){
+    pw=''; clearPw(); setBusy(false);
+    show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
+  }
+  function show(id){
+    ['scr-lock','scr-chat'].forEach(function(s){ $(s).classList.toggle('on', s===id) });
+  }
+  function enter(){
+    show('scr-chat'); loadLog(); render(); setStatus('Ready');
+    // a focused field on the phone pops the keyboard over the conversation; only the desktop wants it
+    if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ $('box').focus() }, 50);
+  }
 
-    // ─── AUTH ───
-    const savedPwd = sessionStorage.getItem('esq_password');
-    if (savedPwd) enterChat();
-
-    function showAuthError() {
-      passwordInput.classList.add('error');
-      authError.classList.add('visible');
-      setTimeout(() => {
-        passwordInput.classList.remove('error');
-        passwordInput.value = '';
-        passwordInput.focus();
-      }, 1000);
+  /* ---------- rendering ---------- */
+  var ALLOW={B:'b',STRONG:'b',I:'i',EM:'i',U:'u',S:'s',STRIKE:'s',DEL:'s',CODE:'code',PRE:'pre',A:'a',BR:'br'};
+  var URL_RE=/https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
+  function textWithLinks(text, into){
+    var last=0, m; URL_RE.lastIndex=0;
+    while((m=URL_RE.exec(text))){
+      if(m.index>last) into.appendChild(document.createTextNode(text.slice(last, m.index)));
+      var a=document.createElement('a'); a.href=m[0]; a.textContent=m[0]; a.target='_blank'; a.rel='noopener';
+      into.appendChild(a); last=m.index+m[0].length;
     }
-
-    async function tryAuth() {
-      const pwd = passwordInput.value.trim();
-      if (!pwd) return;
-      authSubmit.disabled = true;
-      authSubmit.classList.add('loading');
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: '__auth_check__', password: pwd, session_id: sessionId })
-        });
-        if (res.ok) {
-          sessionStorage.setItem('esq_password', pwd);
-          enterChat();
-        } else {
-          showAuthError();
+    if(last<text.length) into.appendChild(document.createTextNode(text.slice(last)));
+  }
+  /* Esquiffis writes for Telegram: plain text with line breaks and, at most, the
+     tags Telegram allows. Everything else becomes text or a line break. Nothing
+     he writes can run here. */
+  function sanitize(html){
+    var frag=document.createDocumentFragment();
+    var doc; try{ doc=new DOMParser().parseFromString('<div>'+String(html)+'</div>','text/html') }catch(e){ doc=null }
+    if(!doc){ textWithLinks(String(html), frag); return frag }
+    function walk(node, into, inPre){
+      for(var c=node.firstChild; c; c=c.nextSibling){
+        if(c.nodeType===3){ if(inPre) into.appendChild(document.createTextNode(c.nodeValue)); else textWithLinks(c.nodeValue, into); continue }
+        if(c.nodeType!==1) continue;
+        var tag=c.tagName, keep=ALLOW[tag];
+        if(tag==='SCRIPT'||tag==='STYLE'||tag==='IFRAME'||tag==='OBJECT'||tag==='EMBED') continue;
+        if(keep==='br'){ into.appendChild(document.createElement('br')); continue }
+        if(keep){
+          var el=document.createElement(keep);
+          if(keep==='a'){
+            var href=c.getAttribute('href')||'';
+            if(!/^https?:\/\//i.test(href)){ walk(c, into, inPre); continue }   // a link that is not a web link is just its text
+            el.href=href; el.target='_blank'; el.rel='noopener';
+          }
+          walk(c, el, inPre||keep==='pre'); into.appendChild(el); continue;
         }
-      } catch (e) {
-        showAuthError();
-      } finally {
-        authSubmit.disabled = false;
-        authSubmit.classList.remove('loading');
+        // block-ish tags keep their shape as line breaks; list items get a bullet
+        var block=/^(P|DIV|LI|UL|OL|H[1-6]|TR|BLOCKQUOTE|SECTION|ARTICLE)$/.test(tag);
+        if(tag==='LI') into.appendChild(document.createTextNode('• '));
+        walk(c, into, inPre);
+        if(block) into.appendChild(document.createTextNode('\n'));
       }
     }
+    walk(doc.body.firstChild, frag, false);
+    return frag;
+  }
+  function when(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }catch(e){ return '' } }
+  function node(m){
+    var art=document.createElement('article'); art.className='m '+m.r;
+    var body=document.createElement('div'); body.className='body';
+    if(m.r==='esq') body.appendChild(sanitize(m.m)); else body.textContent=m.m;
+    art.appendChild(body);
+    if(m.r!=='note'){ var tm=document.createElement('time'); tm.className='when'; tm.dateTime=m.t||''; tm.textContent=when(m.t); art.appendChild(tm) }
+    if(m.g){ var tag=document.createElement('span'); tag.className='tag'; tag.textContent='The fabrication guard replaced this reply'; art.appendChild(tag) }
+    return art;
+  }
+  function render(){
+    var col=$('col'); var empty=$('empty');
+    Array.prototype.slice.call(col.querySelectorAll('.m')).forEach(function(n){ n.remove() });
+    empty.hidden=log.length>0;
+    log.forEach(function(m){ col.appendChild(node(m)) });
+    toBottom();
+  }
+  function add(m){ log.push(m); saveLog(); $('empty').hidden=true; $('col').appendChild(node(m)); toBottom(); }
+  function toBottom(){ var l=$('log'); l.scrollTop=l.scrollHeight }
 
-    function enterChat() {
-      authScreen.classList.add('hidden');
-      chatScreen.classList.add('visible');
-      setTimeout(() => messageInput.focus(), 100);
-    }
+  /* ---------- status ---------- */
+  function setStatus(t, cls){ var s=$('status'); s.textContent=t; s.className='status'+(cls?' '+cls:'') }
+  function fmt(s){ var m=Math.floor(s/60), r=s%60; return m+':'+(r<10?'0':'')+r }
+  function setBusy(on){
+    busy=on; $('send').disabled=on; $('sweep').hidden=!on;
+    clearInterval(tick); tick=null;
+    if(on){ t0=Date.now(); setStatus('Thinking 0:00','busy');
+      tick=setInterval(function(){ setStatus('Thinking '+fmt(Math.floor((Date.now()-t0)/1000)),'busy') },1000); }
+    else setStatus('Ready');
+  }
 
-    authSubmit.addEventListener('click', tryAuth);
-    passwordInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); tryAuth(); }
-    });
-    passwordInput.addEventListener('input', () => {
-      authError.classList.remove('visible');
-      passwordInput.classList.remove('error');
-    });
-
-    // ─── MESSAGES ───
-    function addMessage(role, html) {
-      emptyState.style.display = 'none';
-      const wrap = document.createElement('div');
-      wrap.className = `message ${role}`;
-
-      const avatarEl = document.createElement('div');
-      avatarEl.className = 'msg-avatar';
-
-      if (role === 'agent') {
-        const img = document.createElement('img');
-        img.src = AVATAR_SRC;
-        img.alt = 'Esquiffis';
-        avatarEl.appendChild(img);
-      } else {
-        avatarEl.innerHTML = '<span class="user-avatar-letter">H</span>';
-      }
-
-      const content = document.createElement('div');
-      content.className = 'msg-content';
-
-      const bubble = document.createElement('div');
-      bubble.className = 'msg-bubble';
-
-      if (role === 'agent') {
-        bubble.innerHTML = html;
-        bubble.querySelectorAll('pre code').forEach(block => {
-          hljs.highlightElement(block);
+  /* ---------- sending ---------- */
+  function send(e){
+    if(e) e.preventDefault();
+    var box=$('box'), text=box.value.trim();
+    if(!text || busy) return;
+    if(!pw){ lockOut('Enter the passphrase again.'); return }
+    box.value=''; box.style.height='auto';
+    add({r:'me', m:text, t:new Date().toISOString()});
+    setBusy(true);
+    aborter = (typeof AbortController!=='undefined') ? new AbortController() : null;
+    var timer=setTimeout(function(){ if(aborter) aborter.abort() }, WAIT_MS);
+    post({action:'chat', password:pw, message:text, source:'web'}, aborter&&aborter.signal)
+      .then(function(r){
+        if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
+        if(!r.ok) throw new Error('http '+r.status);
+        return r.json().then(function(d){
+          var reply=(d && typeof d.response==='string') ? d.response.trim() : '';
+          if(!reply) throw new Error('empty');
+          add({r:'esq', m:reply, t:new Date().toISOString(), g:d.blocked===true});
         });
-      } else {
-        bubble.textContent = html;
-      }
+      })
+      .catch(function(err){
+        if(!pw) return;   // already locked out
+        var why = (err && err.name==='AbortError')
+          ? 'No reply in two minutes. Esquiffis may still finish it on his side; ask again in a moment.'
+          : 'Something failed on the way back. Try again.';
+        add({r:'note', m:why, t:new Date().toISOString()});
+      })
+      .finally(function(){ clearTimeout(timer); aborter=null; if(pw) setBusy(false); });
+  }
 
-      content.appendChild(bubble);
-      wrap.appendChild(avatarEl);
-      wrap.appendChild(content);
-      messagesInner.appendChild(wrap);
-      scrollToBottom();
-      return wrap;
+  /* ---------- wiring ---------- */
+  $('face').src=FACE;
+  $('lock-form').addEventListener('submit', unlock);
+  $('pw').addEventListener('input', function(){ lockMsg('') });
+  $('composer').addEventListener('submit', send);
+  var box=$('box');
+  box.addEventListener('input', function(){ box.style.height='auto'; box.style.height=Math.min(box.scrollHeight,160)+'px' });
+  box.addEventListener('keydown', function(e){
+    if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send() }
+  });
+  $('clear').addEventListener('click', function(){
+    log=[]; saveLog(); render();   // the screen only: Esquiffis's memory is his, on the server
+  });
+  /* iOS Safari shrinks the VISUAL viewport for the keyboard and leaves the layout
+     viewport alone, so a 100dvh column would sit under the keys. Size the app to
+     what is actually visible and pin it to the top of it. Nothing is fixed. */
+  if(window.visualViewport){
+    var vv=window.visualViewport, app=$('app');
+    function fit(){
+      var h=Math.round(vv.height);
+      if(h>0 && Math.abs(window.innerHeight-h)>40){ app.style.height=h+'px'; app.style.transform='translateY('+Math.round(vv.offsetTop)+'px)'; }
+      else { app.style.height=''; app.style.transform=''; }
+      toBottom();
     }
+    vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit);
+  }
+  /* the wordmark must fit its form whatever face rendered it: measure, then step down */
+  function fitMark(){
+    var mk=$('mark'); if(!mk) return;
+    mk.style.fontSize='';
+    var size=parseFloat(getComputedStyle(mk).fontSize), guard=0;
+    while(mk.scrollWidth>mk.clientWidth && size>40 && guard++<40){ size-=4; mk.style.fontSize=size+'px' }
+  }
+  fitMark();
+  window.addEventListener('resize', fitMark);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitMark);
 
-    function addTyping() {
-      emptyState.style.display = 'none';
-      const wrap = document.createElement('div');
-      wrap.className = 'typing-indicator';
-      wrap.id = 'typing-indicator';
+  pw=loadPw();
+  if(pw) enter(); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
-      const avatarEl = document.createElement('div');
-      avatarEl.className = 'msg-avatar';
-      const img = document.createElement('img');
-      img.src = AVATAR_SRC;
-      img.alt = 'Esquiffis';
-      avatarEl.appendChild(img);
-
-      const dots = document.createElement('div');
-      dots.className = 'typing-dots';
-      for (let i = 0; i < 3; i++) {
-        const d = document.createElement('div');
-        d.className = 'typing-dot';
-        dots.appendChild(d);
-      }
-
-      wrap.appendChild(avatarEl);
-      wrap.appendChild(dots);
-      messagesInner.appendChild(wrap);
-      scrollToBottom();
-    }
-
-    function removeTyping() {
-      const el = document.getElementById('typing-indicator');
-      if (el) el.remove();
-    }
-
-    function scrollToBottom() {
-      requestAnimationFrame(() => {
-        messagesWrap.scrollTop = messagesWrap.scrollHeight;
-      });
-    }
-
-    // ─── SEND ───
-    async function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text || isLoading) return;
-
-      const pwd = sessionStorage.getItem('esq_password');
-      if (!pwd) { enterAuth(); return; }
-
-      isLoading = true;
-      sendBtn.disabled = true;
-      messageInput.value = '';
-      messageInput.style.height = 'auto';
-
-      addMessage('user', text);
-      addTyping();
-
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: text, password: pwd, session_id: sessionId })
-        });
-
-        removeTyping();
-
-        if (res.status === 401) {
-          sessionStorage.removeItem('esq_password');
-          addMessage('agent', marked.parse('_Session expired. Refresh the page to log in again._'));
-          return;
-        }
-
-        if (!res.ok) {
-          addMessage('agent', marked.parse('_Something went wrong. Check the n8n workflow._'));
-          return;
-        }
-
-        const data = await res.json();
-        const reply = data.response || data.output || data.message || '_No response_';
-        addMessage('agent', marked.parse(reply));
-
-      } catch (e) {
-        removeTyping();
-        addMessage('agent', marked.parse('_Network error. Make sure n8n is running._'));
-      } finally {
-        isLoading = false;
-        sendBtn.disabled = false;
-        messageInput.focus();
-      }
-    }
-
-    // ─── INPUT AUTO-RESIZE ───
-    messageInput.addEventListener('input', () => {
-      messageInput.style.height = 'auto';
-      messageInput.style.height = Math.min(messageInput.scrollHeight, 180) + 'px';
-    });
-
-    messageInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-    // iOS soft keyboard fires keydown unreliably — keyup as fallback
-    messageInput.addEventListener('keyup', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    sendBtn.addEventListener('click', sendMessage);
-
-    // ─── iOS KEYBOARD FIX ───
-    // When the iOS soft keyboard opens, Safari scrolls the visual viewport
-    // to try to center the focused input. This makes position:fixed elements
-    // appear to drift upward. Fix: translate the screens by offsetTop to
-    // counteract the scroll, and set height to vp.height so content
-    // doesn't extend under the keyboard.
-    if (window.visualViewport) {
-      const authEl = document.getElementById('auth-screen');
-      const chatEl = document.getElementById('chat-screen');
-
-      function syncToViewport() {
-        const vp = window.visualViewport;
-        [authEl, chatEl].forEach(el => {
-          el.style.transform = `translateY(${vp.offsetTop}px)`;
-          el.style.height = vp.height + 'px';
-        });
-        scrollToBottom();
-      }
-
-      window.visualViewport.addEventListener('resize', syncToViewport);
-      window.visualViewport.addEventListener('scroll', syncToViewport);
-      syncToViewport(); // set correct initial state
-    }
-  </script>
+  // for the test harness only: read state without touching the DOM contract
+  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE };
+})();
+</script>
 </body>
 </html>
