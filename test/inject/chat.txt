@@ -35,8 +35,8 @@
         if(o&&o.signal) o.signal.addEventListener('abort', function(){ var e=new Error('aborted'); e.name='AbortError'; rej(e) });
       });
       if(mode==='expired') return res(401,{error:'unauthorized'});
-      if(mode==='guard') return res(200,{response:'Stopping myself: I was about to report your inbox as if I had just looked.',blocked:true});
-      return res(200,{response:REPLY,blocked:false});
+      if(mode==='guard') return res(200,{response:'Stopping myself: I was about to report your inbox as if I had just looked.',blocked:true,tools:[]});
+      return res(200,{response:REPLY,blocked:false,tools:['Get_many_messages_in_Gmail','Think','OpenWeatherMap','Get_Single_Email','Some_New_Tool']});
     }
     return Promise.reject(new Error('no net'));
   };
@@ -63,26 +63,47 @@
     T(hit(m,a), 'the letters sit over the art (Vader behind the letters)');
     T(!hit(R($('pw')),face) && !hit(R($('unlock')),face), 'the passphrase and Unlock do not cover his face');
     var pb=R($('vc-stage')), pn=R(document.querySelector('.panel'));
-    T(pb.t>=pn.b-1 && pb.t>=R($('unlock')).b, 'VaderClawd roams below the card and the Unlock button');
+    if(WIDE){
+      T(getComputedStyle($('vc-stage')).position==='absolute' && Math.abs(pb.b-innerHeight)<=1, 'VaderClawd\'s floor runs along the bottom of the window, behind the card');
+      T(window.PET_HOME(innerWidth,1.5)>=pn.r, 'and his home is outside the card on the right');
+    } else T(pb.t>=pn.b-1 && pb.t>=R($('unlock')).b, 'VaderClawd roams below the card and the Unlock button');
     T(Math.abs((pb.r-pb.l)-innerWidth)<=1, 'his strip spans the whole window ('+Math.round(pb.r-pb.l)+')');
   }
-  function petOK(tag){
+  var WIDE=innerWidth>=1100;
+  function petOK(tag, sized){
     var p=window.pet; T(!!p && !!p.state, tag+': VaderClawd is running');
     if(!p) return null;
-    var s=p.state(); T(s.scene==='roam' && s.W>0 && s.H>0, tag+': he roams his strip ('+s.scene+' '+s.W+'x'+s.H+')');
+    var s=p.state(); T(s.scene==='roam' && (!sized || (s.W>0 && s.H>0)), tag+': he roams his strip ('+s.scene+' '+s.W+'x'+s.H+')');
     return s;
+  }
+  // Hector: the chat box all the way down; VaderClawd outside the card on the right, walking left behind it
+  function floorOK(tag){
+    var c=R($('composer')), st=$('vc-stage');
+    T(Math.abs(c.b-innerHeight)<=1, tag+': the chat box is all the way down ('+Math.round(c.b)+' of '+innerHeight+')');
+    if(!WIDE){ T(!vis(st), tag+': no room beside the card, so VaderClawd sits out the chat'); return }
+    var p=R(st), pn=R(document.querySelector('.panel')), s=window.pet&&window.pet.state();
+    T(getComputedStyle(st).position==='absolute' && Math.abs(p.b-innerHeight)<=1 && Math.abs((p.r-p.l)-innerWidth)<=1, tag+': his floor is the bottom of the window, full width');
+    var mid=document.elementFromPoint(Math.round((pn.l+pn.r)/2), Math.round(p.b-20));
+    T(!!mid && mid.id!=='vc-cv' && mid.id!=='vc-stage', tag+': he walks behind the card, never over it ('+(mid&&(mid.id||mid.className))+')');
+    var S2=(s&&s.S)||1.5, body=36*S2, ok=true, bad='';
+    for(var i=0;i<40;i++){ var x=window.PET_PICK(innerWidth,S2,i%2?innerWidth-80:20); if(!(x>=pn.r || x+body<=pn.l)){ ok=false; bad=Math.round(x); break } }
+    T(ok, tag+': every spot he settles on is outside the card'+(bad?' (bad '+bad+')':''));
+    var h=window.PET_HOME(innerWidth,S2);
+    T(h>=pn.r && h+body<=innerWidth, tag+': home is on the right, outside the card (x '+Math.round(h)+', card ends '+Math.round(pn.r)+')');
   }
   function go(){
     layout('lock');
     T(vis($('mark')), 'the name is on the lock screen');
     var mk=$('mark'); T(mk.scrollWidth<=mk.clientWidth+1, 'the wordmark fits its box ('+mk.scrollWidth+' in '+mk.clientWidth+')');
     art();
-    $('pw').value = mode==='badpw' ? 'wrong' : 'right';
-    $('unlock').click();
-    setTimeout(step2, 200);
+    setTimeout(function(){
+      petOK('lock', true);   // his first frame sizes the canvas
+      $('pw').value = mode==='badpw' ? 'wrong' : 'right';
+      $('unlock').click();
+      setTimeout(step2, 200);
+    }, 300);
   }
   function step2(){
-    petOK('after load');   // his first frame sizes the canvas: checked once the page has had a moment
     if(mode==='badpw'){
       T($('scr-lock').classList.contains('on'), 'a wrong passphrase stays on the lock screen');
       T(/not right/.test($('lock-msg').textContent), 'and says so ('+$('lock-msg').textContent+')');
@@ -92,11 +113,13 @@
     T($('scr-chat').classList.contains('on'), 'the right passphrase opens the conversation');
     T(calls.length===1 && calls[0].a==='login', 'login is its own call, no chat turn behind it');
     T(!calls[0].json, 'sent as form data, not JSON (no CORS preflight)');
+    floorOK('chat-empty');
     layout('chat-empty');
     if(mode==='persist'){
       var ms=document.querySelectorAll('#col .m');
       T(ms.length===2, 'the remembered transcript is on screen ('+ms.length+')');
       T(/brisket/.test(ms[1].textContent), 'with its words');
+      T(!document.querySelector('#col .m .used'), 'a reply saved before receipts existed shows none');
       T($('empty').hidden, 'and no empty state over it');
       $('clear').click();
       T(document.querySelectorAll('#col .m').length===0 && !$('empty').hidden, 'Clear screen empties it and the invitation returns');
@@ -118,8 +141,8 @@
         T(!$('send').disabled && $('sweep').hidden, 'and the page is usable again');
         T($('status').textContent==='Ready', 'status back to Ready');
         // two minutes of roaming: never a show, never gone from the page
-        var s=petOK('after 2 min');
-        if(s){ T(['exit','travel','gone','tie'].indexOf(s.mode)<0 && !s.hidden, 'still on the page after two minutes ('+s.mode+')');
+        var s=petOK('after 2 min', WIDE);
+        if(s && WIDE){ T(['exit','travel','gone','tie'].indexOf(s.mode)<0 && !s.hidden, 'still on the page after two minutes ('+s.mode+')');
           T(s.x>-60*s.S && s.x<s.W, 'and inside his strip (x '+s.x+' of '+s.W+')'); }
         done();
       }, 125000);
@@ -132,6 +155,7 @@
       T($('scr-lock').classList.contains('on'), 'a 401 mid-conversation returns to the lock screen');
       T(/expired/i.test($('lock-msg').textContent), 'with the reason ('+$('lock-msg').textContent+')');
       T(sessionStorage.getItem('esq_pw')===null, 'and the passphrase is forgotten');
+      T(vis($('vc-stage')), 'back on the lock screen VaderClawd is on screen again');
       return done();
     }
     var ms=document.querySelectorAll('#col .m');
@@ -141,6 +165,7 @@
     if(mode==='guard'){
       T(!!document.querySelector('#col .m.esq .tag'), 'a guarded reply carries the guard tag');
       T(/Stopping myself/.test(esq.textContent), 'and shows the guard\'s words');
+      T(/No tools used/.test((document.querySelector('#col .m.esq .used')||{}).textContent||''), 'a reply that used no tools says so');
     } else {
       T(esq.querySelector('b') && esq.querySelector('b').textContent==='bold', 'bold survives');
       T(esq.querySelector('i') && esq.querySelector('i').textContent==='italic', 'italic survives');
@@ -150,13 +175,17 @@
       T(!esq.querySelector('script') && !esq.querySelector('img') && window.__pwned===undefined, 'script and img are stripped, nothing ran');
       T(/• one/.test(esq.textContent) && /• two/.test(esq.textContent), 'line breaks and bullets are kept');
       T(!document.querySelector('#col .m.esq .tag'), 'an ordinary reply has no guard tag');
-      var ps=petOK('reply');
+      var chips=[].map.call(document.querySelectorAll('#col .m.esq .used .t'), function(e){ return e.textContent });
+      T(chips.join('|')==='Gmail|Weather|Some New Tool', 'the tools he used show under the reply: plain names, once each, Think hidden ('+chips.join('|')+')');
+      var sv=JSON.parse(localStorage.getItem('esq_log')||'[]'); T(!!sv[1] && Array.isArray(sv[1].k) && sv[1].k.length===5, 'and they are remembered with the transcript');
+      var ps=petOK('reply', WIDE);
       if(ps) T(ps.act==='celebrate' || !!ps.bubble, 'VaderClawd reacts to the reply ('+(ps.act||ps.bubble)+')');
     }
     T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'the page is ready again');
     var l=$('log'); T(Math.abs(l.scrollTop+l.clientHeight-l.scrollHeight)<=2 || l.scrollHeight<=l.clientHeight, 'the conversation is scrolled to the newest message');
     var saved=JSON.parse(localStorage.getItem('esq_log')||'[]');
     T(saved.length===2 && saved[1].r==='esq', 'the transcript is remembered for a reload');
+    floorOK('chat');
     layout('chat');
     done();
   }

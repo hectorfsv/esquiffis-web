@@ -56,6 +56,12 @@ js = once(js, "    if(away||was==='roam') return play(pick());\n    play('roam')
               "    play('roam');   // WEB: never a show")
 js = once_re(js, r"      if\(Math\.random\(\)<\.3\)\{\s+// a full show: he walks off and it plays\n.*?mode='exit'; return; \}\n", "")
 
+# he walks in from the RIGHT and settles where the page says he can be seen (window.PET_HOME / PET_PICK):
+# outside the card on the right, free to cross behind it to the left (Hector 2026-09-14)
+js = once(js, "var sp=spd(),V=new Actor('vader',-44*S,1),t=0,mode='walk',", "var sp=spd(),V=new Actor('vader',W+10*S,-1),t=0,mode='walk',")
+js = once(js, "walk(V,W*(.15+Math.random()*.3),sp*(isNight()?.6:1));",
+              "walk(V,(function(){ try{ var h=window.PET_HOME&&window.PET_HOME(W,S); if(isFinite(h)) return h; }catch(e){} return W*(.62+Math.random()*.22); })(),sp);")
+
 # big moves: sooner and more often, the ones Hector named
 js = once(js, "var nextAnim=20+Math.random()*25,", "var nextAnim=9+Math.random()*8,")
 js = once(js, "nextAnim=t+30+Math.random()*30;", "nextAnim=t+24+Math.random()*20;")
@@ -65,6 +71,7 @@ js = once(js, "var ANIMS=['crate','crate','storm','drone','drone','probe','swarm
 # between big moves: he stays put; now and then he crosses to another part of the page
 js = once_re(js, r"      if\(r<\.2\)\{ var nx=Math\.max.*?\n      else startAct\('look'\);\n",
     "      if(r<.12){ var nx=V.x,tries=0; while(Math.abs(nx-V.x)<W*.22&&tries++<8) nx=8*S+Math.random()*Math.max(1,W-56*S);\n"
+    "        try{ if(window.PET_PICK){ var pk=window.PET_PICK(W,S,V.x); if(isFinite(pk)) nx=pk; } }catch(e){}   // WEB: the page says where he can be seen\n"
     "        V.dir=nx>V.x?1:-1; walk(V,nx,sp*(.7+Math.random()*.3)); mode='walk'; }   // WEB: off to another part of the page\n"
     "      else if(r<.46){ mode='idle'; timer=6+Math.random()*6; }             // WEB: once there, he stays\n"
     "      else if(r<.70){ if(opts.bubbles) chat(); mode='idle'; timer=5+Math.random()*3; }\n"

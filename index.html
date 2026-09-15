@@ -154,12 +154,19 @@ button{cursor:pointer}
 .m.esq .body pre code{background:none;padding:0}
 .m.esq .body a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
 .m .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--amber);margin-top:6px}
+/* what he actually used for this answer: the workflow's own record, not his claim */
+.used{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px}
+.used .lbl{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-right:2px}
+.used .t{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink-dim);
+  background:rgba(0,0,0,.35);border:1px solid var(--rule);padding:3px 8px}
+.used .t::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--go);box-shadow:0 0 6px rgba(63,208,122,.5)}
+.used.none{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-faint)}
 /* a note from the page itself (never from Esquiffis) */
 .m.note{align-self:flex-start;max-width:60ch}
 .m.note .body{color:var(--ink-dim);border-left:3px solid var(--ink-faint);padding:2px 0 2px 14px}
 
 .composer{position:relative;z-index:1;flex:none;display:flex;gap:10px;align-items:flex-end;border-top:1px solid var(--rule);background:var(--panel-lo);
-  padding:10px max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left))}
+  padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .composer .in{flex:1;min-width:0;display:flex;background:rgba(0,0,0,.45);border:1px solid var(--rule)}
 .composer .in:focus-within{border-color:var(--rule-hot)}
 .composer textarea{flex:1;min-width:0;resize:none;padding:11px 13px;font-size:16px;line-height:1.45;max-height:160px;outline:none}
@@ -177,6 +184,11 @@ button{cursor:pointer}
 .petbar canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 @media (max-width:759px){ .petbar{background:linear-gradient(180deg,var(--panel-lo),#000)} }
 .app.kb .petbar{display:none}   /* the phone keyboard is up: the conversation needs the room */
+.dock{position:relative;z-index:2;flex:none}
+/* Hector 2026-09-14: the chat box all the way down; VaderClawd OUTSIDE the card on the right, free to walk
+   left behind it. That needs room beside the card: from 1100px wide his floor is the bottom of the window,
+   BEHIND the card (rules at the end). Narrower there is no outside: he keeps the lock screen, sits out the chat. */
+@media (max-width:1099px){ .app.chatting .petbar{display:none} }
 
 /* ---------- wide: the card ---------- */
 @media (min-width:760px){
@@ -223,6 +235,10 @@ button{cursor:pointer}
   .head{padding-top:6px;padding-bottom:6px}
   .sub{display:none}
   .lock-form{padding-top:10px;padding-bottom:10px}
+}
+@media (min-width:1100px){
+  .panel{flex-basis:min(1200px,calc(100vw - 300px))}
+  .petbar{position:absolute;left:0;right:0;bottom:0;z-index:0}
 }
 @media (prefers-reduced-motion:reduce){
   .sweep,.tape,.chip.busy::before,.app.thinking .bloom{animation:none}
@@ -283,6 +299,7 @@ button{cursor:pointer}
             </div>
           </div>
         </main>
+        <div id="dock" class="dock">
         <form id="composer" class="composer">
           <label class="sr" for="box">Message</label>
           <div class="in"><textarea id="box" rows="1" placeholder="Message Esquiffis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
@@ -290,6 +307,7 @@ button{cursor:pointer}
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 8h-5v10H9V11H4z"/></svg>
           </button>
         </form>
+        </div>
       </section>
     </div>
   </div>
@@ -318,6 +336,37 @@ button{cursor:pointer}
   function vc(kind){ try{ if(window.pet && window.pet.react) window.pet.react(kind) }catch(e){} }
   function petScale(){ return (window.matchMedia && matchMedia('(min-width:760px) and (min-height:501px)').matches) ? 1.5 : 1 }
   window.PET_SCALE=petScale();
+  /* where he can be seen: on a wide window his floor runs behind the card, so he settles only in the open
+     space beside it (the right is home); with no card in the way, anywhere. Used by the pet's roam. */
+  function petZones(W,S){
+    var all=[[8*S, Math.max(8*S, W-44*S)]];
+    try{
+      var st=$('vc-stage'); if(!st || getComputedStyle(st).position!=='absolute') return all;
+      var sr=st.getBoundingClientRect(), pr=document.querySelector('.panel').getBoundingClientRect(), rl=document.querySelector('.rail'),
+          leftEdge=pr.left, body=36*S, z=[];
+      if(rl && rl.getBoundingClientRect().width>0) leftEdge=Math.min(leftEdge, rl.getBoundingClientRect().left);
+      var right=[pr.right-sr.left+6*S, W-body-8*S], left=[8*S, leftEdge-sr.left-body-6*S];
+      if(right[1]>=right[0]) z.push(right);
+      if(left[1]>=left[0]) z.push(left);
+      return z.length ? z : all;
+    }catch(e){ return all }
+  }
+  window.PET_HOME=function(W,S){ var z=petZones(W,S)[0]; return z[0]+Math.random()*(z[1]-z[0]) };
+  window.PET_PICK=function(W,S,x){
+    var zs=petZones(W,S), other=zs.filter(function(z){ return x<z[0]-1 || x>z[1]+1 });
+    var z=(other.length && Math.random()<.5) ? other[Math.floor(Math.random()*other.length)] : zs[Math.floor(Math.random()*zs.length)];
+    return z[0]+Math.random()*(z[1]-z[0]);
+  };
+  /* tool names as the workflow records them -> what Hector would call them */
+  var TOOL_NAMES=[[/^think$/i,''],[/calculator/i,'Calculator'],[/skill/i,'Skill'],[/weather/i,'Weather'],[/mlb/i,'MLB'],
+    [/perplexity/i,'Web search'],[/firecrawl|scrape/i,'Web page'],[/rss|feed|news/i,'News'],[/reminder|cron/i,'Reminders'],
+    [/calendar|event/i,'Calendar'],[/gmail|e-?mail|message/i,'Gmail'],[/contact/i,'Contacts'],[/edit_?image/i,'Image edit'],
+    [/image/i,'Image'],[/doc|drive|file/i,'Drive'],[/session|history/i,'History'],[/memor|data_?table|row/i,'Memory']];
+  function toolLabel(n){
+    var s=String(n);
+    for(var i=0;i<TOOL_NAMES.length;i++) if(TOOL_NAMES[i][0].test(s)) return TOOL_NAMES[i][1];
+    return s.replace(/[_-]+/g,' ').trim().slice(0,32);
+  }
 
   /* ---------- remembered things ---------- */
   function savePw(v){ try{ sessionStorage.setItem(K_PW, JSON.stringify({v:v,t:Date.now()})) }catch(e){} }
@@ -363,6 +412,7 @@ button{cursor:pointer}
     ['scr-lock','scr-chat'].forEach(function(s){ $(s).classList.toggle('on', s===id) });
     var locked=id==='scr-lock';
     $('clear').hidden=locked;
+    app.classList.toggle('chatting', !locked);
     if(locked){ setStatus('Locked'); fitMark(); }
   }
   function enter(fresh){
@@ -424,6 +474,15 @@ button{cursor:pointer}
     var body=document.createElement('div'); body.className='body';
     if(m.r==='esq') body.appendChild(sanitize(m.m)); else body.textContent=m.m;
     art.appendChild(body);
+    if(m.r==='esq' && Array.isArray(m.k)){
+      var seen={}, labels=[], used=document.createElement('div'); used.className='used';
+      m.k.forEach(function(n){ var l=toolLabel(n); if(l && !seen[l]){ seen[l]=1; labels.push(l) } });
+      if(labels.length){
+        var lb=document.createElement('span'); lb.className='lbl'; lb.textContent='Used'; used.appendChild(lb);
+        labels.forEach(function(l){ var t=document.createElement('span'); t.className='t'; t.textContent=l; used.appendChild(t) });
+      } else { used.classList.add('none'); used.textContent='No tools used' }
+      art.appendChild(used);
+    }
     if(m.r!=='note'){ var tm=document.createElement('time'); tm.className='when'; tm.dateTime=m.t||''; tm.textContent=when(m.t); art.appendChild(tm) }
     if(m.g){ var tag=document.createElement('span'); tag.className='tag'; tag.textContent='The fabrication guard replaced this reply'; art.appendChild(tag) }
     return art;
@@ -471,8 +530,9 @@ button{cursor:pointer}
         return r.json().then(function(d){
           var reply=(d && typeof d.response==='string') ? d.response.trim() : '';
           if(!reply) throw new Error('empty');
-          var guarded=d.blocked===true;
-          add({r:'esq', m:reply, t:new Date().toISOString(), g:guarded});
+          var guarded=d.blocked===true, item={r:'esq', m:reply, t:new Date().toISOString(), g:guarded};
+          if(Array.isArray(d.tools)) item.k=d.tools.filter(function(x){ return typeof x==='string' }).slice(0,24);   // older workflow: no receipts
+          add(item);
           vc(guarded ? 'guard' : 'reply');
         });
       })
@@ -1568,13 +1628,13 @@ button{cursor:pointer}
 
   /* ---------- roaming: his normal life ---------- */
   function sceneRoam(){
-    var sp=spd(),V=new Actor('vader',-44*S,1),t=0,mode='walk',timer=0,act=null,actName='',goneT=0;
+    var sp=spd(),V=new Actor('vader',W+10*S,-1),t=0,mode='walk',timer=0,act=null,actName='',goneT=0;
     // Hector 2026-09-14 (after v0.6): mostly just hanging out, one random animation every 30-60 s
     var nextAnim=9+Math.random()*8,benchKind='',benchT=0,standT=0;
     V.signK=0; V.signTo=0;
     var lostT=0,noticeCool=0,parryT=0,choked=false,hotCool=0,tieStep=null;
     V.saber=true; actors=[V];
-    walk(V,W*(.15+Math.random()*.3),sp*(isNight()?.6:1));
+    walk(V,(function(){ try{ var h=window.PET_HOME&&window.PET_HOME(W,S); if(isFinite(h)) return h; }catch(e){} return W*(.62+Math.random()*.22); })(),sp);
     function pickX(){
       var x=V.x+(Math.random()<.5?-1:1)*(60+Math.random()*(W/S)*.35)*S;
       return Math.max(8*S,Math.min(W-48*S,x));
@@ -2064,6 +2124,7 @@ button{cursor:pointer}
       // Hector 2026-09-14: "he walks too much" - short strolls only now and then; mostly he stands
       // (CPU sign up), talks, waves, twirls or throws the saber
       if(r<.12){ var nx=V.x,tries=0; while(Math.abs(nx-V.x)<W*.22&&tries++<8) nx=8*S+Math.random()*Math.max(1,W-56*S);
+        try{ if(window.PET_PICK){ var pk=window.PET_PICK(W,S,V.x); if(isFinite(pk)) nx=pk; } }catch(e){}   // WEB: the page says where he can be seen
         V.dir=nx>V.x?1:-1; walk(V,nx,sp*(.7+Math.random()*.3)); mode='walk'; }   // WEB: off to another part of the page
       else if(r<.46){ mode='idle'; timer=6+Math.random()*6; }             // WEB: once there, he stays
       else if(r<.70){ if(opts.bubbles) chat(); mode='idle'; timer=5+Math.random()*3; }
