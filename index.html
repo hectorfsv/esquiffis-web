@@ -20,9 +20,10 @@
    clock, Santa Clarita weather, headlines and the Dodgers beside the
    conversation; the card opens to the full window and VaderClawd, the desktop
    pet's own engine, lives INSIDE it.
-   2026-09-15 (Hector): on a desktop the conversation takes the right half, on the
-   Vader art; the left half is the hub - widgets over Gargantua, as in the rig -
-   with VaderClawd on his own floor under the widgets. Inbox widget added.
+   2026-09-15 (Hector): on a desktop the conversation is the right quarter of the
+   window with Vader centered behind it; the rest is the hub - widgets over a still
+   of Gargantua - with VaderClawd on his own floor under the widgets. Hub: time,
+   weather, Dodgers, a live news TV, a world events map, the inbox, headlines.
    The pet lives in the last script block, between the VADERCLAWD markers, and is
    written by tools/build-pet.py - edit the pet or the rig, not that block.
    Nothing is position:fixed, so iOS Safari's moving address bar and keyboard
@@ -237,6 +238,47 @@ button{cursor:pointer}
 a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
 .ib-snip{margin-top:2px;font-size:13px;line-height:1.4;color:var(--ink-faint);overflow-wrap:anywhere;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* live news TV: YouTube's player exists only between Play and Stop */
+.tv-ch{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.tv-c{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);
+  border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:3px 9px}
+.tv-c:hover{color:var(--ink);border-color:var(--rule-hot)}
+.tv-c[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
+.tv-screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--rule);overflow:hidden}
+.tv-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.tv-play{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  font-weight:600;font-size:14px;letter-spacing:.03em;color:var(--ink);background:radial-gradient(55% 60% at 50% 45%,rgba(224,27,27,.18),transparent 72%)}
+.tv-tri{position:relative;width:58px;height:40px;background:linear-gradient(180deg,var(--red) 0%,#C41616 62%,var(--red-deep) 100%);
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.tv-tri::after{content:'';position:absolute;left:23px;top:12px;border-left:15px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent}
+.tv-play:hover .tv-tri{filter:brightness(1.15)}
+.tv-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.tv-foot .h-note{margin-top:0}
+.hb-link{flex:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);
+  text-decoration:none;border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:3px 9px}
+.hb-link:hover{color:var(--ink);border-color:var(--rule-hot)}
+/* world events map (Leaflet, loaded when first shown) */
+.map-box{position:relative;width:100%;aspect-ratio:16/9;background:#0b0809;border:1px solid var(--rule);overflow:hidden}
+.map-key{display:flex;align-items:center;gap:12px;letter-spacing:.06em}
+.map-key i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.map-key .k-q{border:1.5px solid var(--amber)}
+.map-key .k-a{background:#FF8A3D}
+.map-box.leaflet-container{background:#0b0809;font-family:var(--disp)}
+/* Leaflet's stylesheet arrives after this one and wins ties, so every override is scoped one class deeper */
+.map-box.leaflet-container .leaflet-popup-content-wrapper,.map-box.leaflet-container .leaflet-popup-tip{background:#15100F;color:var(--ink);border:1px solid var(--rule);border-radius:0;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.map-box.leaflet-container .leaflet-popup-content{margin:10px 12px;min-width:210px;font-size:14px;line-height:1.35}
+.map-box.leaflet-container a.leaflet-popup-close-button{color:var(--ink-dim)}
+.map-box.leaflet-container .leaflet-control-attribution{background:rgba(10,7,8,.72);color:var(--ink-faint);font-size:9px}
+.map-box.leaflet-container .leaflet-control-attribution a{color:var(--ink-dim)}
+.map-box.leaflet-container .leaflet-bar{border:1px solid var(--rule);border-radius:0;box-shadow:none}
+.map-box.leaflet-container .leaflet-bar a{background:#15100F;color:var(--ink);border-color:var(--rule);border-radius:0}
+.map-box.leaflet-container .leaflet-bar a:hover{background:#1F1817}
+.map-box.leaflet-container .leaflet-bar a.leaflet-disabled{background:#0e0a0a;color:var(--ink-faint)}
+.ev-t{font-weight:600}
+.ev-m{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:4px}
+.ev-r{display:flex;align-items:center;gap:10px;margin-top:9px}
+.ev-r a{font-family:var(--mono);font-size:11px;color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
+.ev-r .hl-ask{margin-left:auto}
 /* below 1100px these wrappers do not exist as boxes: the hub is one column, exactly as before */
 .side,.band{display:contents}
 .garg,.hub-floor{display:none}
@@ -310,35 +352,50 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .chat .log{padding-bottom:calc(var(--petc) + 10px)}
 .app.kb .chat .log{padding-bottom:12px}
 @media (max-width:759px){ .app.chatting .chip .cw{display:none} }
-/* desktop (Hector 2026-09-15): the conversation takes the right half, on the Vader art. The left half is the hub:
-   widgets over Gargantua, as in the Render Rig, and under them VaderClawd's own floor - a box of its own, so no
-   widget can ever stand where he walks (he used to wander into the Dodgers tile). */
+/* desktop (Hector 2026-09-15, second pass): the conversation is the right quarter of the window, Vader centered
+   behind it. The rest is the hub: widgets over a still of Gargantua (a still costs nothing once painted; the looping
+   video measured 3.4% of a core in headless WebKit before Safari even paints it), and under them VaderClawd's own
+   floor - a box of its own, so no widget can ever stand where he walks. */
 @media (min-width:1100px){
   .chat{flex-direction:row}
-  .side{display:flex;flex-direction:column;position:relative;flex:1 1 50%;min-width:0;border-right:1px solid var(--rule);container-type:inline-size}
-  .garg{display:block;position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,#160d10,#050304 72%)}
-  .garg img,.garg video{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block}
-  .garg img{opacity:.74;transition:opacity 1.1s linear}
-  .garg.playing img{opacity:0}
-  .garg video{opacity:0;transition:opacity 1.1s linear}
-  .garg video.lead{opacity:.74}
-  .garg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,4,.70) 0%,rgba(5,3,4,.21) 36%,rgba(5,3,4,.84) 100%)}
-  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:14px;flex:1 1 auto;min-height:0;padding:18px 18px 10px}
+  .side{display:flex;flex-direction:column;position:relative;flex:1 1 auto;min-width:0;border-right:1px solid var(--rule);container-type:inline-size}
+  .garg{display:block;position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#050304}
+  .garg img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;opacity:.8}
+  .garg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,4,.62) 0%,rgba(5,3,4,.2) 38%,rgba(5,3,4,.8) 100%)}
+  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:14px;flex:1 1 auto;min-height:0;padding:16px 16px 10px}
   .band{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
-  .hub .hb{background:rgba(9,6,7,.78);border:1px solid var(--rule);padding:16px 18px}
+  .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:14px 16px}
   .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--pet)}
-  .chat .talk,.chat.hubview .talk{flex:1 1 50%}
+  .chat .talk,.chat.hubview .talk{flex:0 0 clamp(400px,25%,640px);min-width:0}
   .chat.hubview .log{display:block}
-  .chat-art{left:50%;width:auto;opacity:.2}
+  .chat-art{left:0;right:0;width:auto;opacity:.2;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
+  .chat-art img{right:auto;left:50%;top:-6%;height:112%;transform:translateX(-38%)}   /* his face (x .24-.52 of the art) on the column's center */
+  .log{padding:22px 20px 16px}
   .chat .log{padding-bottom:24px}
-  .composer{background:none;border-top:0}
+  .composer{background:none;border-top:0;padding:12px 18px}
   .composer .in{background:#0B0809}
   .now{cursor:default}
 }
-/* a wide hub half: time, weather and the Dodgers across the top, the inbox and the headlines side by side */
+/* a hub at least 640px wide: time, weather and the Dodgers across the top, then the TV beside the map */
 @container (min-width:640px){
-  .hub,.chat.hubview .hub{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .band{grid-column:1/-1}
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"band band" "tv map" "inbox news"}
+  .band{grid-area:band}
+  .hb-inbox{grid-area:inbox}
+  .hb-tv{grid-area:tv}
+  .hb-map{grid-area:map}
+  .hb-news{grid-area:news}
+}
+/* a hub at least 1100px wide (his desktop): one screen, no scrolling - the inbox runs down the right beside the chat,
+   the headlines fill the bottom, and a long list scrolls inside its own tile */
+@container (min-width:1100px){
+  .hub,.chat.hubview .hub{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(300px,.8fr);
+    grid-template-areas:"band band inbox" "tv map inbox" "news news inbox";grid-template-rows:auto auto minmax(170px,1fr);align-content:stretch}
+  .hb-inbox,.hb-news{display:flex;flex-direction:column;min-height:0}
+  .hb-inbox .ib-list,.hb-news .h-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+  .hb-news .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;align-content:start}
+  .band .h-time{font-size:52px}
+  .band .h-temp{font-size:50px}
 }
 @media (prefers-reduced-motion:reduce){
   .sweep,.tape,.chip.busy::before,.app.thinking .bloom{animation:none}
@@ -384,9 +441,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       </section>
 
       <section id="scr-chat" class="screen chat" aria-label="Conversation">
-        <div class="chat-art" aria-hidden="true"><img src="hero.webp" alt="" width="736" height="1408"></div>
         <div class="side">
-          <div class="garg" aria-hidden="true"><img src="gargantua-poster.jpg" alt="" width="1280" height="797" loading="lazy" draggable="false"><video id="garg-a" muted playsinline preload="none" tabindex="-1"></video><video id="garg-b" muted playsinline preload="none" tabindex="-1"></video></div>
+          <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
           <aside id="hub" class="hub" aria-label="Hub">
             <div class="band">
               <section class="hb">
@@ -406,12 +462,25 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
                 <div id="h-next" class="h-next"></div>
               </section>
             </div>
-            <section class="hb" aria-labelledby="ib-h">
+            <section class="hb hb-inbox" aria-labelledby="ib-h">
               <div class="hb-h"><span id="ib-h">Inbox<span id="ib-count" class="ib-count"></span></span><button id="ib-refresh" class="hb-btn" type="button">Refresh</button></div>
               <ol id="ib-list" class="ib-list"></ol>
               <p id="ib-note" class="h-note"></p>
             </section>
-            <section class="hb">
+            <section class="hb hb-tv" aria-labelledby="tv-h">
+              <div class="hb-h"><span id="tv-h">Live news</span><a id="tv-yt" class="hb-link" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener">YouTube</a></div>
+              <div id="tv-ch" class="tv-ch" role="group" aria-label="Channel"></div>
+              <div id="tv-screen" class="tv-screen">
+                <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span></button>
+              </div>
+              <div class="tv-foot"><span id="tv-note" class="h-note">Nothing loads until you press Play.</span><button id="tv-stop" class="hb-btn" type="button" hidden>Stop</button></div>
+            </section>
+            <section class="hb hb-map" aria-labelledby="map-h">
+              <div class="hb-h"><span id="map-h">World events</span><span class="map-key" aria-hidden="true"><span><i class="k-q"></i>Quake</span><span><i class="k-a"></i>Disaster alert</span></span></div>
+              <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes and disaster alerts"></div>
+              <p id="map-note" class="h-note">The map loads when the hub is on screen.</p>
+            </section>
+            <section class="hb hb-news">
               <div class="hb-h">Headlines <button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
               <ol id="h-list" class="h-list"></ol>
               <p id="h-note" class="h-note"></p>
@@ -420,6 +489,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
           <div id="hub-floor" class="hub-floor" aria-hidden="true"></div>
         </div>
         <div class="talk">
+          <div class="chat-art" aria-hidden="true"><img src="hero.webp" alt="" width="736" height="1408"></div>
           <main id="log" class="log">
             <div class="col" id="col">
               <div id="empty" class="empty">
@@ -561,7 +631,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
-    pw=''; clearPw(); clearInbox(); setBusy(false);
+    pw=''; clearPw(); clearInbox(); tvStop(); setBusy(false);
     show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
   }
   function show(id){
@@ -570,7 +640,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     $('clear').hidden=locked; $('now').hidden=locked;
     app.classList.toggle('chatting', !locked);
     if(locked){ hubView(false); setStatus('Locked'); fitMark(); }
-    placePet(); gargSync();
+    placePet();
   }
   function enter(fresh){
     show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub();
@@ -715,7 +785,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      API) come straight from the browser: 0 n8n executions. BBC, Jerusalem Post and Times of Israel do not let a
      browser read their feeds, so Esquiffis fetches them inside the login call that already happens: 0 extra.
      The inbox rides the same login call: 0 extra. Refresh (either button) asks for both again: 1 execution.
-     Gargantua is a file on this same site: 0. Nothing is fetched until you unlock. */
+     Gargantua is a still picture on this site: 0. The TV (YouTube) and the map (USGS, GDACS, CARTO tiles) are read
+     by the browser (map tiles from Esri): 0. Nothing is fetched until you unlock, and the TV loads nothing until you press Play. */
   var WX_URL='https://api.open-meteo.com/v1/forecast?latitude=34.3917&longitude=-118.5426'
     +'&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min'
     +'&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=1';
@@ -826,7 +897,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
     if(hubOn) return;
     hubOn=true;
-    loadWeather(); loadFox(); loadMlb();
+    loadWeather(); loadFox(); loadMlb(); startMap();
     (function everyMinute(){ clock(); setTimeout(everyMinute, 60000-(Date.now()%60000)+50) })();
     setInterval(function(){
       if(document.hidden || !$('scr-chat').classList.contains('on')) return;
@@ -834,13 +905,14 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       if(now-lastWx>=REFRESH_MS) loadWeather();
       if(now-lastFox>=REFRESH_MS) loadFox();
       if(now-lastMlb>=MLB_MS) loadMlb();
+      if(MAP && now-lastMap>=MAP_MS) loadEvents();
     }, 60000);
   }
   // on a phone the hub folds away behind the time in the header
   function hubView(on){
     var c=$('scr-chat'); c.classList.toggle('hubview', !!on);
     $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
-    if(!on) toBottom();
+    if(on) startMap(); else toBottom();
   }
 
   /* ---------- the inbox: a glance at Primary ----------
@@ -907,45 +979,142 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }) });
   }
 
-  /* ---------- Gargantua behind the hub (desktop) ----------
-     The Render Rig's own clip, read from the rig's folder on this same site, so either page caches it for both
-     (6.35 MB). Wide screens only, only while the conversation is open and the tab is visible, never with reduced
-     motion; until it plays a still frame holds its place (gargantua-poster.jpg, 112 KB). The clip's last frame
-     is not its first, so two players cross-dissolve at the seam, slowed to 0.6x: the rig's own method. */
-  var GA=$('garg-a'), GB=$('garg-b'), GBOX=document.querySelector('.garg'), GSRC='../render-rig/gargantua.mp4', gOn=false, G_FADE=1.1, G_RATE=0.6;
-  function gHand(cur, nxt){
-    cur.ontimeupdate=function(){
-      var d=cur.duration;
-      if(!d || !isFinite(d) || cur.currentTime < d-G_FADE*G_RATE) return;
-      cur.ontimeupdate=null;
-      try{ nxt.currentTime=0 }catch(e){}
-      nxt.playbackRate=G_RATE; var p=nxt.play(); if(p && p.catch) p.catch(function(){});
-      nxt.classList.add('lead'); cur.classList.remove('lead'); gHand(nxt, cur);
-      setTimeout(function(){ try{ if(!cur.classList.contains('lead')) cur.pause() }catch(e){} }, G_FADE*1000+150);
-    };
+  /* ---------- live news TV ----------
+     YouTube's own player, created when you press Play and removed on Stop: until then it downloads nothing and
+     costs no CPU. 0 n8n executions. Measured 2026-09-15 in WebKit from this page's own address: ABC, NBC, CBS and
+     Bloomberg play as "the channel's live stream", which follows their 24/7 stream when it restarts. LiveNOW from
+     FOX refuses that form, so FOX plays its current live video by id; when FOX ends that stream the id goes stale,
+     and the YouTube button always opens the channel's live page. Fox News itself does not stream on YouTube. */
+  var TV=[
+    {k:'fox', short:'FOX', name:'LiveNOW from FOX', vid:'wmqd8JBYcx8', page:'https://www.youtube.com/@LiveNOWFOX/live'},
+    {k:'abc', short:'ABC', name:'ABC News Live', ch:'UCBi2mrWuNuyYy4gbM6fU18Q', page:'https://www.youtube.com/@ABCNews/live'},
+    {k:'nbc', short:'NBC', name:'NBC News NOW', ch:'UCeY0bbntWzzVIaj2z3QigXg', page:'https://www.youtube.com/@NBCNews/live'},
+    {k:'cbs', short:'CBS', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
+    {k:'bbg', short:'Bloomberg', name:'Bloomberg', ch:'UCIALMKvObZNtJ6AmdCLP7Lg', page:'https://www.youtube.com/@markets/live'}];
+  var K_TV='esq_tv', tvPick=TV[0];
+  try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
+  function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&playsinline=1&rel=0' }
+  function tvPaint(){
+    var bar=$('tv-ch');
+    if(!bar.children.length) TV.forEach(function(c){
+      var b=document.createElement('button'); b.type='button'; b.className='tv-c'; b.textContent=c.short; b.title=c.name;
+      b.setAttribute('data-k', c.k); bar.appendChild(b);
+    });
+    [].forEach.call(bar.children, function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===tvPick.k ? 'true' : 'false') });
+    $('tv-yt').href=tvPick.page; $('tv-play-t').textContent='Play '+tvPick.name;
   }
-  function gargSync(){
-    if(!GA || !GB || !GBOX) return;
-    var calm=!!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-    if(!isWide() || calm || document.hidden || !$('scr-chat').classList.contains('on')){
-      [GA, GB].forEach(function(v){ try{ v.pause() }catch(e){} });
-      return;
+  function tvPlay(){
+    var scr=$('tv-screen'), f=scr.querySelector('iframe');
+    if(!f){
+      f=document.createElement('iframe'); f.title='Live news';
+      f.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen'); f.setAttribute('allowfullscreen', '');
+      f.referrerPolicy='strict-origin-when-cross-origin';   // YouTube refuses embeds that do not say which site they are on
+      scr.appendChild(f);
     }
-    if(!gOn){
-      gOn=true;
-      [GA, GB].forEach(function(v){
-        v.addEventListener('error', function(){ GA.hidden=true; GB.hidden=true; GBOX.classList.remove('playing') });
-        v.preload='auto'; v.src=GSRC;
+    f.src=tvSrc(tvPick);
+    $('tv-play').hidden=true; $('tv-stop').hidden=false; $('tv-note').textContent=tvPick.name;
+  }
+  function tvStop(){
+    var f=$('tv-screen').querySelector('iframe'); if(f) f.remove();
+    $('tv-play').hidden=false; $('tv-stop').hidden=true; $('tv-note').textContent='Nothing loads until you press Play.';
+  }
+
+  /* ---------- world events map ----------
+     Earthquakes M4.5+ in the last day (USGS) and current disaster alerts (GDACS: cyclones, floods, volcanoes,
+     droughts, wildfires - and earthquakes only when GDACS rates them Orange or Red, since USGS already shows them).
+     Both let a browser read them: 0 n8n executions, refreshed every 30 minutes while the tab is open. Leaflet 1.9.4
+     (pinned and integrity-checked) and Esri's dark gray basemap load only when the map is first on screen; nothing moves
+     once it is drawn. Geopolitical events are not here yet: GDELT's map API is gone (404, measured 2026-09-15). */
+  var QUAKES_URL='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson',
+      GDACS_URL='https://www.gdacs.org/gdacsapi/api/events/geteventlist/EVENTS4APP', MAP_MS=30*60*1000;
+  var LEAF_JS='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
+      LEAF_JS_SRI='sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==',
+      LEAF_CSS='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
+      LEAF_CSS_SRI='sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==';
+  var MAP=null, mapLayer=null, lastMap=0, leaf=0, leafWait=[];   // leaf: 0 not asked, 1 loading, 2 ready, 3 failed
+  var GD_KIND={TC:'Cyclone', FL:'Flood', VO:'Volcano', DR:'Drought', WF:'Wildfire', EQ:'Earthquake'},
+      GD_COLOR={Green:'#3FD07A', Orange:'#FF8A3D', Red:'#FF3B30'};
+  function loadLeaflet(done){
+    if(window.L){ leaf=2; done(true); return }
+    if(leaf===3){ done(false); return }
+    leafWait.push(done); if(leaf===1) return; leaf=1;
+    var css=document.createElement('link'); css.rel='stylesheet'; css.href=LEAF_CSS; css.integrity=LEAF_CSS_SRI; css.crossOrigin='anonymous';
+    document.head.appendChild(css);
+    var js=document.createElement('script'); js.src=LEAF_JS; js.integrity=LEAF_JS_SRI; js.crossOrigin='anonymous';
+    function finish(){ leaf=window.L ? 2 : 3; var w=leafWait; leafWait=[]; w.forEach(function(f){ f(leaf===2) }) }
+    js.onload=finish; js.onerror=finish;
+    document.head.appendChild(js);
+  }
+  function mapShown(){ var b=$('map-box'); return !!b && b.offsetWidth>0 && b.offsetHeight>0 }
+  function startMap(){
+    if(!hubOn || !mapShown()) return;
+    if(MAP){ try{ MAP.invalidateSize() }catch(e){} return }
+    loadLeaflet(function(ok){
+      if(MAP || !mapShown()) return;
+      if(!ok){ $('map-note').textContent='The map could not load. Check your connection.'; return }
+      try{
+        MAP=L.map($('map-box'), {worldCopyJump:true, minZoom:1, maxZoom:10, zoomSnap:.5, scrollWheelZoom:false,
+          dragging:!(L.Browser && L.Browser.mobile)});   // on a phone one finger scrolls the hub, two move the map
+        MAP.setView([22, 10], 1);
+        try{ MAP.attributionControl.setPrefix(false) }catch(e){}
+        // Esri's dark gray canvas: no key, no account, CORS open. CARTO's dark tiles now carry an "API KEY REQUIRED"
+        // watermark with or without a referrer (measured 2026-09-15), so they are out.
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          {maxZoom:16, attribution:'Tiles &copy; Esri'}).addTo(MAP);
+        mapLayer=L.layerGroup().addTo(MAP);
+      }catch(e){ MAP=null; $('map-note').textContent='The map could not load.'; return }
+      loadEvents();
+    });
+  }
+  function evLink(u, host){ return (typeof u==='string' && u.indexOf('https://'+host+'/')===0) ? u : '' }
+  function loadEvents(){
+    lastMap=Date.now();
+    function json(r){ if(!r.ok) throw new Error('feed '+r.status); return r.json() }
+    Promise.all([fetch(QUAKES_URL).then(json).catch(function(){ return null }), fetch(GDACS_URL).then(json).catch(function(){ return null })])
+      .then(function(r){ paintEvents(r[0], r[1]) });
+  }
+  function paintEvents(q, g){
+    var ev=[], nq, ng;
+    ((q && q.features) || []).forEach(function(f){
+      var p=(f && f.properties) || {}, c=f && f.geometry && f.geometry.coordinates;
+      if(!Array.isArray(c) || !num(c[0]) || !num(c[1]) || !num(p.mag)) return;
+      ev.push({src:'USGS', kind:'Earthquake', lat:c[1], lon:c[0], ring:true, color:'#E8A33D', r:Math.max(4, Math.min(13, (p.mag-4)*4)),
+        title:'M'+p.mag.toFixed(1)+' · '+String(p.place || 'Earthquake').slice(0,120), t:num(p.time) ? new Date(p.time).toISOString() : null,
+        link:evLink(p.url, 'earthquake.usgs.gov')});
+    });
+    nq=ev.length;
+    ((g && g.features) || []).forEach(function(f){
+      var p=(f && f.properties) || {}, c=f && f.geometry && f.geometry.coordinates, kind=GD_KIND[p.eventtype], lvl=p.alertlevel;
+      if(!kind || !GD_COLOR[lvl] || String(p.iscurrent)!=='true') return;
+      if(p.eventtype==='EQ' && lvl==='Green') return;   // USGS already shows it
+      if(!Array.isArray(c) || !num(c[0]) || !num(c[1])) return;
+      var when=Date.parse(/Z|[+-]\d\d:?\d\d$/.test(String(p.fromdate)) ? p.fromdate : String(p.fromdate)+'Z');   // GDACS times are UTC
+      ev.push({src:'GDACS', kind:kind, level:lvl, lat:c[1], lon:c[0], color:GD_COLOR[lvl], r:lvl==='Red' ? 9 : lvl==='Orange' ? 7 : 4,
+        title:String(p.name || kind).slice(0,120), t:isFinite(when) ? new Date(when).toISOString() : null,
+        link:evLink(p.url && p.url.report, 'www.gdacs.org')});
+    });
+    ng=ev.length-nq;
+    if(mapLayer){
+      try{ mapLayer.clearLayers() }catch(e){}
+      ev.forEach(function(e){
+        L.circleMarker([e.lat, e.lon], {radius:e.r, color:e.color, weight:1.2, opacity:.95, fillColor:e.color, fillOpacity:e.ring ? .15 : .6})
+          .bindPopup(evPopup(e)).addTo(mapLayer);
       });
-      GA.addEventListener('playing', function(){ GBOX.classList.add('playing') }, {once:true});
-      GA.addEventListener('loadedmetadata', function(){
-        GA.playbackRate=G_RATE; var p=GA.play(); if(p && p.catch) p.catch(function(){});
-        GA.classList.add('lead'); gHand(GA, GB);
-      }, {once:true});
-      return;
     }
-    var lead=GB.classList.contains('lead') ? GB : GA;
-    if(lead.readyState>0){ lead.playbackRate=G_RATE; var q=lead.play(); if(q && q.catch) q.catch(function(){}) }
+    $('map-note').textContent = (!q && !g) ? 'The event feeds are unavailable right now.'
+      : nq+' earthquake'+(nq===1 ? '' : 's')+' M4.5+ today  ·  '+ng+' disaster alert'+(ng===1 ? '' : 's')+'  ·  '+((q && g) ? 'Updated ' : 'Partly updated ')+clockText(new Date());
+  }
+  function evPopup(e){
+    var d=document.createElement('div'); d.className='ev';
+    var h=document.createElement('div'); h.className='ev-t'; h.textContent=e.title; d.appendChild(h);
+    var m=document.createElement('div'); m.className='ev-m';
+    m.textContent=[e.kind, e.level ? e.level+' alert' : '', ago(e.t), e.src].filter(Boolean).join('  ·  '); d.appendChild(m);
+    var row=document.createElement('div'); row.className='ev-r';
+    if(e.link){ var a=document.createElement('a'); a.href=e.link; a.target='_blank'; a.rel='noopener'; a.textContent='Details'; row.appendChild(a) }
+    var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask';
+    b.addEventListener('click', function(){ if(busy) return; box.value='Tell me more about this event from '+e.src+': "'+e.title+'" ('+e.kind+')'; send() });
+    row.appendChild(b); d.appendChild(row);
+    return d;
   }
 
   /* ---------- the rail tape ---------- */
@@ -993,6 +1162,16 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     box.value='Summarize this email in my Primary inbox from '+b.getAttribute('data-from')+': "'+b.getAttribute('data-subject')+'"';
     send();
   });
+  $('tv-play').addEventListener('click', tvPlay);
+  $('tv-stop').addEventListener('click', tvStop);
+  $('tv-ch').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button[data-k]') : null; if(!b) return;
+    TV.forEach(function(c){ if(c.k===b.getAttribute('data-k')) tvPick=c });
+    try{ localStorage.setItem(K_TV, tvPick.k) }catch(err){}
+    var playing=!!$('tv-screen').querySelector('iframe');
+    tvPaint(); if(playing) tvPlay();
+  });
+  tvPaint();
   /* iOS Safari shrinks the VISUAL viewport for the keyboard and leaves the layout
      viewport alone, so a 100dvh column would sit under the keys. Size the app to
      what is actually visible and pin it to the top of it. Nothing is fixed. */
@@ -1022,16 +1201,17 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   }
   fitMark(); sizeTape();
   // one copy's length changes when the webfont swaps in (or on zoom): re-measure whenever the tape changes size
-  if(window.ResizeObserver && $('tape')) try{ new ResizeObserver(function(){ sizeTape() }).observe($('tape').firstElementChild) }catch(e){}
+  // sizeTape adds copies, which resizes the observed box: do it just after the notification, not inside it (WebKit reports a 'ResizeObserver loop' otherwise)
+  if(window.ResizeObserver && $('tape')) try{ new ResizeObserver(function(){ setTimeout(sizeTape, 0) }).observe($('tape').firstElementChild) }catch(e){}
   window.addEventListener('resize', function(){
-    fitMark(); placePet(); sizeTape(); gargSync();
+    fitMark(); placePet(); sizeTape(); startMap();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape() });
   // ready can resolve before a font that is not yet in use has even started loading: re-measure whenever one lands
   if(document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ fitMark(); sizeTape() });
   // a hidden tab does not need him drawing
-  document.addEventListener('visibilitychange', function(){ try{ window.pet.pause(document.hidden) }catch(e){} gargSync(); });
+  document.addEventListener('visibilitychange', function(){ try{ window.pet.pause(document.hidden) }catch(e){} });
 
   placePet();   // on first load too: the wide lock screen keeps him inside the card
   pw=loadPw();

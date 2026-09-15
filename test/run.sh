@@ -14,7 +14,7 @@ src=open('index.html').read(); inj=open(sys.argv[1]).read()
 assert src.count('</body>')==1
 open(sys.argv[2],'w').write(src.replace('</body>', inj+'\n</body>'))
 PY
-cp hero.webp "$B/hero.webp"; cp gargantua-poster.jpg "$B/gargantua-poster.jpg"
+cp hero.webp "$B/hero.webp"; cp gargantua.jpg "$B/gargantua.jpg"
 title(){ "$CHR" --headless --disable-gpu --hide-scrollbars --virtual-time-budget="${4:-6000}" \
   --window-size="$1","$2" --dump-dom "$3" 2>/dev/null | tr -d '\n' | sed -n 's/.*<title>§\(.*\)§<\/title>.*/\1/p'; }
 WHAT="${1:-all}"; PASS=0; FAIL=0

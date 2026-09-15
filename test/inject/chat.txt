@@ -8,7 +8,8 @@
      expired  a 401 mid-conversation sends you back to the lock screen with the reason
      persist  a remembered transcript is on screen after a reload
      guard    a reply the guard replaced is marked as such
-     hub      the hub: Refresh is one login call, Ask sends a headline and a message to Esquiffis, Gmail down keeps the last inbox
+     hub      the hub: Refresh is one login call, Ask sends a headline and a message to Esquiffis, Gmail down keeps the last inbox,
+              the TV loads nothing until Play, the map draws the feeds safely
      hubfail  every hub source is down: the hub says so and the chat still works (runs the ok turn)
    Layout is asserted in every mode: no horizontal overflow, the page itself never
    scrolls, every text field is 16px or more (iOS zooms otherwise), and the
@@ -22,7 +23,7 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news') }catch(e){}
+  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv') }catch(e){}
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
@@ -39,6 +40,30 @@
     {id:'a3',thread:'javascript:alert(1)',from:'Evil',subject:'Not a link',snippet:'',t:null,unread:true},
     {id:'a4',thread:'199a1b2c3d4e5f63',from:42,subject:'dropped',snippet:'',t:ago(3),unread:true}]};
   var logins=0;
+  // the map feeds: USGS (2 good quakes, 1 without coordinates) and GDACS (3 that should be drawn, 5 that should not)
+  var QUAKES={type:'FeatureCollection',features:[
+    {properties:{mag:5.6,place:'40 km S of Hualien, Taiwan',time:Date.now()-2*3600000,url:'https://earthquake.usgs.gov/earthquakes/eventpage/us1'},geometry:{coordinates:[121.6,23.6,10]}},
+    {properties:{mag:4.7,place:'Fiji region',time:Date.now()-9*3600000,url:'https://evil.example/usgs'},geometry:{coordinates:[178.1,-17.9,500]}},
+    {properties:{mag:4.9,place:'no coordinates'},geometry:{coordinates:[]}}]};
+  var GDACS={type:'FeatureCollection',features:[
+    {properties:{eventtype:'EQ',alertlevel:'Green',iscurrent:'true',name:'Earthquake in Indonesia',fromdate:'2026-09-15T06:07:52',url:{report:'https://www.gdacs.org/report.aspx?e=1'}},geometry:{coordinates:[130.3,-6.6]}},
+    {properties:{eventtype:'EQ',alertlevel:'Red',iscurrent:'true',name:'Earthquake in Chile',fromdate:'2026-09-15T01:00:00',url:{report:'https://www.gdacs.org/report.aspx?e=2'}},geometry:{coordinates:[-71.5,-33.0]}},
+    {properties:{eventtype:'WF',alertlevel:'Green',iscurrent:'true',name:'Forest fires in United States',fromdate:'2026-09-14T00:00:00',url:{report:'https://www.gdacs.org/report.aspx?e=3'}},geometry:{coordinates:[-118.5,34.4]}},
+    {properties:{eventtype:'TC',alertlevel:'Orange',iscurrent:'true',name:'Tropical Cyclone <img src=x onerror="window.__pwned=3">',fromdate:'2026-09-13T12:00:00',url:{report:'https://evil.example/tc'}},geometry:{coordinates:[-139.9,20.1]}},
+    {properties:{eventtype:'FL',alertlevel:'Orange',iscurrent:'false',name:'ended flood',fromdate:'2026-09-01T00:00:00'},geometry:{coordinates:[10,10]}},
+    {properties:{eventtype:'VO',alertlevel:'Red',iscurrent:'true',name:'no coordinates'},geometry:{coordinates:['x']}},
+    {properties:{eventtype:'XX',alertlevel:'Red',iscurrent:'true',name:'unknown kind'},geometry:{coordinates:[1,1]}},
+    {properties:{eventtype:'DR',alertlevel:'Purple',iscurrent:'true',name:'unknown level'},geometry:{coordinates:[2,2]}}]};
+  // a stand-in for exactly the Leaflet surface the page uses, recording what it is asked to draw (the harness runs
+  // offline; real Leaflet is checked in WebKit, which loads this file WITHOUT ?t=)
+  var mapCalls={markers:[], tiles:0, tileUrl:'', views:0, invalidate:0};
+  window.__mapCalls=mapCalls;
+  if(q.has('t')) window.L={
+    map:function(el,o){ mapCalls.el=el; mapCalls.opts=o; var m={setView:function(){ mapCalls.views++; return m }, invalidateSize:function(){ mapCalls.invalidate++; return m }, attributionControl:{setPrefix:function(){}}}; return m },
+    tileLayer:function(u){ mapCalls.tiles++; mapCalls.tileUrl=u; return {addTo:function(){ return this }} },
+    layerGroup:function(){ var g={addTo:function(){ return g }, clearLayers:function(){ mapCalls.markers=[]; return g }, addLayer:function(x){ mapCalls.markers.push(x); return g }}; return g },
+    circleMarker:function(ll,o){ var mk={ll:ll, o:o, bindPopup:function(n){ mk.popup=n; return mk }, addTo:function(g){ g.addLayer(mk); return mk }}; return mk }
+  };
   var FOX='<?xml version="1.0"?><rss><channel><title>Fox</title>'
     +'<item><title>Fox one &amp; more</title><link>https://www.foxnews.com/world/one</link><pubDate>'+new Date(Date.now()-30*60000).toUTCString()+'</pubDate></item>'
     +'<item><title>Fox two</title><link>https://www.foxnews.com/world/two</link><pubDate>'+new Date(Date.now()-5*3600000).toUTCString()+'</pubDate></item>'
@@ -54,6 +79,8 @@
     if(/open-meteo/.test(url)){ hubCalls.push('wx'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,WX) }
     if(/foxnews/.test(url)){ hubCalls.push('fox'); return FAIL_HUB ? res(503,'') : res(200,FOX) }
     if(/statsapi/.test(url)){ hubCalls.push('mlb'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,MLB) }
+    if(/earthquake\.usgs\.gov/.test(url)){ hubCalls.push('quakes'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,QUAKES) }
+    if(/gdacs\.org/.test(url)){ hubCalls.push('gdacs'); return FAIL_HUB ? res(503,'') : res(200,GDACS) }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
     calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, json:!!(o&&o.headers)});
     if(a==='login'){
@@ -110,7 +137,8 @@
     T(hit(m,a), 'the letters sit over the art (Vader behind the letters)');
     T(!hit(R($('pw')),face) && !hit(R($('unlock')),face), 'the passphrase and Unlock do not cover his face');
     var st=$('vc-stage'), pb=R(st), pn=R(document.querySelector('.panel'));
-    T(!attr('garg-a','src'), 'Gargantua is not downloaded on the lock screen');
+    T(!document.querySelector('video'), 'no video anywhere on the page (Gargantua is a still)');
+    T(!document.querySelector('iframe'), 'no YouTube player on the lock screen');
     if(WIDE){
       T(st.parentNode===$('scr-lock') && Math.abs(pb.b-scr.b)<=1, 'VaderClawd walks the bottom of the lock screen, inside the card');
       var p=R($('pw')), mid=document.elementFromPoint(Math.round((p.l+p.r)/2), Math.round((p.t+p.b)/2));
@@ -164,18 +192,29 @@
     T(!$('now').hidden && /\d:\d\d/.test($('now-time').textContent), 'the header shows the time ('+$('now-time').textContent+')');
     if(WIDE){
       T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
-      var sc=R($('scr-chat')), tk=R(document.querySelector('.talk')), sd=R(document.querySelector('.side'));
-      T(Math.abs(tk.l-(sc.l+sc.r)/2)<=2 && Math.abs(tk.r-sc.r)<=1, 'the conversation takes the right half ('+Math.round(tk.l-sc.l)+' of '+Math.round(sc.r-sc.l)+')');
-      var ca=document.querySelector('.chat-art'), car=R(ca);
-      T(vis(ca) && car.l>=tk.l-1 && car.r<=tk.r+1, 'the Vader art is the background of the chat half only');
-      var g=document.querySelector('.garg'), gr=R(g);
-      T(vis(g) && Math.abs(gr.l-sd.l)<=1 && Math.abs(gr.r-sd.r)<=1 && Math.abs(gr.t-sd.t)<=1 && Math.abs(gr.b-sd.b)<=1, 'Gargantua fills the hub half');
-      T(attr('garg-a','src')==='../render-rig/gargantua.mp4' && attr('garg-b','src')==='../render-rig/gargantua.mp4', 'Gargantua is the Render Rig clip from the same site');
+      // Hector 2026-09-15: "the chat can be half that size, in the right corner of the whole window. and center the vader image to the chat"
+      var sc=R($('scr-chat')), tk=R(document.querySelector('.talk')), sd=R(document.querySelector('.side')), want=Math.min(640, Math.max(400, .25*(sc.r-sc.l)));
+      T(Math.abs((tk.r-tk.l)-want)<=2 && Math.abs(tk.r-sc.r)<=1, 'the conversation is the right quarter of the window ('+Math.round(tk.r-tk.l)+' of '+Math.round(sc.r-sc.l)+')');
+      var ca=document.querySelector('.chat-art'), car=R(ca), vi=R(ca.querySelector('img')), faceX=vi.l+(vi.r-vi.l)*.38;
+      T(vis(ca) && car.l>=tk.l-1 && car.r<=tk.r+1, 'the Vader art is the background of the chat column only');
+      T(Math.abs(faceX-(tk.l+tk.r)/2)<=4, 'Vader is centered in the chat ('+Math.round(faceX)+' vs '+Math.round((tk.l+tk.r)/2)+')');
+      var g=document.querySelector('.garg'), gr=R(g), gi=g.querySelector('img');
+      T(vis(g) && Math.abs(gr.l-sd.l)<=1 && Math.abs(gr.r-sd.r)<=1 && Math.abs(gr.t-sd.t)<=1 && Math.abs(gr.b-sd.b)<=1, 'Gargantua fills the hub side');
+      T(!g.querySelector('video') && !!gi && /gargantua\.jpg$/.test(gi.getAttribute('src')), 'Gargantua is a still picture, no video');
+      var hubEl=$('hub'), parts=['.band','.hb-inbox','.hb-tv','.hb-map','.hb-news'].map(function(x){ return document.querySelector(x) }).filter(vis), clash='';
+      parts.forEach(function(a,i){ parts.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) clash=a.className+' / '+b.className }) });
+      T(parts.length===5 && !clash, 'every widget has its own space, none overlap ('+parts.length+(clash?', '+clash:'')+')');
+      if(innerWidth>=1900 && innerHeight>=1000){
+        T(hubEl.scrollHeight<=hubEl.clientHeight+1, 'the whole hub fits his desktop window, nothing to scroll ('+hubEl.scrollHeight+' in '+hubEl.clientHeight+')');
+        var tvr=R(document.querySelector('.hb-tv')), mpr=R(document.querySelector('.hb-map')), ibr=R(document.querySelector('.hb-inbox')), nwr=R(document.querySelector('.hb-news'));
+        T(Math.abs(tvr.t-mpr.t)<=1 && tvr.r<=mpr.l && ibr.l>=mpr.r && Math.abs(ibr.r-R(hubEl).r)<=20 && nwr.t>=tvr.b, 'TV beside the map, inbox down the right, headlines along the bottom');
+        var tvs=R($('tv-screen')); T(tvs.r-tvs.l>=420, 'the TV is big enough to watch ('+Math.round(tvs.r-tvs.l)+'x'+Math.round(tvs.b-tvs.t)+')');
+      }
       var tiles=document.querySelectorAll('#hub .hb:not([hidden])'), cols={};
       [].forEach.call(tiles, function(el){ cols[Math.round(R(el).l)]=1 });
       T(innerWidth<1400 || Object.keys(cols).length>=2, 'a wide hub lays its widgets out side by side ('+Object.keys(cols).length+' columns of tiles)');
     } else {
-      T(!attr('garg-a','src'), 'no Gargantua download on a narrow screen');
+      T(!vis(document.querySelector('.garg')), 'no Gargantua on a narrow screen');
       T(!vis($('hub')), 'on a narrow screen the hub is folded away');
       $('now').click();
       T(vis($('hub')) && !vis($('log')) && $('now').getAttribute('aria-expanded')==='true', 'tapping the time opens the hub');
@@ -210,6 +249,43 @@
     }
     T(hubCalls.indexOf('wx')>-1 && hubCalls.indexOf('fox')>-1 && hubCalls.indexOf('mlb')>-1, 'weather, Fox and the Dodgers came from the browser, not n8n');
     if(!WIDE){ $('now').click(); T(!vis($('hub')) && vis($('log')), 'tapping the time again returns to the conversation'); }
+  }
+  // the map, once its feeds have answered (call after a pause)
+  function mapOK(allowAsk){
+    var mc=window.__mapCalls;
+    T(hubCalls.indexOf('quakes')>-1 && hubCalls.indexOf('gdacs')>-1, 'map: USGS and GDACS come from the browser, not n8n');
+    if(FAIL_HUB){
+      T(/unavailable/.test($('map-note').textContent) && mc.markers.length===0, 'map: both feeds down, it says so ('+$('map-note').textContent+')');
+      return;
+    }
+    T(mc.tiles===1 && /^https:\/\/server\.arcgisonline\.com\/.*World_Dark_Gray_Base/.test(mc.tileUrl), 'map: one dark basemap, Esri (no key, no watermark)');
+    T(mc.markers.length===5, 'map: 2 quakes + 3 alerts drawn; green GDACS quakes, ended, unknown and coordinate-less events dropped ('+mc.markers.length+')');
+    T(/2 earthquakes/.test($('map-note').textContent) && /3 disaster alerts/.test($('map-note').textContent) && /Updated/.test($('map-note').textContent), 'map: the count line ('+$('map-note').textContent+')');
+    var pops=mc.markers.map(function(m){ return m.popup }).filter(Boolean), tc=pops.filter(function(p){ return /Cyclone/.test(p.textContent) })[0];
+    T(pops.length===5 && !!tc && !tc.querySelector('img') && /<img/.test(tc.textContent) && window.__pwned===undefined, 'map: markup in an event name stays text');
+    T(pops.every(function(p){ return [].every.call(p.querySelectorAll('a'), function(a){ return /^https:\/\/(earthquake\.usgs\.gov|www\.gdacs\.org)\//.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }) }), 'map: Details links only to USGS or GDACS, in a new tab');
+    T(!!tc && !tc.querySelector('a') && pops.filter(function(p){ return /Fiji/.test(p.textContent) && !p.querySelector('a') }).length===1, 'map: a link to any other site is dropped');
+    var red=mc.markers.filter(function(m){ return m.o.color==='#FF3B30' }).length, quake=mc.markers.filter(function(m){ return m.o.color==='#E8A33D' }).length;
+    T(red===1 && quake===2, 'map: colored by what it is (quakes amber, a red alert red)');
+    var ask=tc && tc.querySelector('.hl-ask'), n=calls.length;
+    if(allowAsk && ask && !window.__esq.busy){ ask.click(); T(calls.length===n+1 && calls[n].a==='chat' && /Tropical Cyclone/.test(calls[n].msg||'') && /GDACS/.test(calls[n].msg||''), 'map: Ask hands the event to Esquiffis'); }
+  }
+  // the TV: nothing from YouTube until Play; one player; Stop removes it
+  function tvOK(){
+    var scr=$('tv-screen');
+    T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
+    var chips=$('tv-ch').querySelectorAll('button'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
+    T(chips.length===5 && !!on && on.textContent==='FOX', 'TV: five channels, FOX first');
+    $('tv-play').click();
+    var f=scr.querySelectorAll('iframe');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/wmqd8JBYcx8?autoplay=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
+    T($('tv-play').hidden && !$('tv-stop').hidden, 'TV: Play becomes Stop');
+    var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
+    f=scr.querySelectorAll('iframe');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&playsinline=1&rel=0' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
+    T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('esq_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
+    $('tv-stop').click();
+    T(!document.querySelector('iframe') && !$('tv-play').hidden && /ABC/.test($('tv-play-t').textContent), 'TV: Stop removes the player completely');
   }
   function go(){
     layout('lock');
@@ -250,7 +326,11 @@
       setTimeout(function(){
         T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
         T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
-        var ask=$('h-list').querySelector('.hl-ask'), n1=calls.length; ask.click();
+        tvOK();
+        mapOK(false);
+        var ask=$('h-list').querySelector('.hl-ask'), n1=calls.length;
+        if(!WIDE && $('scr-chat').className.indexOf('hubview')<0) $('now').click();
+        ask.click();
         T(calls.length===n1+1 && calls[n1].a==='chat' && /ToI one/.test(calls[n1].msg||''), 'Ask sends the headline to Esquiffis ('+(calls[n1]&&calls[n1].msg)+')');
         T(vis($('log')) && $('scr-chat').className.indexOf('hubview')<0, 'and shows the conversation');
         setTimeout(function(){
@@ -337,6 +417,7 @@
     var l=$('log'); T(Math.abs(l.scrollTop+l.clientHeight-l.scrollHeight)<=2 || l.scrollHeight<=l.clientHeight, 'the conversation is scrolled to the newest message');
     var saved=JSON.parse(localStorage.getItem('esq_log')||'[]');
     T(saved.length===2 && saved[1].r==='esq', 'the transcript is remembered for a reload');
+    if(WIDE && (mode==='ok' || FAIL_HUB)) mapOK(true);
     floorOK('chat');
     layout('chat');
     done();
