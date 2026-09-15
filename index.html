@@ -361,12 +361,34 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .cams-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .cams-grid[data-n="2"],.cams-grid[data-n="3"],.cams-grid[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
 .cams-grid[data-n="3"] .cam:nth-child(3){grid-column:1/-1}
-.cam{display:flex;flex-direction:column;gap:5px;min-width:0}
-.cam-pick{width:100%;min-width:0;font-family:var(--disp);font-size:16px;color:var(--ink);background:#0e0a0a;border:1px solid var(--rule);padding:2px 6px}
+.cam{display:flex;flex-direction:column;gap:5px;min-width:0;container-type:inline-size}
+.cam-pick{display:flex;align-items:baseline;gap:8px;width:100%;min-width:0;padding:5px 9px;overflow:hidden;text-align:left;color:var(--ink);background:#0e0a0a;border:1px solid var(--rule)}
+.cam-pick:hover,.cam-pick[aria-expanded="true"]{border-color:var(--rule-hot)}
+.cam-no{flex:none;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red)}
+.cam-city{flex:none;max-width:60%;font-weight:700;font-size:14px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cam-place{flex:1;min-width:0;font-size:13px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cam-chg{flex:none;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+/* a narrow frame (two side by side on a phone): the spot gets its own line and "Change" goes - the whole label is the button */
+@container (max-width:300px){
+  .cam-pick{flex-wrap:wrap;row-gap:0}
+  .cam-city{max-width:calc(100% - 18px)}
+  .cam-place{flex:0 0 100%}
+  .cam-chg{display:none}
+}
+.cams-lib{margin-top:10px;padding:10px 12px;background:rgba(0,0,0,.4);border:1px solid var(--rule-hot)}
+.cams-lib-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-weight:600;font-size:14px}
+.lib-g+.lib-g{margin-top:10px}
+.lib-r{margin-bottom:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.lib-chips{display:flex;flex-wrap:wrap;gap:6px}
+.lib-c{display:flex;flex-direction:column;align-items:flex-start;gap:1px;max-width:100%;padding:6px 10px;text-align:left;color:var(--ink);background:#15100F;border:1px solid var(--rule)}
+.lib-c b{font-size:14px;font-weight:700}
+.lib-c span{font-size:12.5px;color:var(--ink-dim)}
+.lib-c:hover{border-color:var(--rule-hot)}
+.lib-c[aria-pressed="true"]{border-color:var(--red);background:rgba(224,27,27,.18)}
 .cam-screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--rule);overflow:hidden}
 .cam-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
 .hb-cams.playing .cam-screen{border-color:var(--red)}
-.hb-cams.shut .cams-grid,.hb-cams.shut .cams-bar,.hb-cams.shut .h-note{display:none}
+.hb-cams.shut .cams-grid,.hb-cams.shut .cams-bar,.hb-cams.shut .h-note,.hb-cams.shut .cams-lib{display:none}
 .hb-cams.shut .hb-h{margin-bottom:0}
 .hb-cams.sized .cams-grid{flex:1 1 auto;min-height:0;grid-auto-rows:minmax(0,1fr)}
 .hb-cams.sized .cam-screen{flex:1 1 auto;aspect-ratio:auto;min-height:60px}
@@ -578,6 +600,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
             <section class="hb hb-cams" data-w="cams" aria-labelledby="cams-h">
               <div class="hb-h"><button id="cams-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="cams-grid">Live cameras</button><span class="cams-bar"><span id="cams-n" class="cams-n" role="group" aria-label="How many cameras"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button></span><button id="cams-play" class="hb-btn" type="button">Play</button><button id="cams-stop" class="hb-btn" type="button" hidden>Stop</button></span></div>
               <div id="cams-grid" class="cams-grid" data-n="2"></div>
+              <div id="cams-lib" class="cams-lib" hidden><div class="cams-lib-h"><span id="cams-lib-t">Choose a camera</span><button id="cams-lib-x" class="hb-btn" type="button">Done</button></div><div id="cams-lib-list"></div></div>
               <p id="cams-note" class="h-note">Nothing loads until you press Play. Cameras play muted.</p>
             </section>
             <section class="hb hb-news" data-w="news" aria-labelledby="news-h">
@@ -1211,11 +1234,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      FOX refuses that form, so FOX plays its current live video by id; when FOX ends that stream the id goes stale,
      and the YouTube button always opens the channel's live page. Fox News itself does not stream on YouTube. */
   var TV=[
-    {k:'fox', short:'FOX', name:'LiveNOW from FOX', vid:'wmqd8JBYcx8', page:'https://www.youtube.com/@LiveNOWFOX/live'},
-    {k:'abc', short:'ABC', name:'ABC News Live', ch:'UCBi2mrWuNuyYy4gbM6fU18Q', page:'https://www.youtube.com/@ABCNews/live'},
+    {k:'fox', short:'FOX LiveNOW', name:'LiveNOW from FOX', vid:'v6dJAqft5NU', page:'https://www.youtube.com/@LiveNOWFOX/live'},
+    {k:'abc', short:'ABC News', name:'ABC News Live', ch:'UCBi2mrWuNuyYy4gbM6fU18Q', page:'https://www.youtube.com/@ABCNews/live'},
     {k:'aje', short:'Al Jazeera', name:'Al Jazeera English', vid:'gCNeDWCI0vo', page:'https://www.youtube.com/@aljazeeraenglish/live'},   // in NBC's place (Hector 2026-09-15); its channel-live embed did not play
-    {k:'cbs', short:'CBS', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
-    {k:'bbg', short:'Bloomberg', name:'Bloomberg', ch:'UCIALMKvObZNtJ6AmdCLP7Lg', page:'https://www.youtube.com/@markets/live'}];
+    {k:'cbs', short:'CBS News', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
+    {k:'bbg', short:'Bloomberg', name:'Bloomberg', ch:'UCIALMKvObZNtJ6AmdCLP7Lg', page:'https://www.youtube.com/@markets/live'},
+    {k:'mmty', short:'Multimedios MTY', name:'Multimedios Monterrey', vid:'SM864ZgPpG8', page:'https://www.youtube.com/@Multimedios/live'}];   // Canal 6 Monterrey, the official Multimedios live stream (Hector 2026-09-15)
   var K_TV='esq_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
   function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&playsinline=1&rel=0' }
@@ -1365,16 +1389,24 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      address on 2026-09-15; a camera that ends its stream shows YouTube's "unavailable" - pick another. The count and the
      picks are remembered on this device; a remembered camera that was removed falls back to the default for its frame.
      2026-09-15 (Hector): no multi-camera feeds, Middle East only Jerusalem; no single live camera exists on YouTube for
-     Giza or Iran (searched: only multi-camera aggregators, a camera tour that refuses embedding, and news channels). */
-  var CAMS=[   // single sources only (Hector: rotating views are fine, multi-camera feeds are not); Middle East = Jerusalem only
-    {k:'wall', name:'Jerusalem · Western Wall', vid:'77akujLn4k8'},
-    {k:'dc', name:'Washington · Washington Monument', vid:'oDCAAfOSqvA'},
-    {k:'wh', name:'Washington · White House', vid:'5p_KGD4fJZs'},
-    {k:'nyc', name:'New York · Times Square', vid:'JQ_jwk_7OVE'},
-    {k:'la', name:'Los Angeles · Hollywood', vid:'YHWJd_DNgKY'},
-    {k:'smpier', name:'Santa Monica · Pier', vid:'v97JpT3ZA0w'},
-    {k:'london', name:'London · Abbey Road', vid:'zMCea32gpmg'},
-    {k:'iss', name:'Space · International Space Station', vid:'awQzjn72bI0'}];
+     Giza or Iran (searched: only multi-camera aggregators, a camera tour that refuses embedding, and news channels).
+     His Mexican picks and Eagle Pass added the same day; Laredo has no live border camera on YouTube (searched).
+     Each frame is a button labeled with its number, city and spot; tapping it opens the camera list for that frame -
+     buttons grouped by region, in the page flow (no popover to break in Safari). */
+  var CAMS=[   // single sources only (Hector: rotating views are fine, multi-camera feeds are not); every entry says its region, city and spot
+    {k:'wall', region:'Middle East', city:'Jerusalem', place:'Western Wall', vid:'77akujLn4k8'},
+    {k:'dc', region:'United States', city:'Washington, D.C.', place:'Washington Monument', vid:'oDCAAfOSqvA'},
+    {k:'wh', region:'United States', city:'Washington, D.C.', place:'White House', vid:'5p_KGD4fJZs'},
+    {k:'nyc', region:'United States', city:'New York', place:'Times Square', vid:'JQ_jwk_7OVE'},
+    {k:'la', region:'United States', city:'Los Angeles', place:'Hollywood', vid:'YHWJd_DNgKY'},
+    {k:'smpier', region:'United States', city:'Santa Monica', place:'Pier and beach', vid:'v97JpT3ZA0w'},
+    {k:'volcanoes', region:'México', city:'Puebla', place:'Popocatépetl and Iztaccíhuatl volcanoes', vid:'d8MjS53ncyw'},
+    {k:'zocalo', region:'México', city:'Mexico City', place:'Zócalo', vid:'7tf7p5LCtXY'},
+    {k:'basilica', region:'México', city:'Mexico City', place:'Basílica de Guadalupe', vid:'NmHkMgNwawg'},
+    {k:'tulum', region:'México', city:'Tulum, Quintana Roo', place:'Beach', vid:'keWC1l1flQw'},
+    {k:'eaglepass', region:'US–Mexico border', city:'Eagle Pass – Piedras Negras', place:'International Bridge 1 line', vid:'k23pkDqe5Do'},
+    {k:'london', region:'Europe', city:'London', place:'Abbey Road', vid:'zMCea32gpmg'},
+    {k:'iss', region:'Space', city:'International Space Station', place:'Earth from orbit', vid:'awQzjn72bI0'}];
   var K_CAMS='esq_cams', cams={n:2, picks:['wall','wh','nyc','la']}, camsOn=false, camsReady=false;
   function camBy(k){ for(var i=0;i<CAMS.length;i++) if(CAMS[i].k===k) return CAMS[i]; return null }
   try{
@@ -1383,27 +1415,47 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     if(cs0 && Array.isArray(cs0.picks)) cs0.picks.slice(0,4).forEach(function(k,i){ if(camBy(k)) cams.picks[i]=k });
   }catch(e){}
   function camsSave(){ try{ localStorage.setItem(K_CAMS, JSON.stringify(cams)) }catch(e){} }
+  var camsLibFor=-1;   // the frame whose camera list is open, or -1
   function camsInit(){
     if(camsReady) return;
     camsReady=true;
     var g=$('cams-grid');
     for(var i=0;i<4;i++){
       var f=document.createElement('div'); f.className='cam'; f.setAttribute('data-i', String(i));
-      var sel=document.createElement('select'); sel.className='cam-pick'; sel.setAttribute('aria-label', 'Camera '+(i+1));
-      CAMS.forEach(function(c){ var o=document.createElement('option'); o.value=c.k; o.textContent=c.name; sel.appendChild(o) });
-      sel.value=cams.picks[i];
+      var pk=document.createElement('button'); pk.type='button'; pk.className='cam-pick';
+      pk.setAttribute('aria-expanded', 'false'); pk.setAttribute('aria-controls', 'cams-lib');
+      ['cam-no','cam-city','cam-place','cam-chg'].forEach(function(cl){ var sp=document.createElement('span'); sp.className=cl; pk.appendChild(sp) });
+      pk.querySelector('.cam-no').textContent=String(i+1); pk.querySelector('.cam-chg').textContent='Change';
       var scr=document.createElement('div'); scr.className='cam-screen';
-      f.appendChild(sel); f.appendChild(scr); g.appendChild(f);
+      f.appendChild(pk); f.appendChild(scr); g.appendChild(f);
     }
+    var list=$('cams-lib-list'), regions=[];
+    CAMS.forEach(function(c){ if(regions.indexOf(c.region)<0) regions.push(c.region) });
+    regions.forEach(function(r){
+      var grp=document.createElement('div'); grp.className='lib-g';
+      var h=document.createElement('div'); h.className='lib-r'; h.textContent=r; grp.appendChild(h);
+      var chips=document.createElement('div'); chips.className='lib-chips';
+      CAMS.filter(function(c){ return c.region===r }).forEach(function(c){
+        var b=document.createElement('button'); b.type='button'; b.className='lib-c'; b.setAttribute('data-k', c.k);
+        var nm=document.createElement('b'); nm.textContent=c.city; var pl=document.createElement('span'); pl.textContent=c.place;
+        b.appendChild(nm); b.appendChild(pl); chips.appendChild(b);
+      });
+      grp.appendChild(chips); list.appendChild(grp);
+    });
     camsPaint();
   }
   function camsPaint(){
     if(!camsReady) return;
     var g=$('cams-grid'); g.setAttribute('data-n', String(cams.n));
+    if(camsLibFor>=cams.n) camsLibFor=-1;
     [].forEach.call($('cams-n').querySelectorAll('button'), function(b){ b.setAttribute('aria-pressed', +b.getAttribute('data-n')===cams.n ? 'true' : 'false') });
     [].forEach.call(g.querySelectorAll('.cam'), function(f, i){
-      var on=i<cams.n, scr=f.querySelector('.cam-screen'), ifr=scr.querySelector('iframe'), c=camBy(cams.picks[i]);
+      var on=i<cams.n, scr=f.querySelector('.cam-screen'), ifr=scr.querySelector('iframe'), c=camBy(cams.picks[i]), pk=f.querySelector('.cam-pick');
       f.hidden=!on;
+      pk.querySelector('.cam-city').textContent=c ? c.city : 'No camera';
+      pk.querySelector('.cam-place').textContent=c ? c.place : '';
+      pk.setAttribute('aria-expanded', camsLibFor===i ? 'true' : 'false');
+      pk.setAttribute('aria-label', 'Frame '+(i+1)+': '+(c ? c.city+', '+c.place : 'no camera')+'. Change the camera');
       if(camsOn && on && c){
         if(!ifr){
           ifr=document.createElement('iframe');
@@ -1412,9 +1464,14 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
           scr.appendChild(ifr);
         }
         var want='https://www.youtube.com/embed/'+c.vid+'?autoplay=1&mute=1&playsinline=1&rel=0';
-        if(ifr.getAttribute('src')!==want){ ifr.src=want; ifr.title=c.name }
+        if(ifr.getAttribute('src')!==want){ ifr.src=want; ifr.title=c.city+', '+c.place }
       } else if(ifr) ifr.remove();
     });
+    $('cams-lib').hidden=camsLibFor<0;
+    if(camsLibFor>=0){
+      $('cams-lib-t').textContent='Choose the camera for frame '+(camsLibFor+1);
+      [].forEach.call($('cams-lib-list').querySelectorAll('.lib-c'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===cams.picks[camsLibFor] ? 'true' : 'false') });
+    }
     $('cams-play').hidden=camsOn; $('cams-stop').hidden=!camsOn;
     var t=tile('cams'); if(t) t.classList.toggle('playing', camsOn);
     $('cams-note').textContent=camsOn ? cams.n+(cams.n>1 ? ' cameras' : ' camera')+' playing, muted. Unmute inside a player.' : 'Nothing loads until you press Play. Cameras play muted.';
@@ -1642,10 +1699,18 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     var b=e.target.closest ? e.target.closest('button[data-n]') : null; if(!b) return;
     cams.n=+b.getAttribute('data-n'); camsSave(); camsPaint();
   });
-  $('cams-grid').addEventListener('change', function(e){
-    var sel=e.target; if(!sel.classList || !sel.classList.contains('cam-pick')) return;
-    var i=+sel.parentNode.getAttribute('data-i');
-    if(camBy(sel.value)){ cams.picks[i]=sel.value; camsSave(); camsPaint() }
+  // tap a frame's label: its camera list opens (tap again, or Done, to close); tap a camera: it goes in that frame
+  $('cams-grid').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('.cam-pick') : null; if(!b) return;
+    var i=+b.parentNode.getAttribute('data-i');
+    camsLibFor=(camsLibFor===i) ? -1 : i; camsPaint();
+  });
+  $('cams-lib').addEventListener('click', function(e){
+    if(!e.target.closest) return;
+    if(e.target.closest('#cams-lib-x')){ camsLibFor=-1; camsPaint(); return }
+    var c=e.target.closest('.lib-c'); if(!c || camsLibFor<0) return;
+    if(camBy(c.getAttribute('data-k'))){ cams.picks[camsLibFor]=c.getAttribute('data-k'); camsSave() }
+    camsLibFor=-1; camsPaint();
   });
   $('tv-play').addEventListener('click', tvPlay);
   $('tv-stop').addEventListener('click', tvStop);

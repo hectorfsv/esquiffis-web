@@ -385,23 +385,41 @@
   // Hector 2026-09-15: "a mosaic option up to 4 cameras, 4 different frames ... select how many to reproduce, 1,2,3,4"
   function camsOK(){
     var g=$('cams-grid'); if(!g){ T(false, 'cameras: the mosaic exists'); return }
-    var frames=g.querySelectorAll('.cam'), shown=function(){ return [].filter.call(frames, vis).length };
+    var frames=g.querySelectorAll('.cam'), lib=$('cams-lib'), shown=function(){ return [].filter.call(frames, vis).length };
+    function city(i){ var e=frames[i] && frames[i].querySelector('.cam-city'); return e ? e.textContent : '' }
+    function place(i){ var e=frames[i] && frames[i].querySelector('.cam-place'); return e ? e.textContent : '' }
+    function pickBtn(i){ return frames[i] ? frames[i].querySelector('.cam-pick') : null }
     T(frames.length===4 && g.getAttribute('data-n')==='2' && shown()===2 && !g.querySelector('iframe') && $('cams-n').querySelector('[aria-pressed="true"]').textContent==='2',
       'cameras: two frames by default, and nothing loads until Play');
-    T(frames[0].querySelector('select').value==='wall' && frames[1].querySelector('select').value==='wh' && frames[0].querySelectorAll('option').length===8, 'cameras: each frame picks its own camera (8 to choose from)');
+    // Hector 2026-09-15: "Put clear names on the buttons, easy to read and understand which button is which city or region"
+    T(city(0)==='Jerusalem' && place(0)==='Western Wall' && city(1)==='Washington, D.C.' && place(1)==='White House' && !!lib && !vis(lib),
+      'cameras: every frame is a button labeled with its city and spot; the camera list stays closed');
+    if(!lib || !pickBtn(1)) return;
+    pickBtn(1).click();
+    var chips=lib.querySelectorAll('.lib-c'), regions=[].map.call(lib.querySelectorAll('.lib-r'), function(x){ return x.textContent });
+    T(vis(lib) && /frame 2/.test(tx('cams-lib-t')) && pickBtn(1).getAttribute('aria-expanded')==='true', 'cameras: tapping a frame opens the camera list for that frame');
+    T(chips.length===13 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 13 camera buttons grouped by region ('+regions.join(', ')+')');
+    T([].every.call(chips, function(c){ return !!c.querySelector('b') && c.querySelector('b').textContent.trim() && c.querySelector('span').textContent.trim() })
+      && !!lib.querySelector('.lib-c[aria-pressed="true"]') && lib.querySelector('.lib-c[aria-pressed="true"]').getAttribute('data-k')==='wh', 'cameras: each button names the city and the spot; the current camera is lit');
     // Hector 2026-09-15: "Anything multi-cam, get rid of it" - and no Taipei, Shibuya, or Middle East beyond Jerusalem
-    T(['mideast','kyiv','taipei','tokyo','mecca'].every(function(k){ return !frames[0].querySelector('option[value="'+k+'"]') })
-      && [].every.call(frames[0].querySelectorAll('option'), function(o){ return !/multi|cameras|and more|Taipei|Shibuya|Mecca/i.test(o.textContent) }), 'cameras: single sources only, the dropped ones are gone');
+    T(['mideast','kyiv','taipei','tokyo','mecca'].every(function(k){ return !lib.querySelector('.lib-c[data-k="'+k+'"]') })
+      && [].every.call(chips, function(c){ return !/multi|cameras|and more|Taipei|Shibuya|Mecca/i.test(c.textContent) }), 'cameras: single sources only, the dropped ones are gone');
+    T(['volcanoes','zocalo','basilica','tulum','eaglepass'].every(function(k){ return !!lib.querySelector('.lib-c[data-k="'+k+'"]') }) && /Popocat/.test(lib.querySelector('[data-k="volcanoes"]').textContent)
+      && /Eagle Pass/.test(lib.querySelector('[data-k="eaglepass"]').textContent), 'cameras: his Mexican picks (volcanoes, Zócalo, Basílica, Tulum) and Eagle Pass are in the list');
+    lib.querySelector('[data-k="zocalo"]').click();
+    T(city(1)==='Mexico City' && /Zócalo/.test(place(1)) && !vis(lib) && pickBtn(1).getAttribute('aria-expanded')==='false', 'cameras: a tap on Zócalo puts it in frame 2 and closes the list');
+    pickBtn(0).click(); T(vis(lib) && /frame 1/.test(tx('cams-lib-t')), 'cameras: the list follows the frame you tap');
+    tap('cams-lib-x'); T(!vis(lib), 'cameras: Done closes the list');
     $('cams-play').click();
     var ifr=g.querySelectorAll('iframe');
-    T(ifr.length===2 && ifr[0].src==='https://www.youtube.com/embed/77akujLn4k8?autoplay=1&mute=1&playsinline=1&rel=0' && ifr[0].referrerPolicy==='strict-origin-when-cross-origin' && tile('cams').classList.contains('playing'),
+    T(ifr.length===2 && ifr[0].src==='https://www.youtube.com/embed/77akujLn4k8?autoplay=1&mute=1&playsinline=1&rel=0' && /7tf7p5LCtXY/.test(ifr[1].src) && ifr[0].referrerPolicy==='strict-origin-when-cross-origin' && tile('cams').classList.contains('playing'),
       'cameras: Play starts the frames on screen, muted');
     $('cams-n').querySelector('[data-n="4"]').click();
     ifr=g.querySelectorAll('iframe');
     T(ifr.length===4 && shown()===4 && g.getAttribute('data-n')==='4', 'cameras: 4 frames play at once');
     if(WIDE){ var f0=R(frames[0]), f1=R(frames[1]), f2=R(frames[2]); T(Math.abs(f0.t-f1.t)<=1 && f1.l>f0.r-1 && f2.t>=f0.b-1, 'cameras: four frames in a 2 x 2 mosaic'); }
-    var sel=frames[3].querySelector('select'); sel.value='iss'; sel.dispatchEvent(new Event('change', {bubbles:true}));
-    T(/awQzjn72bI0/.test(frames[3].querySelector('iframe').src) && frames[0].querySelector('iframe')===ifr[0], 'cameras: one frame switches to the Space Station, the others keep playing');
+    pickBtn(3).click(); lib.querySelector('[data-k="iss"]').click();
+    T(/awQzjn72bI0/.test(frames[3].querySelector('iframe').src) && frames[0].querySelector('iframe')===ifr[0] && city(3)==='International Space Station', 'cameras: one frame switches to the Space Station, the others keep playing');
     $('cams-n').querySelector('[data-n="1"]').click();
     T(g.querySelectorAll('iframe').length===1 && shown()===1, 'cameras: 1 frame stops the other three');
     $('cams-n').querySelector('[data-n="3"]').click();
@@ -410,7 +428,16 @@
     $('cams-stop').click();
     T(!g.querySelector('iframe') && !$('cams-play').hidden && !tile('cams').classList.contains('playing'), 'cameras: Stop removes every player');
     var sv=JSON.parse(localStorage.getItem('esq_cams')||'{}');
-    T(sv.n===3 && Array.isArray(sv.picks) && sv.picks[3]==='iss', 'cameras: the count and the picks are remembered');
+    T(sv.n===3 && Array.isArray(sv.picks) && sv.picks[3]==='iss' && sv.picks[1]==='zocalo', 'cameras: the count and the picks are remembered');
+    var spill=[].filter.call(g.querySelectorAll('.cam-city,.cam-place'), function(e){ return vis(e) && getComputedStyle(e).textOverflow!=='ellipsis' && e.scrollWidth>e.clientWidth+1 });
+    T(spill.length===0, 'cameras: long names end in an ellipsis, never spill');
+    // WebKit on a phone showed the spot cut to one letter and "CHANGE" drawn past the button edge: nothing may stick out
+    var stick=[];
+    [].forEach.call(frames, function(f){ var pb=f.querySelector('.cam-pick'); if(!vis(pb)) return; var br=R(pb);
+      [].forEach.call(pb.children, function(c){ if(!vis(c)) return; var cr=R(c); if(cr.r>br.r+1 || cr.l<br.l-1) stick.push(c.className+' in frame '+f.getAttribute('data-i')) }) });
+    T(stick.length===0, 'cameras: every frame label fits inside its button'+(stick.length?' ('+stick.join(', ')+')':''));
+    var p0=frames[0].querySelector('.cam-place');
+    T(vis(p0) && p0.textContent.length>0 && (p0.scrollWidth<=p0.clientWidth+1 || R(p0).r-R(p0).l>=60), 'cameras: the spot stays readable, not cut to a letter ('+Math.round(R(p0).r-R(p0).l)+'px)');
   }
   // the map, once its feeds have answered (call after a pause)
   function mapOK(allowAsk){
@@ -437,12 +464,14 @@
     var scr=$('tv-screen');
     T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
     var chips=$('tv-ch').querySelectorAll('button'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
-    T(chips.length===5 && !!on && on.textContent==='FOX', 'TV: five channels, FOX first');
+    T(chips.length===6 && !!on && on.textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: six channels with clear names, FOX first');
+    var mm=$('tv-ch').querySelector('[data-k="mmty"]');
+    T(!!mm && mm.textContent==='Multimedios MTY', 'TV: Multimedios Monterrey is on the TV');
     T(!!$('tv-ch').querySelector('[data-k="aje"]') && !$('tv-ch').querySelector('[data-k="nbc"]') && /Al Jazeera/.test($('tv-ch').querySelector('[data-k="aje"]').textContent), 'TV: Al Jazeera English in NBC\'s place');
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: the YouTube frame is dark while nothing plays');
     $('tv-play').click();
     var f=scr.querySelectorAll('iframe');
-    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/wmqd8JBYcx8?autoplay=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/v6dJAqft5NU?autoplay=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
     T($('tv-play').hidden && !$('tv-stop').hidden, 'TV: Play becomes Stop');
     T(tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor==='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).borderTopColor==='rgb(224, 27, 27)', 'TV: while it plays, the YouTube frame lights red');
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
