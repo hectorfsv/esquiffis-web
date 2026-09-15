@@ -16,8 +16,10 @@
 
    2026-09-14 (Hector): the Render Rig's chrome - notched card, red corner
    brackets, running tape, chips - with the rig's Vader art BEHIND the letters
-   on the lock screen (never over his face), and VaderClawd, the desktop pet's
-   own engine, roaming a strip under the card across the whole window.
+   on the lock screen (never over his face). The chat window is a mini HUB:
+   clock, Santa Clarita weather, headlines and the Dodgers beside the
+   conversation; the card opens to the full window and VaderClawd, the desktop
+   pet's own engine, lives INSIDE it, walking behind the chat box.
    The pet lives in the last script block, between the VADERCLAWD markers, and is
    written by tools/build-pet.py - edit the pet or the rig, not that block.
    Nothing is position:fixed, so iOS Safari's moving address bar and keyboard
@@ -30,7 +32,7 @@
   --disp:'Chakra Petch','Trebuchet MS',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --word:'Bebas Neue','Arial Narrow',Impact,sans-serif;
-  --notch:14px; --pet:84px;
+  --notch:14px; --pet:84px; --petc:76px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--void);color:var(--ink);font-family:var(--disp);font-size:16px;line-height:1.5;
@@ -77,6 +79,12 @@ button{cursor:pointer}
   background:rgba(0,0,0,.32);border:1px solid var(--rule);padding:5px 9px;white-space:nowrap}
 .gbtn:hover{border-color:var(--rule-hot);color:var(--ink)}
 .gbtn .more{display:none}
+/* the time and temperature in the header; on a phone it is also the door to the hub */
+.now{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink);
+  background:rgba(0,0,0,.32);border:1px solid var(--rule);padding:5px 9px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.now .nt{color:var(--amber)}
+.now .nt:empty{display:none}
+.now[aria-expanded="true"]{border-color:var(--rule-hot);background:rgba(224,27,27,.12)}
 /* while Esquiffis is thinking, a red sweep runs under the header */
 .sweep{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--red);box-shadow:0 0 10px rgba(224,27,27,.7);
   transform-origin:left;transform:scaleX(0);animation:sweep 1.6s cubic-bezier(.4,0,.2,1) infinite}
@@ -125,7 +133,8 @@ button{cursor:pointer}
 .chat-art{position:absolute;right:0;bottom:0;height:100%;width:60%;overflow:hidden;pointer-events:none;opacity:.09;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 45%);mask-image:linear-gradient(90deg,transparent,#000 45%)}
 .chat-art img{position:absolute;display:block;max-width:none;height:130%;width:auto;top:-20%;right:-8%}
-.log{position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+.talk{position:relative;z-index:1;flex:1;min-height:0;min-width:0;display:flex;flex-direction:column}
+.log{position:relative;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:18px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
 .col{width:100%;max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 .empty{padding:8px 0 0}
@@ -165,6 +174,7 @@ button{cursor:pointer}
 .m.note{align-self:flex-start;max-width:60ch}
 .m.note .body{color:var(--ink-dim);border-left:3px solid var(--ink-faint);padding:2px 0 2px 14px}
 
+.dock{position:relative;z-index:2;flex:none}
 .composer{position:relative;z-index:1;flex:none;display:flex;gap:10px;align-items:flex-end;border-top:1px solid var(--rule);background:var(--panel-lo);
   padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .composer .in{flex:1;min-width:0;display:flex;background:rgba(0,0,0,.45);border:1px solid var(--rule)}
@@ -177,18 +187,51 @@ button{cursor:pointer}
 .send:disabled{filter:saturate(.45) brightness(.7);cursor:default}
 .send svg{width:20px;height:20px;fill:currentColor}
 
-/* ---------- VaderClawd: under the card, the whole width of the window ---------- */
+/* ---------- the hub: clock, weather, headlines, Dodgers ---------- */
+.hub{display:none;position:relative;z-index:1;flex-direction:column;min-height:0;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.chat.hubview .hub{display:flex;flex:1;padding-bottom:calc(var(--petc) + 6px)}   /* he stands above the chat box: the last headline stays above him */
+.chat.hubview .log{display:none}
+.chat.hubview .talk{flex:none}
+.hb{padding:16px max(18px,env(safe-area-inset-left));border-bottom:1px solid var(--rule)}
+.hb-h{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+.h-time{font-family:var(--word);font-size:64px;line-height:.88;letter-spacing:.02em;color:var(--ink);text-shadow:0 0 30px rgba(224,27,27,.25);font-variant-numeric:tabular-nums}
+.h-date{color:var(--ink-dim);font-size:15px;margin-top:6px}
+.wx-row{display:flex;align-items:center;gap:16px}
+.h-temp{font-family:var(--word);font-size:60px;line-height:.88;color:var(--ink);white-space:nowrap}
+.h-temp sup{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-dim);vertical-align:top;margin-left:3px;line-height:1}
+.h-cond{font-weight:600;font-size:17px;line-height:1.2}
+.h-range{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:4px}
+.hb-btn,.hl-ask{flex:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);
+  border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:3px 9px}
+.hb-btn:hover,.hl-ask:hover{border-color:var(--rule-hot);color:var(--ink)}
+.hb-btn:disabled{opacity:.6;cursor:default}
+.h-list{list-style:none;display:flex;flex-direction:column;gap:14px}
+.hl-t{display:block;color:var(--ink);text-decoration:none;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.hl-t:hover{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
+.hl-m{display:flex;align-items:center;gap:10px;margin-top:5px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-faint)}
+.hl-s{color:var(--red);font-weight:600}
+.hl-ask{margin-left:auto}
+.h-note{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:12px}
+.h-game{font-weight:600;font-size:16px}
+.h-game b{display:inline-block;min-width:1.6em;text-align:center;font-family:var(--mono);font-size:11px;padding:1px 5px;margin-right:6px;border:1px solid currentColor;vertical-align:2px}
+.h-game b.w{color:var(--go)}
+.h-game b.l{color:var(--red-hot)}
+.h-next{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:6px}
+
+/* ---------- VaderClawd ----------
+   Phone lock screen: a strip under the card. Everywhere else he lives INSIDE the card: on a narrow screen
+   standing just above the chat box, on a wide one walking the bottom of the card behind the chat box
+   (Hector 2026-09-14). The page moves this one element between those homes (placePet). */
 .petbar{position:relative;z-index:2;flex:none;height:var(--pet);width:100%}
 .petbar::after{content:'';position:absolute;left:0;right:0;bottom:5px;height:1px;pointer-events:none;
   background:linear-gradient(90deg,transparent,var(--rule-hot) 15%,var(--rule-hot) 85%,transparent);opacity:.45}
 .petbar canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-@media (max-width:759px){ .petbar{background:linear-gradient(180deg,var(--panel-lo),#000)} }
+@media (max-width:759px){ .app>.petbar{background:linear-gradient(180deg,var(--panel-lo),#000)} }
+.screen .petbar{position:absolute;left:0;right:0;bottom:0;width:auto;z-index:0;pointer-events:none}
+.chat .dock .petbar{bottom:100%;height:var(--petc);background:none}
+.chat .dock .petbar::after{display:none}
 .app.kb .petbar{display:none}   /* the phone keyboard is up: the conversation needs the room */
-.dock{position:relative;z-index:2;flex:none}
-/* Hector 2026-09-14: the chat box all the way down; VaderClawd OUTSIDE the card on the right, free to walk
-   left behind it. That needs room beside the card: from 1100px wide his floor is the bottom of the window,
-   BEHIND the card (rules at the end). Narrower there is no outside: he keeps the lock screen, sits out the chat. */
-@media (max-width:1099px){ .app.chatting .petbar{display:none} }
 
 /* ---------- wide: the card ---------- */
 @media (min-width:760px){
@@ -200,7 +243,7 @@ button{cursor:pointer}
   .tape span{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
     white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg)}
   @keyframes tape{from{transform:translateY(0)}to{transform:translateY(-50%)}}
-  .panel{flex:0 1 1200px;border:1px solid var(--rule);box-shadow:0 30px 90px rgba(0,0,0,.6);
+  .panel{flex:1 1 auto;border:1px solid var(--rule);box-shadow:0 30px 90px rgba(0,0,0,.6);
     background:linear-gradient(180deg,var(--panel-hi) 0%,var(--panel) 26%,var(--panel-lo) 100%);
     clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
   .brk{display:block;position:absolute;width:16px;height:16px;pointer-events:none;z-index:5}
@@ -223,6 +266,7 @@ button{cursor:pointer}
   .composer .in{max-width:724px}
   .chat-art{opacity:.12}
 }
+@media (min-width:760px) and (min-height:501px){ :root{--petc:100px} }
 /* a short window (a phone on its side): the card and the strip give up height */
 @media (min-width:760px) and (max-height:500px){
   .art img{height:150%;top:-30%;left:22%}
@@ -230,15 +274,27 @@ button{cursor:pointer}
   .gate{max-width:46%;margin:0}
 }
 @media (max-height:500px){
-  :root{--pet:72px}
+  :root{--pet:72px;--petc:64px}
   .frame{padding-top:8px}
   .head{padding-top:6px;padding-bottom:6px}
   .sub{display:none}
   .lock-form{padding-top:10px;padding-bottom:10px}
 }
+/* narrow chat: he stands above the chat box, so the newest message stays above him; the chip is just its light */
+.chat .log{padding-bottom:calc(var(--petc) + 10px)}
+.app.kb .chat .log{padding-bottom:12px}
+@media (max-width:759px){ .app.chatting .chip .cw{display:none} }
+/* desktop: the hub column beside the conversation, his floor along the bottom of the card */
 @media (min-width:1100px){
-  .panel{flex-basis:min(1200px,calc(100vw - 300px))}
-  .petbar{position:absolute;left:0;right:0;bottom:0;z-index:0}
+  .chat{flex-direction:row}
+  .hub,.chat.hubview .hub{display:flex;flex:0 0 340px;border-right:1px solid var(--rule);padding-bottom:calc(var(--pet) + 4px)}
+  .chat.hubview .log{display:block}
+  .chat.hubview .talk{flex:1}
+  .hb{padding:18px 22px}
+  .chat .log{padding-bottom:24px}
+  .composer{background:none;border-top:0}
+  .composer .in{background:#0B0809}
+  .now{cursor:default}
 }
 @media (prefers-reduced-motion:reduce){
   .sweep,.tape,.chip.busy::before,.app.thinking .bloom{animation:none}
@@ -260,6 +316,7 @@ button{cursor:pointer}
           <span class="name">Esquiffis</span><span class="model">Grok 4.20</span>
         </div>
         <div class="head-r">
+          <button id="now" class="now" type="button" aria-controls="hub" aria-expanded="false" hidden><span id="now-time">--:--</span><span id="now-temp" class="nt"></span></button>
           <span id="status" class="chip" aria-live="polite">Locked</span>
           <button id="clear" class="gbtn" type="button" hidden>Clear<span class="more"> screen</span></button>
         </div>
@@ -270,7 +327,7 @@ button{cursor:pointer}
         <div class="art" aria-hidden="true"><img id="art" src="hero.webp" alt="" width="736" height="1408" draggable="false"></div>
         <form id="lock-form" class="lock-form" autocomplete="on">
           <h1 id="mark" class="mark"><span id="mark-t">Esquiffis</span></h1>
-          <div class="gate">
+          <div class="gate" data-pet-cover>
             <p class="sub">Same Esquiffis as on your phone, with the same memory.</p>
             <label class="sr" for="pw">Passphrase</label>
             <div class="slot">
@@ -284,29 +341,54 @@ button{cursor:pointer}
 
       <section id="scr-chat" class="screen chat" aria-label="Conversation">
         <div class="chat-art" aria-hidden="true"><img src="hero.webp" alt="" width="736" height="1408"></div>
-        <main id="log" class="log">
-          <div class="col" id="col">
-            <div id="empty" class="empty">
-              <p class="lead">What do you need?</p>
-              <p class="hint">Same Esquiffis as on your phone. He remembers both.</p>
-              <div class="asks" id="asks">
-                <button type="button" data-ask="give me my morning coffee">Morning coffee <span>the briefing</span></button>
-                <button type="button" data-ask="anything important in my inbox?">My inbox</button>
-                <button type="button" data-ask="what's on my calendar today?">Calendar today</button>
-                <button type="button" data-ask="what's the weather right now?">Weather</button>
-                <button type="button" data-ask="MLB scores from last night">MLB scores</button>
+        <aside id="hub" class="hub" aria-label="Hub">
+          <section class="hb">
+            <div id="h-time" class="h-time">--:--</div>
+            <div id="h-date" class="h-date"></div>
+          </section>
+          <section class="hb">
+            <div class="hb-h">Santa Clarita</div>
+            <div class="wx-row">
+              <div class="h-temp"><span id="h-temp">--</span><sup>°F</sup></div>
+              <div><div id="h-cond" class="h-cond">Checking the sky</div><div id="h-range" class="h-range"></div></div>
+            </div>
+          </section>
+          <section class="hb">
+            <div class="hb-h">Headlines <button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
+            <ol id="h-list" class="h-list"></ol>
+            <p id="h-note" class="h-note"></p>
+          </section>
+          <section id="h-mlb" class="hb" hidden>
+            <div class="hb-h">Dodgers</div>
+            <div id="h-last" class="h-game"></div>
+            <div id="h-next" class="h-next"></div>
+          </section>
+        </aside>
+        <div class="talk">
+          <main id="log" class="log">
+            <div class="col" id="col">
+              <div id="empty" class="empty">
+                <p class="lead">What do you need?</p>
+                <p class="hint">Same Esquiffis as on your phone. He remembers both.</p>
+                <div class="asks" id="asks">
+                  <button type="button" data-ask="give me my morning coffee">Morning coffee <span>the briefing</span></button>
+                  <button type="button" data-ask="anything important in my inbox?">My inbox</button>
+                  <button type="button" data-ask="what's on my calendar today?">Calendar today</button>
+                  <button type="button" data-ask="what's the weather right now?">Weather</button>
+                  <button type="button" data-ask="MLB scores from last night">MLB scores</button>
+                </div>
               </div>
             </div>
+          </main>
+          <div id="dock" class="dock">
+            <form id="composer" class="composer">
+              <label class="sr" for="box">Message</label>
+              <div class="in" data-pet-cover><textarea id="box" rows="1" placeholder="Message Esquiffis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
+              <button id="send" class="send" type="submit" aria-label="Send" data-pet-cover>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 8h-5v10H9V11H4z"/></svg>
+              </button>
+            </form>
           </div>
-        </main>
-        <div id="dock" class="dock">
-        <form id="composer" class="composer">
-          <label class="sr" for="box">Message</label>
-          <div class="in"><textarea id="box" rows="1" placeholder="Message Esquiffis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
-          <button id="send" class="send" type="submit" aria-label="Send">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 8h-5v10H9V11H4z"/></svg>
-          </button>
-        </form>
         </div>
       </section>
     </div>
@@ -322,7 +404,7 @@ button{cursor:pointer}
      cannot answer. ?dev=1 talks to the DEV copy. */
   var PROD='https://hectorfsv.app.n8n.cloud/webhook/esquiffis-access';
   var BASE=/[?&]dev=1(&|$)/.test(location.search) ? PROD+'-dev' : PROD;
-  var K_PW='esq_pw', K_LOG='esq_log';
+  var K_PW='esq_pw', K_LOG='esq_log', K_NEWS='esq_news';
   var PW_TTL_MS=2*60*60*1000;   // sessionStorage never expires on iOS by itself: timestamp it
   var LOG_MAX=80;               // what a reload shows; Esquiffis's own memory lives on the server
   var WAIT_MS=120*1000;         // real turns run 6-78 s; the webhook connection is cut near 100 s
@@ -330,28 +412,44 @@ button{cursor:pointer}
 
   function $(id){return document.getElementById(id)}
   var pw='', log=[], busy=false, tick=null, t0=0, aborter=null, waited=false;
-  var app=$('app');
+  var app=$('app'), box=$('box');
+  var MQ_WIDE=window.matchMedia ? matchMedia('(min-width:1100px)') : null;
+  function isWide(){ return !!(MQ_WIDE && MQ_WIDE.matches) }
 
-  /* ---------- VaderClawd reacts (the page never depends on him) ---------- */
+  /* ---------- VaderClawd (the page never depends on him) ---------- */
   function vc(kind){ try{ if(window.pet && window.pet.react) window.pet.react(kind) }catch(e){} }
   function petScale(){ return (window.matchMedia && matchMedia('(min-width:760px) and (min-height:501px)').matches) ? 1.5 : 1 }
   window.PET_SCALE=petScale();
-  /* where he can be seen: on a wide window his floor runs behind the card, so he settles only in the open
-     space beside it (the right is home); with no card in the way, anywhere. Used by the pet's roam. */
-  function petZones(W,S){
-    var all=[[8*S, Math.max(8*S, W-44*S)]];
-    try{
-      var st=$('vc-stage'); if(!st || getComputedStyle(st).position!=='absolute') return all;
-      var sr=st.getBoundingClientRect(), pr=document.querySelector('.panel').getBoundingClientRect(), rl=document.querySelector('.rail'),
-          leftEdge=pr.left, body=36*S, z=[];
-      if(rl && rl.getBoundingClientRect().width>0) leftEdge=Math.min(leftEdge, rl.getBoundingClientRect().left);
-      var right=[pr.right-sr.left+6*S, W-body-8*S], left=[8*S, leftEdge-sr.left-body-6*S];
-      if(right[1]>=right[0]) z.push(right);
-      if(left[1]>=left[0]) z.push(left);
-      return z.length ? z : all;
-    }catch(e){ return all }
+  // his home right now: phone lock screen = under the card; narrow chat = above the chat box; wide = the bottom of the card
+  function petHome(){
+    var chatting=$('scr-chat').classList.contains('on');
+    if(isWide()) return chatting ? $('scr-chat') : $('scr-lock');
+    return chatting ? $('dock') : app;
   }
-  window.PET_HOME=function(W,S){ var z=petZones(W,S)[0]; return z[0]+Math.random()*(z[1]-z[0]) };
+  function placePet(){
+    var st=$('vc-stage'), home=petHome();
+    if(st.parentNode!==home){ home.appendChild(st); try{ window.pet.restart() }catch(e){} }   // a new floor: he walks in from the right
+  }
+  /* where he can be seen: his whole floor, minus anything that stands on it (the chat box, the passphrase).
+     The rightmost clear stretch is home. Used by the pet's roam through PET_HOME / PET_PICK. */
+  function cut(zones, a, b){
+    var out=[];
+    zones.forEach(function(z){ if(a>z[0]) out.push([z[0], Math.min(z[1], a)]); if(b<z[1]) out.push([Math.max(z[0], b), z[1]]) });
+    return out.filter(function(z){ return z[1]>=z[0] });
+  }
+  function petZones(W,S){
+    var body=36*S, all=[[8*S, Math.max(8*S, W-body-8*S)]], zones=all;
+    try{
+      var st=$('vc-stage'), sr=st.getBoundingClientRect();
+      [].forEach.call(st.parentNode.querySelectorAll('[data-pet-cover]'), function(el){
+        var r=el.getBoundingClientRect();
+        if(r.width<=0 || r.bottom<=sr.top || r.top>=sr.bottom) return;
+        zones=cut(zones, r.left-sr.left-body-6*S, r.right-sr.left+6*S);
+      });
+    }catch(e){ return all }
+    return zones.length ? zones : all;
+  }
+  window.PET_HOME=function(W,S){ var zs=petZones(W,S), z=zs[zs.length-1]; return z[0]+(z[1]-z[0])*(.6+Math.random()*.4) };   // clearly on the right
   window.PET_PICK=function(W,S,x){
     var zs=petZones(W,S), other=zs.filter(function(z){ return x<z[0]-1 || x>z[1]+1 });
     var z=(other.length && Math.random()<.5) ? other[Math.floor(Math.random()*other.length)] : zs[Math.floor(Math.random()*zs.length)];
@@ -399,7 +497,9 @@ button{cursor:pointer}
       .then(function(r){
         if(r.status===401){ lockMsg('That passphrase is not right.', true); vc('locked'); return }
         if(!r.ok){ lockMsg('Esquiffis did not answer ('+r.status+'). Try again.', true); return }
-        pw=v; savePw(v); enter(true);
+        pw=v; savePw(v);
+        // the login answer also carries the hub's headlines (fetched by n8n in this same call)
+        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); enter(true) });
       })
       .catch(function(){ lockMsg("Can't reach Esquiffis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
@@ -411,15 +511,16 @@ button{cursor:pointer}
   function show(id){
     ['scr-lock','scr-chat'].forEach(function(s){ $(s).classList.toggle('on', s===id) });
     var locked=id==='scr-lock';
-    $('clear').hidden=locked;
+    $('clear').hidden=locked; $('now').hidden=locked;
     app.classList.toggle('chatting', !locked);
-    if(locked){ setStatus('Locked'); fitMark(); }
+    if(locked){ hubView(false); setStatus('Locked'); fitMark(); }
+    placePet();
   }
   function enter(fresh){
-    show('scr-chat'); loadLog(); render(); setStatus('Ready','ok');
+    show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub();
     if(fresh) setTimeout(function(){ vc('greet') }, 900);
     // a focused field on the phone pops the keyboard over the conversation; only the desktop wants it
-    if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ $('box').focus() }, 50);
+    if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ box.focus() }, 50);
   }
 
   /* ---------- rendering ---------- */
@@ -498,7 +599,12 @@ button{cursor:pointer}
   function toBottom(){ var l=$('log'); l.scrollTop=l.scrollHeight }
 
   /* ---------- status ---------- */
-  function setStatus(t, cls){ var s=$('status'); s.textContent=t; s.className='chip'+(cls?' '+cls:'') }
+  function setStatus(t, cls){
+    var s=$('status'), m=/^(.*?)(?:\s+([\d:]+))?$/.exec(t);
+    s.textContent=''; s.className='chip'+(cls?' '+cls:'');
+    var w=document.createElement('span'); w.className='cw'; w.textContent=m[1]; s.appendChild(w);
+    if(m[2]){ s.appendChild(document.createTextNode(' ')); var c=document.createElement('span'); c.className='ct'; c.textContent=m[2]; s.appendChild(c) }
+  }
   function fmt(s){ var m=Math.floor(s/60), r=s%60; return m+':'+(r<10?'0':'')+r }
   function setBusy(on){
     busy=on; $('send').disabled=on; $('sweep').hidden=!on; app.classList.toggle('thinking', on);
@@ -515,9 +621,10 @@ button{cursor:pointer}
   /* ---------- sending ---------- */
   function send(e){
     if(e) e.preventDefault();
-    var box=$('box'), text=box.value.trim();
+    var text=box.value.trim();
     if(!text || busy) return;
     if(!pw){ lockOut('Enter the passphrase again.'); return }
+    hubView(false);
     box.value=''; box.style.height='auto';
     add({r:'me', m:text, t:new Date().toISOString()});
     setBusy(true); vc('thinking');
@@ -547,12 +654,143 @@ button{cursor:pointer}
       .finally(function(){ clearTimeout(timer); aborter=null; if(pw) setBusy(false); });
   }
 
+  /* ---------- the hub: clock, weather, headlines, Dodgers ----------
+     What each costs (Ninth Rule). The clock, the weather (Open-Meteo), Fox News and the Dodgers (MLB's own
+     API) come straight from the browser: 0 n8n executions. BBC, Jerusalem Post and Times of Israel do not let a
+     browser read their feeds, so Esquiffis fetches them inside the login call that already happens: 0 extra.
+     Refresh asks for them again: 1 execution. Nothing is fetched until you unlock. */
+  var WX_URL='https://api.open-meteo.com/v1/forecast?latitude=34.3917&longitude=-118.5426'
+    +'&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min'
+    +'&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=1';
+  var FOX_URL='https://moxie.foxnews.com/google-publisher/world.xml';
+  var REFRESH_MS=15*60*1000, MLB_MS=30*60*1000;
+  var hubOn=false, serverNews=null, foxNews=[], newsSaid=false, hotSaid=false, lastWx=0, lastFox=0, lastMlb=0;
+  function clockText(d){ return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) }
+  function clock(){
+    var d=new Date(), t=clockText(d);
+    $('h-time').textContent=t; $('now-time').textContent=t;
+    $('h-date').textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  }
+  // WMO weather codes, as Open-Meteo reports them (the upper bound of each band)
+  var WMO=[[0,'Clear'],[1,'Mostly clear'],[2,'Partly cloudy'],[3,'Overcast'],[48,'Fog'],[57,'Drizzle'],[67,'Rain'],
+    [77,'Snow'],[82,'Showers'],[86,'Snow showers'],[99,'Thunderstorms']];
+  function sky(c){ for(var i=0;i<WMO.length;i++) if(c<=WMO[i][0]) return WMO[i][1]; return 'Weather' }
+  function num(v){ return typeof v==='number' && isFinite(v) }
+  function loadWeather(){
+    lastWx=Date.now();
+    fetch(WX_URL).then(function(r){ if(!r.ok) throw new Error('weather '+r.status); return r.json() }).then(function(d){
+      var c=(d&&d.current)||{}, dl=(d&&d.daily)||{}, hi=dl.temperature_2m_max&&dl.temperature_2m_max[0], lo=dl.temperature_2m_min&&dl.temperature_2m_min[0];
+      if(!num(c.temperature_2m)) throw new Error('no temperature');
+      var t=Math.round(c.temperature_2m), bits=[];
+      $('h-temp').textContent=t; $('now-temp').textContent=t+'°';
+      $('h-cond').textContent=num(c.weather_code) ? sky(c.weather_code) : 'Santa Clarita';
+      if(num(hi) && num(lo)) bits.push('H '+Math.round(hi), 'L '+Math.round(lo));
+      if(num(c.wind_speed_10m)) bits.push('Wind '+Math.round(c.wind_speed_10m)+' mph');
+      $('h-range').textContent=bits.join('  ·  ');
+      if(t>=95 && !hotSaid){ hotSaid=true; setTimeout(function(){ vc('hot') }, 6000) }
+    }).catch(function(){ if($('h-temp').textContent==='--') $('h-cond').textContent='Weather unavailable right now' });
+  }
+  function ago(t){
+    var ms=Date.now()-Date.parse(t); if(!isFinite(ms) || ms<0) return '';
+    var m=Math.max(0,Math.round(ms/60000));
+    return m<60 ? m+'m' : m<1440 ? Math.round(m/60)+'h' : Math.round(m/1440)+'d';
+  }
+  function webLink(s){ return /^https?:\/\//i.test(String(s||'')) }
+  function loadFox(){
+    lastFox=Date.now();
+    fetch(FOX_URL).then(function(r){ if(!r.ok) throw new Error('fox '+r.status); return r.text() }).then(function(x){
+      var doc=new DOMParser().parseFromString(x,'application/xml'), out=[];
+      [].slice.call(doc.getElementsByTagName('item'), 0, 10).forEach(function(it){
+        function g(n){ var e=it.getElementsByTagName(n)[0]; return e ? e.textContent.trim() : '' }
+        var title=g('title'), link=g('link')||g('guid'), at=Date.parse(g('pubDate'));
+        if(title && webLink(link) && out.length<4) out.push({src:'Fox News', title:title.slice(0,220), link:link, t:isFinite(at)?new Date(at).toISOString():null});
+      });
+      foxNews=out; paintNews();
+    }).catch(function(){ paintNews() });
+  }
+  function setServerNews(list){
+    if(!Array.isArray(list)) return;
+    serverNews={t:Date.now(), items:list.filter(function(h){ return h && typeof h.title==='string' && webLink(h.link) }).slice(0,24)};
+    try{ localStorage.setItem(K_NEWS, JSON.stringify(serverNews)) }catch(e){}
+    if(hubOn) paintNews();
+  }
+  function loadServerNews(){
+    if(serverNews) return;
+    try{ var s=JSON.parse(localStorage.getItem(K_NEWS)||'null'); if(s && Array.isArray(s.items)) serverNews=s }catch(e){}
+  }
+  function paintNews(){
+    var all=((serverNews&&serverNews.items)||[]).concat(foxNews), per={}, pick=[];
+    function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }   // future-dated stories count as now
+    all.sort(function(a,b){ return ts(b)-ts(a) });
+    all.forEach(function(h){ per[h.src]=(per[h.src]||0)+1; if(per[h.src]<=3 && pick.length<10) pick.push(h) });
+    var ol=$('h-list'); ol.textContent='';
+    pick.forEach(function(h){
+      var li=document.createElement('li'); li.className='hl';
+      var a=document.createElement('a'); a.className='hl-t'; a.href=h.link; a.target='_blank'; a.rel='noopener'; a.textContent=h.title; li.appendChild(a);
+      var meta=document.createElement('div'); meta.className='hl-m';
+      var s=document.createElement('span'); s.className='hl-s'; s.textContent=h.src; meta.appendChild(s);
+      var age=ago(h.t); if(age){ var w=document.createElement('span'); w.textContent=age; meta.appendChild(w) }
+      var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask';
+      b.setAttribute('data-title', h.title); b.setAttribute('data-src', h.src); meta.appendChild(b);
+      li.appendChild(meta); ol.appendChild(li);
+    });
+    $('h-note').textContent = !pick.length ? 'No headlines yet. Tap Refresh.'
+      : serverNews ? 'Updated '+clockText(new Date(serverNews.t)) : '';
+    if(pick.length && !newsSaid){ newsSaid=true; setTimeout(function(){ vc('news') }, 5000) }
+  }
+  function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2) }
+  function shortTeam(n){ var p=String(n||'').split(' '), l=p.pop()||''; return (/^(Sox|Jays)$/.test(l) && p.length) ? p.pop()+' '+l : l }
+  function loadMlb(){
+    lastMlb=Date.now();
+    var from=new Date(Date.now()-4*864e5), to=new Date(Date.now()+5*864e5);
+    fetch('https://statsapi.mlb.com/api/v1/schedule?sportId=1&teamId=119&startDate='+ymd(from)+'&endDate='+ymd(to))
+      .then(function(r){ if(!r.ok) throw new Error('mlb '+r.status); return r.json() }).then(function(d){
+        var games=[], last=null, next=null;
+        ((d&&d.dates)||[]).forEach(function(x){ (x.games||[]).forEach(function(g){ games.push(g) }) });
+        games.sort(function(a,b){ return Date.parse(a.gameDate)-Date.parse(b.gameDate) });
+        games.forEach(function(g){ var st=(g.status||{}).abstractGameState; if(st==='Final') last=g; else if(!next && (st==='Live'||st==='Preview')) next=g });
+        if(!last && !next){ $('h-mlb').hidden=true; return }
+        function side(g){ var home=g.teams.home.team.id===119; return {us:home?g.teams.home:g.teams.away, them:home?g.teams.away:g.teams.home, home:home} }
+        var L=$('h-last'); L.textContent='';
+        if(last){
+          var s=side(last), won=(s.us.score||0)>(s.them.score||0), badge=document.createElement('b');
+          badge.className=won?'w':'l'; badge.textContent=won?'W':'L'; L.appendChild(badge);
+          L.appendChild(document.createTextNode('Dodgers '+(s.us.score||0)+', '+shortTeam(s.them.team.name)+' '+(s.them.score||0)));
+        }
+        if(next){
+          var n=side(next), live=(next.status||{}).abstractGameState==='Live', dt=new Date(next.gameDate);
+          $('h-next').textContent=(live?'Live now ':'Next: ')+(n.home?'vs ':'at ')+shortTeam(n.them.team.name)
+            +(live?'':'  ·  '+dt.toLocaleDateString('en-US',{weekday:'short'})+' '+clockText(dt));
+        } else $('h-next').textContent='';
+        $('h-mlb').hidden=false;
+      }).catch(function(){ $('h-mlb').hidden=true });
+  }
+  function startHub(){
+    loadServerNews(); clock(); paintNews();
+    if(hubOn) return;
+    hubOn=true;
+    loadWeather(); loadFox(); loadMlb();
+    (function everyMinute(){ clock(); setTimeout(everyMinute, 60000-(Date.now()%60000)+50) })();
+    setInterval(function(){
+      if(document.hidden || !$('scr-chat').classList.contains('on')) return;
+      var now=Date.now();
+      if(now-lastWx>=REFRESH_MS) loadWeather();
+      if(now-lastFox>=REFRESH_MS) loadFox();
+      if(now-lastMlb>=MLB_MS) loadMlb();
+    }, 60000);
+  }
+  // on a phone the hub folds away behind the time in the header
+  function hubView(on){
+    var c=$('scr-chat'); c.classList.toggle('hubview', !!on);
+    $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
+    if(!on) toBottom();
+  }
+
   /* ---------- wiring ---------- */
   $('face').src=FACE;
   $('lock-form').addEventListener('submit', unlock);
   $('pw').addEventListener('input', function(){ lockMsg('') });
   $('composer').addEventListener('submit', send);
-  var box=$('box');
   box.addEventListener('input', function(){ box.style.height='auto'; box.style.height=Math.min(box.scrollHeight,160)+'px' });
   box.addEventListener('keydown', function(e){
     if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send() }
@@ -564,6 +802,24 @@ button{cursor:pointer}
   });
   $('clear').addEventListener('click', function(){
     log=[]; saveLog(); render();   // the screen only: Esquiffis's memory is his, on the server
+  });
+  $('now').addEventListener('click', function(){ if(!isWide()) hubView(!$('scr-chat').classList.contains('hubview')) });
+  $('h-list').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
+    if(!b || busy) return;
+    box.value='Tell me more about this headline from '+b.getAttribute('data-src')+': "'+b.getAttribute('data-title')+'"';
+    send();
+  });
+  $('h-refresh').addEventListener('click', function(){
+    var btn=$('h-refresh'); if(btn.disabled || !pw) return;
+    btn.disabled=true; btn.textContent='Refreshing';
+    loadFox();
+    post({action:'login', password:pw}).then(function(r){
+      if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.json().then(function(d){ setServerNews(d && d.headlines) });
+    }).catch(function(){ $('h-note').textContent='Could not refresh the headlines. Try again.' })
+      .finally(function(){ btn.disabled=false; btn.textContent='Refresh' });
   });
   /* iOS Safari shrinks the VISUAL viewport for the keyboard and leaves the layout
      viewport alone, so a 100dvh column would sit under the keys. Size the app to
@@ -594,13 +850,14 @@ button{cursor:pointer}
   }
   fitMark();
   window.addEventListener('resize', function(){
-    fitMark();
+    fitMark(); placePet();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitMark);
   // a hidden tab does not need him drawing
   document.addEventListener('visibilitychange', function(){ try{ window.pet.pause(document.hidden) }catch(e){} });
 
+  placePet();   // on first load too: the wide lock screen keeps him inside the card
   pw=loadPw();
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
@@ -1152,6 +1409,8 @@ button{cursor:pointer}
     guard:['The guard caught that one.','He almost made that up. Blocked.'],
     failed:['The line went dead. Ask again.','No answer. Try once more.'],
     locked:['Access denied.','Wrong code, rebel.'],
+    news:['News from across the galaxy.','Fresh headlines. Read them.','The HoloNet has spoken.'],
+    hot:['Hot out there. Even for a Sith.','The suit is not rated for this heat.'],
     hello:['Greetings, Hector.','Still here. Still watching.','Hi. Keep working.'],
     workout:['Leg day. Every day.','Do you even lift, rebel?','The Empire needs strong arms.'],
     gains:['Gains.','Feel the burn. The Dark Side burn.','Workout complete.'],

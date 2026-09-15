@@ -1,34 +1,55 @@
 <style>*{animation:none!important;transition:none!important}</style>
 <script>
-/* Drive the page through its OWN code paths with an honest fake of the access
-   point. Modes (?t=):
+/* Drive the page through its OWN code paths with honest fakes of the access point
+   and of the hub's sources (Open-Meteo, Fox News RSS, MLB). Modes (?t=):
      ok       login, one turn, reply rendered from Telegram-flavoured HTML, script stripped, link kept
      badpw    a wrong passphrase is refused and the page stays locked
      timeout  the reply never comes: a note appears after two minutes and the page is usable again
      expired  a 401 mid-conversation sends you back to the lock screen with the reason
      persist  a remembered transcript is on screen after a reload
      guard    a reply the guard replaced is marked as such
+     hub      the hub: Refresh is one login call, Ask sends a headline to Esquiffis
+     hubfail  every hub source is down: the hub says so and the chat still works (runs the ok turn)
    Layout is asserted in every mode: no horizontal overflow, the page itself never
    scrolls, every text field is 16px or more (iOS zooms otherwise), and the
    composer is on screen. */
 (function(){
-  var S=String.fromCharCode(167), out=[], q=new URLSearchParams(location.search), mode=q.get('t')||'ok', calls=[];
+  var S=String.fromCharCode(167), out=[], q=new URLSearchParams(location.search), mode=q.get('t')||'ok', calls=[], hubCalls=[];
+  var FAIL_HUB=mode==='hubfail';
   function $(i){return document.getElementById(i)}
   function T(c,m){out.push((c?'PASS':'FAIL')+'  '+m); flush()}
   function flush(){ try{document.title=S+out.join('\n')+S}catch(e){} }
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); localStorage.removeItem('esq_log') }catch(e){}
+  try{ sessionStorage.removeItem('esq_pw'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news') }catch(e){}
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
   var REPLY='Here is <b>bold</b> and <i>italic</i>, a link https://docs.x.ai/x and <a href="https://example.com/a">a tagged one</a>.\n• one\n• two<script>window.__pwned=1<\/script><img src=x onerror="window.__pwned=2"> <a href="javascript:alert(1)">bad link</a>';
-  function res(status, body){ return Promise.resolve({ok:status>=200&&status<300, status:status, json:function(){return Promise.resolve(body)}}) }
+  function ago(min){ return new Date(Date.now()-min*60000).toISOString() }
+  // what n8n returns with the login: 4 BBC (one too many), 1 Times of Israel, 1 with a bad link
+  var HEADS=[{src:'BBC',title:'BBC one',link:'https://www.bbc.com/news/1',t:ago(60)},{src:'BBC',title:'BBC two',link:'https://www.bbc.com/news/2',t:ago(120)},
+    {src:'BBC',title:'BBC three',link:'https://www.bbc.com/news/3',t:ago(180)},{src:'BBC',title:'BBC four',link:'https://www.bbc.com/news/4',t:ago(240)},
+    {src:'Times of Israel',title:'ToI one',link:'https://www.timesofisrael.com/one',t:ago(20)},{src:'Evil',title:'bad',link:'javascript:alert(2)',t:null}];
+  var FOX='<?xml version="1.0"?><rss><channel><title>Fox</title>'
+    +'<item><title>Fox one &amp; more</title><link>https://www.foxnews.com/world/one</link><pubDate>'+new Date(Date.now()-30*60000).toUTCString()+'</pubDate></item>'
+    +'<item><title>Fox two</title><link>https://www.foxnews.com/world/two</link><pubDate>'+new Date(Date.now()-5*3600000).toUTCString()+'</pubDate></item>'
+    +'<item><title>Fox bad</title><link>javascript:alert(3)</link></item></channel></rss>';
+  var WX={current:{temperature_2m:71.4,weather_code:1,wind_speed_10m:4.2},daily:{temperature_2m_max:[88.1],temperature_2m_min:[60.2]}};
+  var MLB={dates:[{games:[
+    {gameDate:new Date(Date.now()-864e5).toISOString(),status:{abstractGameState:'Final'},teams:{home:{team:{id:119,name:'Los Angeles Dodgers'},score:5},away:{team:{id:135,name:'San Diego Padres'},score:2}}},
+    {gameDate:new Date(Date.now()+864e5).toISOString(),status:{abstractGameState:'Preview'},teams:{home:{team:{id:137,name:'San Francisco Giants'}},away:{team:{id:119,name:'Los Angeles Dodgers'}}}}]}]};
+  function res(status, body){ return Promise.resolve({ok:status>=200&&status<300, status:status,
+    json:function(){return Promise.resolve(body)}, text:function(){return Promise.resolve(typeof body==='string'?body:JSON.stringify(body))}}) }
   window.fetch=function(u,o){
+    var url=String(u);
+    if(/open-meteo/.test(url)){ hubCalls.push('wx'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,WX) }
+    if(/foxnews/.test(url)){ hubCalls.push('fox'); return FAIL_HUB ? res(503,'') : res(200,FOX) }
+    if(/statsapi/.test(url)){ hubCalls.push('mlb'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,MLB) }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
     calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, json:!!(o&&o.headers)});
-    if(a==='login') return pwd==='right' ? res(200,{ok:true}) : res(401,{error:'unauthorized'});
+    if(a==='login') return pwd==='right' ? res(200, FAIL_HUB ? {ok:true} : {ok:true,headlines:HEADS}) : res(401,{error:'unauthorized'});
     if(a==='chat'){
       // never answers - but like a real fetch it REJECTS with AbortError when the page gives up
       if(mode==='timeout') return new Promise(function(_,rej){
@@ -49,8 +70,9 @@
   }
   function R(el){ var r=el.getBoundingClientRect(); return {l:r.left,r:r.right,t:r.top,b:r.bottom} }
   function hit(a,b){ return a.l<b.r && a.r>b.l && a.t<b.b && a.b>b.t }
+  var WIDE=innerWidth>=1100;
   function art(){
-    // Hector: Vader behind the letters, never his face covered; VaderClawd under the passphrase, across the window
+    // Hector: Vader behind the letters, never his face covered
     var img=$('art'); T(!!img && img.naturalWidth>0, 'the Vader art is loaded on the lock screen');
     if(!img) return;
     var a=R(img), w=a.r-a.l, h=a.b-a.t, scr=R($('scr-lock'));
@@ -62,42 +84,87 @@
     T(!hit(m,face), 'the letters do not cover his face');
     T(hit(m,a), 'the letters sit over the art (Vader behind the letters)');
     T(!hit(R($('pw')),face) && !hit(R($('unlock')),face), 'the passphrase and Unlock do not cover his face');
-    var pb=R($('vc-stage')), pn=R(document.querySelector('.panel'));
+    var st=$('vc-stage'), pb=R(st), pn=R(document.querySelector('.panel'));
     if(WIDE){
-      T(getComputedStyle($('vc-stage')).position==='absolute' && Math.abs(pb.b-innerHeight)<=1, 'VaderClawd\'s floor runs along the bottom of the window, behind the card');
-      T(window.PET_HOME(innerWidth,1.5)>=pn.r, 'and his home is outside the card on the right');
-    } else T(pb.t>=pn.b-1 && pb.t>=R($('unlock')).b, 'VaderClawd roams below the card and the Unlock button');
-    T(Math.abs((pb.r-pb.l)-innerWidth)<=1, 'his strip spans the whole window ('+Math.round(pb.r-pb.l)+')');
+      T(st.parentNode===$('scr-lock') && Math.abs(pb.b-scr.b)<=1, 'VaderClawd walks the bottom of the lock screen, inside the card');
+      var p=R($('pw')), mid=document.elementFromPoint(Math.round((p.l+p.r)/2), Math.round((p.t+p.b)/2));
+      T(mid===$('pw'), 'he walks behind the passphrase, never over it');
+    } else {
+      T(pb.t>=pn.b-1 && pb.t>=R($('unlock')).b, 'VaderClawd roams below the card and the Unlock button');
+      T(Math.abs((pb.r-pb.l)-innerWidth)<=1, 'his strip spans the whole window ('+Math.round(pb.r-pb.l)+')');
+    }
   }
-  var WIDE=innerWidth>=1100;
   function petOK(tag, sized){
     var p=window.pet; T(!!p && !!p.state, tag+': VaderClawd is running');
     if(!p) return null;
     var s=p.state(); T(s.scene==='roam' && (!sized || (s.W>0 && s.H>0)), tag+': he roams his strip ('+s.scene+' '+s.W+'x'+s.H+')');
     return s;
   }
-  // Hector: the chat box all the way down; VaderClawd outside the card on the right, walking left behind it
+  // every spot he settles on is clear of what stands on his floor, and home is the rightmost clear stretch
+  function spotsOK(tag, covers){
+    var st=$('vc-stage'), sr=R(st), s=window.pet&&window.pet.state(), S2=(s&&s.S)||1, body=36*S2, W=sr.r-sr.l, bad='';
+    for(var i=0;i<40 && !bad;i++){
+      var x=window.PET_PICK(W,S2,i%2?W-60:10)+sr.l;
+      covers.forEach(function(c){ if(x<c.r && x+body>c.l) bad=Math.round(x) });
+      if(x<sr.l-1 || x+body>sr.r+1) bad='off the floor '+Math.round(x);
+    }
+    T(!bad, tag+': every spot he settles on is in the open'+(bad?' (bad '+bad+')':''));
+    var h=window.PET_HOME(W,S2)+sr.l, right=covers.length ? Math.max.apply(null, covers.map(function(c){ return c.r })) : sr.l+W*.5-body/2-1;   // open floor: his CENTER is right of the middle
+    T(h>=right && h+body<=sr.r+1, tag+': home is on the right ('+Math.round(h)+' past '+Math.round(right)+')');
+  }
+  // Hector: the chat box all the way down; VaderClawd inside the box, behind the chat box on a wide screen
   function floorOK(tag){
-    var c=R($('composer')), st=$('vc-stage');
-    T(Math.abs(c.b-innerHeight)<=1, tag+': the chat box is all the way down ('+Math.round(c.b)+' of '+innerHeight+')');
-    if(!WIDE){ T(!vis(st), tag+': no room beside the card, so VaderClawd sits out the chat'); return }
-    var p=R(st), pn=R(document.querySelector('.panel')), s=window.pet&&window.pet.state();
-    T(getComputedStyle(st).position==='absolute' && Math.abs(p.b-innerHeight)<=1 && Math.abs((p.r-p.l)-innerWidth)<=1, tag+': his floor is the bottom of the window, full width');
-    var mid=document.elementFromPoint(Math.round((pn.l+pn.r)/2), Math.round(p.b-20));
-    T(!!mid && mid.id!=='vc-cv' && mid.id!=='vc-stage', tag+': he walks behind the card, never over it ('+(mid&&(mid.id||mid.className))+')');
-    var S2=(s&&s.S)||1.5, body=36*S2, ok=true, bad='';
-    for(var i=0;i<40;i++){ var x=window.PET_PICK(innerWidth,S2,i%2?innerWidth-80:20); if(!(x>=pn.r || x+body<=pn.l)){ ok=false; bad=Math.round(x); break } }
-    T(ok, tag+': every spot he settles on is outside the card'+(bad?' (bad '+bad+')':''));
-    var h=window.PET_HOME(innerWidth,S2);
-    T(h>=pn.r && h+body<=innerWidth, tag+': home is on the right, outside the card (x '+Math.round(h)+', card ends '+Math.round(pn.r)+')');
+    var c=R($('composer')), st=$('vc-stage'), p=R(st);
+    T(Math.abs(c.b-innerHeight)<=2, tag+': the chat box is all the way down ('+Math.round(c.b)+' of '+innerHeight+')');
+    T(vis(st), tag+': VaderClawd is on screen');
+    if(WIDE){
+      var sc=R($('scr-chat')), inb=R(document.querySelector('.composer .in'));
+      T(st.parentNode===$('scr-chat') && Math.abs(p.b-sc.b)<=1 && Math.abs((p.r-p.l)-(sc.r-sc.l))<=1, tag+': his floor is the bottom of the card, full width');
+      var mid=document.elementFromPoint(Math.round((inb.l+inb.r)/2), Math.round((inb.t+inb.b)/2));
+      T(!!mid && mid.id!=='vc-cv' && mid.id!=='vc-stage', tag+': he walks behind the chat box, never over it ('+(mid&&(mid.id||mid.className))+')');
+      spotsOK(tag, [inb, R($('send'))]);
+    } else {
+      T(st.parentNode===$('dock') && Math.abs(p.b-c.t)<=1, tag+': he stands just above the chat box, inside the card');
+      spotsOK(tag, []);
+    }
+  }
+  function hubOK(){
+    T(!$('now').hidden && /\d:\d\d/.test($('now-time').textContent), 'the header shows the time ('+$('now-time').textContent+')');
+    if(WIDE){
+      T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
+    } else {
+      T(!vis($('hub')), 'on a narrow screen the hub is folded away');
+      $('now').click();
+      T(vis($('hub')) && !vis($('log')) && $('now').getAttribute('aria-expanded')==='true', 'tapping the time opens the hub');
+    }
+    T(/\d:\d\d/.test($('h-time').textContent) && $('h-date').textContent.length>5, 'clock and date ('+$('h-time').textContent+', '+$('h-date').textContent+')');
+    if(FAIL_HUB){
+      T(/unavailable/i.test($('h-cond').textContent) && $('h-temp').textContent==='--', 'weather down: it says so');
+      T($('h-list').children.length===0 && /Refresh/.test($('h-note').textContent), 'no headlines: it says to tap Refresh');
+      T($('h-mlb').hidden, 'no Dodgers data: the tile stays hidden');
+    } else {
+      T($('h-temp').textContent==='71' && $('now-temp').textContent==='71°', 'the temperature in the hub and the header');
+      T($('h-cond').textContent==='Mostly clear' && /H 88/.test($('h-range').textContent) && /L 60/.test($('h-range').textContent), 'sky and high/low ('+$('h-range').textContent+')');
+      var lis=$('h-list').querySelectorAll('li'), srcs=[].map.call(lis, function(l){ return l.querySelector('.hl-s').textContent });
+      T(lis.length===6, 'headlines: bad links dropped, BBC capped at 3 ('+lis.length+')');
+      T(srcs.filter(function(s){ return s==='BBC' }).length===3 && srcs.indexOf('Fox News')>-1 && srcs.indexOf('Times of Israel')>-1, 'from BBC, Times of Israel and Fox News ('+srcs.join(', ')+')');
+      T(lis.length && lis[0].querySelector('.hl-t').textContent==='ToI one' && /20m/.test(lis[0].textContent), 'newest first, with its age');
+      T([].every.call($('h-list').querySelectorAll('a'), function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'every headline opens safely in a new tab');
+      T(!$('h-mlb').hidden && /Dodgers 5, Padres 2/.test($('h-last').textContent) && /at Giants/.test($('h-next').textContent), 'the Dodgers tile ('+$('h-last').textContent+' / '+$('h-next').textContent+')');
+    }
+    T(hubCalls.indexOf('wx')>-1 && hubCalls.indexOf('fox')>-1 && hubCalls.indexOf('mlb')>-1, 'weather, Fox and the Dodgers came from the browser, not n8n');
+    if(!WIDE){ $('now').click(); T(!vis($('hub')) && vis($('log')), 'tapping the time again returns to the conversation'); }
   }
   function go(){
     layout('lock');
     T(vis($('mark')), 'the name is on the lock screen');
     var mk=$('mark'); T(mk.scrollWidth<=mk.clientWidth+1, 'the wordmark fits its box ('+mk.scrollWidth+' in '+mk.clientWidth+')');
+    T($('now').hidden, 'no time or weather on the lock screen');
     art();
     setTimeout(function(){
       petOK('lock', true);   // his first frame sizes the canvas
+      spotsOK('lock', WIDE ? [R(document.querySelector('.gate'))] : []);
+      T(hubCalls.length===0, 'nothing is fetched for the hub before you unlock ('+hubCalls.join(',')+')');
       $('pw').value = mode==='badpw' ? 'wrong' : 'right';
       $('unlock').click();
       setTimeout(step2, 200);
@@ -108,13 +175,29 @@
       T($('scr-lock').classList.contains('on'), 'a wrong passphrase stays on the lock screen');
       T(/not right/.test($('lock-msg').textContent), 'and says so ('+$('lock-msg').textContent+')');
       T(calls.length===1 && calls[0].a==='login', 'one login call, nothing else');
+      T(hubCalls.length===0, 'and still nothing fetched for the hub');
       return done();
     }
     T($('scr-chat').classList.contains('on'), 'the right passphrase opens the conversation');
     T(calls.length===1 && calls[0].a==='login', 'login is its own call, no chat turn behind it');
     T(!calls[0].json, 'sent as form data, not JSON (no CORS preflight)');
+    petOK('chat', true);
     floorOK('chat-empty');
+    hubOK();
     layout('chat-empty');
+    if(mode==='hub'){
+      if(!WIDE) $('now').click();
+      var n0=calls.length; $('h-refresh').click();
+      T(calls.length===n0+1 && calls[n0].a==='login', 'Refresh asks n8n once, through the login call');
+      setTimeout(function(){
+        T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled, 'and the button is ready again');
+        var ask=$('h-list').querySelector('.hl-ask'), n1=calls.length; ask.click();
+        T(calls.length===n1+1 && calls[n1].a==='chat' && /ToI one/.test(calls[n1].msg||''), 'Ask sends the headline to Esquiffis ('+(calls[n1]&&calls[n1].msg)+')');
+        T(vis($('log')) && $('scr-chat').className.indexOf('hubview')<0, 'and shows the conversation');
+        setTimeout(function(){ floorOK('hub'); layout('hub'); done() }, 300);
+      }, 250);
+      return;
+    }
     if(mode==='persist'){
       var ms=document.querySelectorAll('#col .m');
       T(ms.length===2, 'the remembered transcript is on screen ('+ms.length+')');
@@ -141,9 +224,10 @@
         T(!$('send').disabled && $('sweep').hidden, 'and the page is usable again');
         T($('status').textContent==='Ready', 'status back to Ready');
         // two minutes of roaming: never a show, never gone from the page
-        var s=petOK('after 2 min', WIDE);
-        if(s && WIDE){ T(['exit','travel','gone','tie'].indexOf(s.mode)<0 && !s.hidden, 'still on the page after two minutes ('+s.mode+')');
+        var s=petOK('after 2 min', true);
+        if(s){ T(['exit','travel','gone','tie'].indexOf(s.mode)<0 && !s.hidden, 'still on the page after two minutes ('+s.mode+')');
           T(s.x>-60*s.S && s.x<s.W, 'and inside his strip (x '+s.x+' of '+s.W+')'); }
+        T(/\d:\d\d/.test($('h-time').textContent), 'the clock is still running');
         done();
       }, 125000);
       return;
@@ -155,7 +239,7 @@
       T($('scr-lock').classList.contains('on'), 'a 401 mid-conversation returns to the lock screen');
       T(/expired/i.test($('lock-msg').textContent), 'with the reason ('+$('lock-msg').textContent+')');
       T(sessionStorage.getItem('esq_pw')===null, 'and the passphrase is forgotten');
-      T(vis($('vc-stage')), 'back on the lock screen VaderClawd is on screen again');
+      T(vis($('vc-stage')) && $('now').hidden, 'back on the lock screen: VaderClawd on screen, the hub readout gone');
       return done();
     }
     var ms=document.querySelectorAll('#col .m');
@@ -178,7 +262,7 @@
       var chips=[].map.call(document.querySelectorAll('#col .m.esq .used .t'), function(e){ return e.textContent });
       T(chips.join('|')==='Gmail|Weather|Some New Tool', 'the tools he used show under the reply: plain names, once each, Think hidden ('+chips.join('|')+')');
       var sv=JSON.parse(localStorage.getItem('esq_log')||'[]'); T(!!sv[1] && Array.isArray(sv[1].k) && sv[1].k.length===5, 'and they are remembered with the transcript');
-      var ps=petOK('reply', WIDE);
+      var ps=petOK('reply', true);
       if(ps) T(ps.act==='celebrate' || !!ps.bubble, 'VaderClawd reacts to the reply ('+(ps.act||ps.bubble)+')');
     }
     T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'the page is ready again');

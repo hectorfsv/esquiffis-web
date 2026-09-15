@@ -91,7 +91,9 @@ js = once_re(js, r"    idle:\[[^\]]*\],\n",
     "    reply:['There. Answered.','Esquiffis delivers.','Read it, apprentice.'],\n"
     "    guard:['The guard caught that one.','He almost made that up. Blocked.'],\n"
     "    failed:['The line went dead. Ask again.','No answer. Try once more.'],\n"
-    "    locked:['Access denied.','Wrong code, rebel.'],\n")
+    "    locked:['Access denied.','Wrong code, rebel.'],\n"
+    "    news:['News from across the galaxy.','Fresh headlines. Read them.','The HoloNet has spoken.'],\n"
+    "    hot:['Hot out there. Even for a Sith.','The suit is not rated for this heat.'],\n")
 js = once(js, "    celebrate:['Task complete. Impressive.','The Force is strong with this code.','Another one for the Empire.'],",
               "    celebrate:['Answered. Impressive.','Esquiffis delivers.','Another one for the Empire.'],")
 
