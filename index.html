@@ -1036,17 +1036,23 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     hubInit(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
     if(hubOn) return;
     hubOn=true;
-    loadWeather(); loadFox(); loadMlb(); startMap(); loadMarkets(); camsInit(); paintBrief();
+    loadWeather(); loadFox(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
     (function everyMinute(){ clock(); setTimeout(everyMinute, 60000-(Date.now()%60000)+50) })();
-    setInterval(function(){
-      if(document.hidden || !$('scr-chat').classList.contains('on')) return;
-      var now=Date.now();
-      if(now-lastWx>=REFRESH_MS) loadWeather();
-      if(now-lastFox>=REFRESH_MS) loadFox();
-      if(now-lastMlb>=MLB_MS) loadMlb();
-      if(MAP && now-lastMap>=MAP_MS) loadEvents();
-      if(now-lastMk>=MK_MS) loadMarkets();
-    }, 60000);
+    setInterval(function(){ hubTick(Date.now()) }, 60000);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) hubTick(Date.now()) });
+  }
+  /* Everything the browser refreshes by itself - 0 n8n executions (Hector 2026-09-15: "the stuff than can be refresh
+     auto without execution from N8N, do it"): weather, Fox headlines, the map's quakes and alerts, and markets every
+     15 minutes, the Dodgers every 30, and anything stale the moment the tab comes back. Hidden tabs and the lock screen
+     fetch nothing. The inbox, the BBC and Jerusalem Post headlines and the brief need an n8n execution, so they
+     refresh only at login or on a tap until Hector chooses otherwise. */
+  function hubTick(now){
+    if(document.hidden || !$('scr-chat').classList.contains('on')) return;
+    if(now-lastWx>=REFRESH_MS) loadWeather();
+    if(now-lastFox>=REFRESH_MS) loadFox();
+    if(now-lastMlb>=MLB_MS) loadMlb();
+    if(now-lastMap>=MAP_MS) loadEvents();
+    if(now-lastMk>=MK_MS) loadMarkets();
   }
   // on a phone the hub folds away behind the time in the header
   function hubView(on){
@@ -1405,6 +1411,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     {k:'basilica', region:'México', city:'Mexico City', place:'Basílica de Guadalupe', vid:'NmHkMgNwawg'},
     {k:'tulum', region:'México', city:'Tulum, Quintana Roo', place:'Beach', vid:'keWC1l1flQw'},
     {k:'eaglepass', region:'US–Mexico border', city:'Eagle Pass – Piedras Negras', place:'International Bridge 1 line', vid:'k23pkDqe5Do'},
+    {k:'acuna1', region:'US–Mexico border', city:'Del Rio – Ciudad Acuña', place:'International Bridge 1', vid:'M2OrL8XFrMA'},
+    {k:'acuna2', region:'US–Mexico border', city:'Del Rio – Ciudad Acuña', place:'International Bridge 2', vid:'_Icedwkezwc'},
     {k:'london', region:'Europe', city:'London', place:'Abbey Road', vid:'zMCea32gpmg'},
     {k:'iss', region:'Space', city:'International Space Station', place:'Earth from orbit', vid:'awQzjn72bI0'}];
   var K_CAMS='esq_cams', cams={n:2, picks:['wall','wh','nyc','la']}, camsOn=false, camsReady=false;
@@ -1485,12 +1493,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      (pinned and integrity-checked) and Esri's dark gray basemap load only when the map is first on screen; nothing moves
      once it is drawn. Geopolitical events are not here yet: GDELT's map API is gone (404, measured 2026-09-15). */
   var QUAKES_URL='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson',
-      GDACS_URL='https://www.gdacs.org/gdacsapi/api/events/geteventlist/EVENTS4APP', MAP_MS=30*60*1000;
+      GDACS_URL='https://www.gdacs.org/gdacsapi/api/events/geteventlist/EVENTS4APP', MAP_MS=15*60*1000;
   var LEAF_JS='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
       LEAF_JS_SRI='sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==',
       LEAF_CSS='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
       LEAF_CSS_SRI='sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==';
-  var MAP=null, mapLayer=null, lastMap=0, leaf=0, leafWait=[];   // leaf: 0 not asked, 1 loading, 2 ready, 3 failed
+  var MAP=null, mapLayer=null, lastMap=0, lastEv=null, leaf=0, leafWait=[];   // leaf: 0 not asked, 1 loading, 2 ready, 3 failed
   var GD_KIND={TC:'Cyclone', FL:'Flood', VO:'Volcano', DR:'Drought', WF:'Wildfire', EQ:'Earthquake'},
       GD_COLOR={Green:'#3FD07A', Orange:'#FF8A3D', Red:'#FF3B30'};
   function loadLeaflet(done){
@@ -1522,7 +1530,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
           {maxZoom:16, attribution:'Tiles &copy; Esri'}).addTo(MAP);
         mapLayer=L.layerGroup().addTo(MAP);
       }catch(e){ MAP=null; $('map-note').textContent='The map could not load.'; return }
-      loadEvents();
+      if(lastEv) paintEvents(lastEv[0], lastEv[1]);   // the events already came in at login: draw them
+      else if(!lastMap) loadEvents();                 // (if they are still on the way, they draw when they land)
     });
   }
   function evLink(u, host){ return (typeof u==='string' && u.indexOf('https://'+host+'/')===0) ? u : '' }
@@ -1533,6 +1542,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       .then(function(r){ paintEvents(r[0], r[1]) });
   }
   function paintEvents(q, g){
+    lastEv=[q, g];
     var ev=[], nq, ng;
     ((q && q.features) || []).forEach(function(f){
       var p=(f && f.properties) || {}, c=f && f.geometry && f.geometry.coordinates;
@@ -1768,7 +1778,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE };
+  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick };
 })();
 </script>
 <script>

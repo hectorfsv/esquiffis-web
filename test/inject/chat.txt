@@ -216,6 +216,8 @@
     }
   }
   function hubOK(){
+    // Hector 2026-09-15: "for everything in the HUB, i wanted to be loaded at log in" - the map's events too, on every device
+    T(hubCalls.indexOf('quakes')>-1 && hubCalls.indexOf('gdacs')>-1, 'the world events load at login, even before the hub is opened');
     T(!$('now').hidden && /\d:\d\d/.test($('now-time').textContent), 'the header shows the time ('+$('now-time').textContent+')');
     if(WIDE){
       T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
@@ -398,7 +400,11 @@
     pickBtn(1).click();
     var chips=lib.querySelectorAll('.lib-c'), regions=[].map.call(lib.querySelectorAll('.lib-r'), function(x){ return x.textContent });
     T(vis(lib) && /frame 2/.test(tx('cams-lib-t')) && pickBtn(1).getAttribute('aria-expanded')==='true', 'cameras: tapping a frame opens the camera list for that frame');
-    T(chips.length===13 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 13 camera buttons grouped by region ('+regions.join(', ')+')');
+    T(chips.length===15 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 15 camera buttons grouped by region ('+regions.join(', ')+')');
+    // Hector 2026-09-15: "Only eagle pass one and both from ciudad acuña"
+    var border=[].filter.call(lib.querySelectorAll('.lib-g'), function(gp){ return /border/.test(gp.querySelector('.lib-r').textContent) })[0];
+    T(!!border && [].map.call(border.querySelectorAll('.lib-c'), function(c){ return c.getAttribute('data-k') }).join('|')==='eaglepass|acuna1|acuna2' && /Acuña/.test(border.textContent) && /Bridge 2/.test(border.textContent),
+      'cameras: the border is Eagle Pass and both Ciudad Acuña bridges, nothing else');
     T([].every.call(chips, function(c){ return !!c.querySelector('b') && c.querySelector('b').textContent.trim() && c.querySelector('span').textContent.trim() })
       && !!lib.querySelector('.lib-c[aria-pressed="true"]') && lib.querySelector('.lib-c[aria-pressed="true"]').getAttribute('data-k')==='wh', 'cameras: each button names the city and the spot; the current camera is lit');
     // Hector 2026-09-15: "Anything multi-cam, get rid of it" - and no Taipei, Shibuya, or Middle East beyond Jerusalem
@@ -530,6 +536,16 @@
         tvOK();
         mapOK(false);
         camsOK();
+        // "the stuff than can be refresh auto without execution from N8N, do it": 16 minutes on, the browser refreshes by itself
+        var nN8n=calls.length, h0=hubCalls.length, tick=window.__esq && window.__esq.hubTick;
+        if(typeof tick==='function') tick(Date.now()+16*60000);
+        var fresh=hubCalls.slice(h0);
+        T(typeof tick==='function' && ['wx','fox','quakes','gdacs','gold','snap'].every(function(k){ return fresh.indexOf(k)>-1 }) && fresh.indexOf('mlb')<0 && calls.length===nN8n,
+          'auto refresh: 16 minutes later weather, Fox, the map and markets refresh with no n8n call ('+fresh.filter(function(k,i,a){ return a.indexOf(k)===i }).join(',')+')');
+        var h1=hubCalls.length; if(typeof tick==='function') tick(Date.now()+31*60000);
+        T(typeof tick==='function' && hubCalls.slice(h1).indexOf('mlb')>-1 && calls.length===nN8n, 'auto refresh: the Dodgers every 30 minutes, still no n8n call');
+        var h2=hubCalls.length; if(typeof tick==='function') tick(Date.now()+60000);
+        T(hubCalls.length===h2, 'auto refresh: nothing is fetched again before it is due');
         var bps=qa('brief-list');
         T(bps.length===3 && !$('brief-list').querySelector('b') && /<b>bold<\/b>/.test(bps[0].textContent), 'the brief shows its points, as text');
         T([].map.call(bps[1] ? bps[1].querySelectorAll('.bp-s') : [], function(x){ return x.textContent }).join('|')==='Fox News|Times of Israel' && !!bps[0].querySelector('.hl-ask'), 'each point names its sources and has Ask');
