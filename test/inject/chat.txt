@@ -11,6 +11,7 @@
      hub      the hub: Refresh is one login call, Ask sends a headline and a message to Esquiffis, Gmail down keeps the last inbox,
               the TV loads nothing until Play, the map draws the feeds safely
      hubfail  every hub source is down: the hub says so and the chat still works (runs the ok turn)
+     (hub also: Markets from fake metals + currency snapshots, the AI brief through a fake brief path, the camera mosaic)
      arrange  a saved layout is restored and cleaned; Arrange moves, resizes, hides, drags and resets widgets;
               folding works and the TV keeps playing while it moves
    Layout is asserted in every mode: no horizontal overflow, the page itself never
@@ -25,7 +26,7 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub') }catch(e){}
+  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams') }catch(e){}
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
@@ -45,6 +46,12 @@
     {id:'a3',thread:'javascript:alert(1)',from:'Evil',subject:'Not a link',snippet:'',t:null,unread:true},
     {id:'a4',thread:'199a1b2c3d4e5f63',from:42,subject:'dropped',snippet:'',t:ago(3),unread:true}]};
   var logins=0;
+  // markets: gold-api live prices, and the currency snapshots for today and the day before
+  var METAL={XAU:4310.8, XAG:63.999, XPT:1790, XPD:1326, HG:6.376775};
+  var SNAP_TODAY={date:'2026-09-15', usd:{mxn:17.15, gbp:0.7416, eur:0.8669, xau:0.00023232, xag:0.0157876, xpt:0.00056284, xpd:0.00077382}};
+  var SNAP_YDAY={date:'2026-09-14', usd:{mxn:17.0009, gbp:0.74047, eur:0.86447, xau:1/4329.68, xag:1/63.909, xpt:1/1801.07, xpd:1/1298.4}};
+  // the brief path: one point carries markup, one names two sources
+  var BRIEF={ok:true, n:7, model:'grok-4.3', points:[{text:'Point one <b>bold</b>', sources:['BBC']}, {text:'Point two', sources:['Fox News','Times of Israel']}, {text:'Point three', sources:[]}]};
   // the map feeds: USGS (2 good quakes, 1 without coordinates) and GDACS (3 that should be drawn, 5 that should not)
   var QUAKES={type:'FeatureCollection',features:[
     {properties:{mag:5.6,place:'40 km S of Hualien, Taiwan',time:Date.now()-2*3600000,url:'https://earthquake.usgs.gov/earthquakes/eventpage/us1'},geometry:{coordinates:[121.6,23.6,10]}},
@@ -86,8 +93,13 @@
     if(/statsapi/.test(url)){ hubCalls.push('mlb'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,MLB) }
     if(/earthquake\.usgs\.gov/.test(url)){ hubCalls.push('quakes'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,QUAKES) }
     if(/gdacs\.org/.test(url)){ hubCalls.push('gdacs'); return FAIL_HUB ? res(503,'') : res(200,GDACS) }
+    var mg=url.match(/api\.gold-api\.com\/price\/([A-Z]+)/);
+    if(mg){ hubCalls.push('gold'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,{symbol:mg[1], price:METAL[mg[1]]}) }
+    if(/currency-api/.test(url)){ hubCalls.push('snap'); if(FAIL_HUB) return Promise.reject(new Error('down'));
+      return /latest/.test(url) ? res(200,SNAP_TODAY) : /2026-09-14/.test(url) ? res(200,SNAP_YDAY) : res(404,'') }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
-    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, json:!!(o&&o.headers)});
+    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, heads:(b&&b.get)?b.get('headlines'):null, json:!!(o&&o.headers)});
+    if(a==='brief') return pwd==='right' ? res(200, FAIL_HUB ? {ok:false, points:[], n:0} : BRIEF) : res(401,{error:'unauthorized'});
     if(a==='login'){
       if(pwd!=='right') return res(401,{error:'unauthorized'});
       logins++;
@@ -116,6 +128,10 @@
   function R(el){ if(!el) return {l:0,r:0,t:0,b:0}; var r=el.getBoundingClientRect(); return {l:r.left,r:r.right,t:r.top,b:r.bottom} }
   function attr(id,name){ var e=$(id); return e ? e.getAttribute(name) : null }
   function tile(w){ return document.querySelector('#hub .hb[data-w="'+w+'"]') }
+  // missing widgets must FAIL, not crash the harness: a check that never runs looks exactly like one that passed
+  function qa(id, sel){ var e=$(id); return e ? e.querySelectorAll(sel||'li') : [] }
+  function tx(id){ var e=$(id); return e ? e.textContent : '' }
+  function tap(id){ var e=$(id); if(e) e.click(); return !!e }
   function ord(w){ var t=tile(w); return t ? +getComputedStyle(t).order : NaN }
   // Hector 2026-09-15: "the tape strip ... not seamless, i can see a big gap before it restarts"
   function tapeOK(tag, tries){
@@ -225,8 +241,9 @@
         var tmr=R(tile('time')), ibr=R(tile('inbox')), tvr=R(tile('tv')), mpr=R(tile('map')), nwr=R(tile('news')), hr=R(hubEl);
         // Hector then asked for the hub side to scroll: folded, the first screen holds everything but the headlines
         T(ibr.b<=hr.b && tvr.b<=hr.b && mpr.b<=hr.b, 'folded, clock, weather, Dodgers, inbox, TV and map are all on the first screen ('+Math.round(Math.max(tvr.b,mpr.b)-hr.t)+' of '+Math.round(hr.b-hr.t)+')');
-        T(Math.abs(tmr.t-ibr.t)<=1 && Math.abs(tvr.t-mpr.t)<=1 && tvr.r<=mpr.l && tvr.t>=ibr.b-1 && nwr.t>=tvr.b && (nwr.r-nwr.l)>=(hr.r-hr.l)-60,
-          'clock, weather, Dodgers and the inbox in a row; the TV beside the map; headlines across the bottom');
+        var mkr=R(tile('markets')), cmr=R(tile('cams'));
+        T(Math.abs(tmr.t-ibr.t)<=1 && Math.abs(tvr.t-mpr.t)<=1 && tvr.r<=mpr.l && tvr.t>=ibr.b-1 && mkr.t>=tvr.b && (mkr.r-mkr.l)>=(hr.r-hr.l)-60 && cmr.t>=mkr.b && Math.abs(cmr.t-nwr.t)<=1 && cmr.r<=nwr.l,
+          'clock, weather, Dodgers and the inbox in a row; the TV beside the map; markets across; the cameras beside the news');
         var tvs=R($('tv-screen')); T(tvs.r-tvs.l>=420, 'the TV is big enough to watch ('+Math.round(tvs.r-tvs.l)+'x'+Math.round(tvs.b-tvs.t)+')');
       }
     } else {
@@ -240,6 +257,7 @@
       T(/unavailable/i.test($('h-cond').textContent) && $('h-temp').textContent==='--', 'weather down: it says so');
       T($('h-list').children.length===0 && /Refresh/.test($('h-note').textContent), 'no headlines: it says to tap Refresh');
       T($('h-mlb').hidden, 'no Dodgers data: the tile stays hidden');
+      T(!!$('mk-metals') && qa('mk-metals').length===0 && qa('mk-fx').length===0 && /unavailable/.test(tx('mk-note')), 'markets down: it says so');
       T($('ib-list').children.length===0 && /Refresh/.test($('ib-note').textContent) && $('ib-count').textContent==='', 'no inbox from an older workflow: it says to tap Refresh ('+$('ib-note').textContent+')');
     } else {
       T($('h-temp').textContent==='71' && $('now-temp').textContent==='71°', 'the temperature in the hub and the header');
@@ -250,6 +268,18 @@
       T(lis.length && lis[0].querySelector('.hl-t').textContent==='ToI one' && /20m/.test(lis[0].textContent), 'newest first, with its age');
       T([].every.call($('h-list').querySelectorAll('a'), function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'every headline opens safely in a new tab');
       T(!$('h-mlb').hidden && /Dodgers 5, Padres 2/.test($('h-last').textContent) && /at Giants/.test($('h-next').textContent), 'the Dodgers tile ('+$('h-last').textContent+' / '+$('h-next').textContent+')');
+      // Hector 2026-09-15: "the price of rare metals, the price of change of different coins (dollar, mexican peso, British pound)"
+      var mls=qa('mk-metals'), fls=qa('mk-fx');
+      T(mls.length===5 && /Gold/.test(mls[0].textContent) && /\$4,310\.80/.test(mls[0].textContent) && /\u22120\.44%/.test(mls[0].textContent) && mls[0].querySelector('.mk-c.down'),
+        'markets: gold live, with its change since yesterday ('+(mls[0]&&mls[0].textContent)+')');
+      T(mls.length===5 && /Copper/.test(mls[4].textContent) && /\/lb/.test(mls[4].textContent) && !mls[4].querySelector('.mk-c'), 'markets: copper per pound, price only (no snapshot to compare)');
+      T(fls.length===3 && /USD \u2192 MXN/.test(fls[0].textContent) && /17\.15/.test(fls[0].textContent) && /\+0\.88%/.test(fls[0].textContent) && fls[0].querySelector('.mk-c.up'),
+        'markets: the dollar in pesos, up since yesterday ('+(fls[0]&&fls[0].textContent)+')');
+      T(fls.length===3 && /GBP \u2192 USD/.test(fls[1].textContent) && /1\.3484/.test(fls[1].textContent) && /\u22120\.15%/.test(fls[1].textContent), 'markets: the pound in dollars ('+(fls[1]&&fls[1].textContent)+')');
+      T(/since yesterday/.test(tx('mk-note')), 'markets: says what the change compares to');
+      T(hubCalls.indexOf('gold')>-1 && hubCalls.indexOf('snap')>-1, 'markets come from the browser, not n8n');
+      T(!!$('brief-list') && qa('brief-list').length===0 && /One tap/.test(tx('brief-meta')) && /Summarize with Grok/.test(tx('brief-go')) && calls.every(function(c){ return c.a!=='brief' }),
+        'news: no brief and no Grok call until you tap Summarize');
       var ibs=$('ib-list').querySelectorAll('li');
       T(ibs.length===3, 'inbox: three messages, the malformed one dropped ('+ibs.length+')');
       T($('ib-count').textContent==='6 unread', 'inbox: the unread count ('+$('ib-count').textContent+')');
@@ -315,7 +345,7 @@
     T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
     $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
     var saved=JSON.parse(localStorage.getItem('esq_hub')||'{}');
-    T(Array.isArray(saved.order) && saved.order.length===7 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===9 && saved.hidden.join()==='dodgers',
+    T(Array.isArray(saved.order) && saved.order.length===9 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===9 && saved.hidden.join()==='dodgers',
       'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
     T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
     if(WIDE){
@@ -346,11 +376,38 @@
       T(!tvT.style.height && !tvT.classList.contains('sized'), 'double-clicking the handle fits the height to the content again');
     }
     $('hub-reset').click();
-    T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('news')
+    T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('markets') && ord('markets')<ord('cams') && ord('cams')<ord('news')
       && tile('news').classList.contains('shut') && tile('inbox').classList.contains('shut') && tile('map').getAttribute('data-size')==='M' && vis(tile('dodgers')) && !tile('tv').style.height, 'Reset layout puts everything back');
     $('hub-arrange').click();
     T($('hub-arrange').getAttribute('aria-pressed')==='false' && !vis(tools), 'Done hides the tools again');
     if(!WIDE) $('now').click();
+  }
+  // Hector 2026-09-15: "a mosaic option up to 4 cameras, 4 different frames ... select how many to reproduce, 1,2,3,4"
+  function camsOK(){
+    var g=$('cams-grid'); if(!g){ T(false, 'cameras: the mosaic exists'); return }
+    var frames=g.querySelectorAll('.cam'), shown=function(){ return [].filter.call(frames, vis).length };
+    T(frames.length===4 && g.getAttribute('data-n')==='2' && shown()===2 && !g.querySelector('iframe') && $('cams-n').querySelector('[aria-pressed="true"]').textContent==='2',
+      'cameras: two frames by default, and nothing loads until Play');
+    T(frames[0].querySelector('select').value==='wall' && frames[1].querySelector('select').value==='mideast' && frames[0].querySelectorAll('option').length===13, 'cameras: each frame picks its own camera (13 to choose from)');
+    $('cams-play').click();
+    var ifr=g.querySelectorAll('iframe');
+    T(ifr.length===2 && ifr[0].src==='https://www.youtube.com/embed/77akujLn4k8?autoplay=1&mute=1&playsinline=1&rel=0' && ifr[0].referrerPolicy==='strict-origin-when-cross-origin' && tile('cams').classList.contains('playing'),
+      'cameras: Play starts the frames on screen, muted');
+    $('cams-n').querySelector('[data-n="4"]').click();
+    ifr=g.querySelectorAll('iframe');
+    T(ifr.length===4 && shown()===4 && g.getAttribute('data-n')==='4', 'cameras: 4 frames play at once');
+    if(WIDE){ var f0=R(frames[0]), f1=R(frames[1]), f2=R(frames[2]); T(Math.abs(f0.t-f1.t)<=1 && f1.l>f0.r-1 && f2.t>=f0.b-1, 'cameras: four frames in a 2 x 2 mosaic'); }
+    var sel=frames[3].querySelector('select'); sel.value='iss'; sel.dispatchEvent(new Event('change', {bubbles:true}));
+    T(/awQzjn72bI0/.test(frames[3].querySelector('iframe').src) && frames[0].querySelector('iframe')===ifr[0], 'cameras: one frame switches to the Space Station, the others keep playing');
+    $('cams-n').querySelector('[data-n="1"]').click();
+    T(g.querySelectorAll('iframe').length===1 && shown()===1, 'cameras: 1 frame stops the other three');
+    $('cams-n').querySelector('[data-n="3"]').click();
+    T(g.querySelectorAll('iframe').length===3 && shown()===3, 'cameras: 3 frames');
+    if(WIDE){ var a3=R(frames[2]), gr3=R(g); T(Math.abs((a3.r-a3.l)-(gr3.r-gr3.l))<=2, 'cameras: with three, the third runs the full width'); }
+    $('cams-stop').click();
+    T(!g.querySelector('iframe') && !$('cams-play').hidden && !tile('cams').classList.contains('playing'), 'cameras: Stop removes every player');
+    var sv=JSON.parse(localStorage.getItem('esq_cams')||'{}');
+    T(sv.n===3 && Array.isArray(sv.picks) && sv.picks[3]==='iss', 'cameras: the count and the picks are remembered');
   }
   // the map, once its feeds have answered (call after a pause)
   function mapOK(allowAsk){
@@ -429,12 +486,27 @@
     if(mode==='hub'){
       if(!WIDE) $('now').click();
       var n0=calls.length; $('h-refresh').click();
-      T(calls.length===n0+1 && calls[n0].a==='login', 'Refresh asks n8n once, through the login call');
+      var nb=calls.length; tap('brief-go');
+      var bc=calls[nb], sentHeads=[]; try{ sentHeads=JSON.parse((bc && bc.heads) || '[]') }catch(e){}
+      T(calls[n0] && calls[n0].a==='login', 'Refresh asks n8n once, through the login call');
+      T(!!bc && bc.a==='brief' && calls.length===n0+2 && sentHeads.length>=6 && sentHeads.some(function(h){ return h.src==='Fox News' }) && sentHeads.some(function(h){ return h.src==='BBC' })
+        && sentHeads.every(function(h){ return typeof h.title==='string' && !('link' in h) }), 'Summarize sends the headlines to the brief path, one call, titles only ('+sentHeads.length+')');
+      T(!!$('brief-go') && $('brief-go').disabled && /reading/.test(tx('brief-meta')), 'while Grok reads, the button waits');
       setTimeout(function(){
         T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
         T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
         tvOK();
         mapOK(false);
+        camsOK();
+        var bps=qa('brief-list');
+        T(bps.length===3 && !$('brief-list').querySelector('b') && /<b>bold<\/b>/.test(bps[0].textContent), 'the brief shows its points, as text');
+        T([].map.call(bps[1] ? bps[1].querySelectorAll('.bp-s') : [], function(x){ return x.textContent }).join('|')==='Fox News|Times of Israel' && !!bps[0].querySelector('.hl-ask'), 'each point names its sources and has Ask');
+        T(tile('news').classList.contains('has-brief') && tile('news').classList.contains('shut') && !vis($('h-list')) && vis($('h-more')) && /Show all 6 headlines/.test(tx('h-more')),
+          'with a brief, the headline list folds away behind "Show all" ('+$('h-more').textContent+')');
+        T(/Summarized/.test(tx('brief-meta')) && /7 headlines/.test(tx('brief-meta')) && !!$('brief-go') && !$('brief-go').disabled && /again/.test(tx('brief-go')), 'it says when, and from how many headlines ('+tx('brief-meta')+')');
+        T((localStorage.getItem('esq_brief')||'').indexOf('Point two')>-1, 'the brief is kept on this device');
+        $('h-more').click();
+        T(vis($('h-list')) && !tile('news').classList.contains('shut'), '"Show all" opens the headlines under the brief');
         var ask=$('h-list').querySelector('.hl-ask'), n1=calls.length;
         if(!WIDE && $('scr-chat').className.indexOf('hubview')<0) $('now').click();
         ask.click();

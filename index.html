@@ -325,6 +325,51 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 /* the TV on air: its frame and the YouTube button light red (Hector) */
 .hb-tv.playing .tv-screen{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(224,27,27,.4)}
 .hb-tv.playing .hb-link{color:#fff;border-color:var(--red);background:rgba(224,27,27,.24);box-shadow:0 0 12px rgba(224,27,27,.55)}
+/* markets: metals and currencies, each with its change since yesterday */
+.mk-note{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--ink-faint)}
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 28px}
+.mk-cap{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+.mk-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 18px}
+.mk{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;min-width:0;font-variant-numeric:tabular-nums}
+.mk-n{font-size:13px;color:var(--ink-dim)}
+.mk-v{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink)}
+.mk-u{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-left:-6px}
+.mk-c{font-family:var(--mono);font-size:11px;font-weight:600}
+.mk-c.up{color:var(--go)}
+.mk-c.down{color:var(--red-hot)}
+.mk-c.flat{color:var(--ink-faint)}
+/* the AI news brief on top of the news; with a brief, the folded list hides behind "Show all" */
+.brief-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+.brief-bar .h-note{margin-top:0}
+.brief-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin:10px 0 2px}
+.brief-list:empty{display:none}
+.bp{position:relative;padding-left:14px;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.bp::before{content:'';position:absolute;left:0;top:.5em;width:6px;height:6px;background:var(--red)}
+.bp-m{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin-top:4px}
+.bp-s{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--red)}
+.bp-m .hl-ask{margin-left:auto}
+.hb-news.has-brief .brief{padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--rule)}
+.hb-news.shut.has-brief .brief{padding-bottom:0;border-bottom:0}
+.hb-news.shut.has-brief .h-list{display:none}
+/* live cameras: a mosaic of 1-4 frames */
+.cams-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.cams-n{display:inline-flex;border:1px solid var(--rule)}
+.cams-n button{min-width:28px;height:24px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-dim);background:rgba(0,0,0,.3)}
+.cams-n button+button{border-left:1px solid var(--rule)}
+.cams-n button:hover{color:var(--ink)}
+.cams-n button[aria-pressed="true"]{color:#fff;background:rgba(224,27,27,.3)}
+.cams-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.cams-grid[data-n="2"],.cams-grid[data-n="3"],.cams-grid[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cams-grid[data-n="3"] .cam:nth-child(3){grid-column:1/-1}
+.cam{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cam-pick{width:100%;min-width:0;font-family:var(--disp);font-size:16px;color:var(--ink);background:#0e0a0a;border:1px solid var(--rule);padding:2px 6px}
+.cam-screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--rule);overflow:hidden}
+.cam-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.hb-cams.playing .cam-screen{border-color:var(--red)}
+.hb-cams.shut .cams-grid,.hb-cams.shut .cams-bar,.hb-cams.shut .h-note{display:none}
+.hb-cams.shut .hb-h{margin-bottom:0}
+.hb-cams.sized .cams-grid{flex:1 1 auto;min-height:0;grid-auto-rows:minmax(0,1fr)}
+.hb-cams.sized .cam-screen{flex:1 1 auto;aspect-ratio:auto;min-height:60px}
 /* below 1100px these wrappers do not exist as boxes: the hub is one column, exactly as before */
 .side{display:contents}
 .garg,.hub-floor{display:none}
@@ -510,6 +555,13 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
               <button id="ib-more" class="hb-more" type="button" hidden></button>
               <p id="ib-note" class="h-note"></p>
             </section>
+            <section class="hb hb-markets" data-w="markets" aria-labelledby="mk-h">
+              <div class="hb-h"><span id="mk-h">Markets</span><span id="mk-note" class="mk-note"></span></div>
+              <div class="mk-grid">
+                <div><div class="mk-cap">Metals</div><ul id="mk-metals" class="mk-list"></ul></div>
+                <div><div class="mk-cap">Currencies</div><ul id="mk-fx" class="mk-list"></ul></div>
+              </div>
+            </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
               <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><a id="tv-yt" class="hb-link" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener">YouTube</a></div>
               <div id="tv-ch" class="tv-ch" role="group" aria-label="Channel"></div>
@@ -523,8 +575,14 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
               <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes and disaster alerts"></div>
               <p id="map-note" class="h-note">The map loads when the hub is on screen.</p>
             </section>
+            <section class="hb hb-cams" data-w="cams" aria-labelledby="cams-h">
+              <div class="hb-h"><button id="cams-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="cams-grid">Live cameras</button><span class="cams-bar"><span id="cams-n" class="cams-n" role="group" aria-label="How many cameras"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button></span><button id="cams-play" class="hb-btn" type="button">Play</button><button id="cams-stop" class="hb-btn" type="button" hidden>Stop</button></span></div>
+              <div id="cams-grid" class="cams-grid" data-n="2"></div>
+              <p id="cams-note" class="h-note">Nothing loads until you press Play. Cameras play muted.</p>
+            </section>
             <section class="hb hb-news" data-w="news" aria-labelledby="news-h">
-              <div class="hb-h"><button id="news-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="h-list">Headlines</button><button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
+              <div class="hb-h"><button id="news-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="h-list">News</button><button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
+              <div class="brief"><div class="brief-bar"><button id="brief-go" class="hb-btn" type="button">Summarize with Grok</button><span id="brief-meta" class="h-note"></span></div><ul id="brief-list" class="brief-list"></ul></div>
               <ol id="h-list" class="h-list"></ol>
               <button id="h-more" class="hb-more" type="button" hidden></button>
               <p id="h-note" class="h-note"></p>
@@ -686,7 +744,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
-    pw=''; clearPw(); clearInbox(); tvStop(); setBusy(false);
+    pw=''; clearPw(); clearInbox(); tvStop(); camsStop(); setBusy(false);
     show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
   }
   function show(id){
@@ -917,7 +975,9 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       b.setAttribute('data-title', h.title); b.setAttribute('data-src', h.src); meta.appendChild(b);
       li.appendChild(meta); ol.appendChild(li);
     });
-    $('h-more').hidden=pick.length<=HL_SHUT; $('h-more').textContent=(pick.length-HL_SHUT)+' more';
+    var hasBrief=!!(brief && brief.points && brief.points.length);
+    $('h-more').hidden=hasBrief ? !pick.length : pick.length<=HL_SHUT;
+    $('h-more').textContent=hasBrief ? 'Show all '+pick.length+' headlines' : (pick.length-HL_SHUT)+' more';
     $('h-note').textContent = !pick.length ? 'No headlines yet. Tap Refresh.'
       : serverNews ? 'Updated '+clockText(new Date(serverNews.t)) : '';
     if(pick.length && !newsSaid){ newsSaid=true; setTimeout(function(){ vc('news') }, 5000) }
@@ -953,7 +1013,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     hubInit(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
     if(hubOn) return;
     hubOn=true;
-    loadWeather(); loadFox(); loadMlb(); startMap();
+    loadWeather(); loadFox(); loadMlb(); startMap(); loadMarkets(); camsInit(); paintBrief();
     (function everyMinute(){ clock(); setTimeout(everyMinute, 60000-(Date.now()%60000)+50) })();
     setInterval(function(){
       if(document.hidden || !$('scr-chat').classList.contains('on')) return;
@@ -962,6 +1022,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       if(now-lastFox>=REFRESH_MS) loadFox();
       if(now-lastMlb>=MLB_MS) loadMlb();
       if(MAP && now-lastMap>=MAP_MS) loadEvents();
+      if(now-lastMk>=MK_MS) loadMarkets();
     }, 60000);
   }
   // on a phone the hub folds away behind the time in the header
@@ -1045,7 +1106,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
   var WIDGETS=[{w:'time', name:'Clock', span:3, minH:90}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Dodgers', span:3, minH:90},
     {w:'inbox', name:'Inbox', span:3, minH:110, shut:true}, {w:'tv', name:'Live news', span:6, minH:200}, {w:'map', name:'World events', span:6, minH:180},
-    {w:'news', name:'Headlines', span:12, minH:110, shut:true}];
+    {w:'markets', name:'Markets', span:12, minH:90}, {w:'cams', name:'Live cameras', span:6, minH:200}, {w:'news', name:'News', span:6, minH:110, shut:true}];
   var K_HUB='esq_hub', SPANS=[3,6,9,12], SPAN_WORD={3:'a quarter', 6:'half', 9:'three quarters', 12:'the full width'},
       LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=3, MAX_H=1400, IB_SHUT=3, HL_SHUT=3;
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
@@ -1124,6 +1185,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     add.hidden=!arranging || !hub.hidden.length;
     $('hub-reset').hidden=!arranging;
     if(hub.shut.tv || hub.hidden.indexOf('tv')>-1) tvStop();   // a folded or hidden TV does not keep playing out of sight
+    if(hub.shut.cams || hub.hidden.indexOf('cams')>-1) camsStop();
     startMap();   // a map that was unfolded, shown or resized redraws to its new box
   }
   // arrows: take the place of the nearest widget that is actually on screen
@@ -1183,6 +1245,184 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     $('tv-play').hidden=false; $('tv-stop').hidden=true; $('tv-note').textContent='Nothing loads until you press Play.';
     $('tv-screen').parentNode.classList.remove('playing');
   }
+
+  /* ---------- markets ----------
+     Metals live from gold-api.com (gold, silver, platinum, palladium in USD per troy ounce; copper per pound) and currency
+     rates from the fawazahmed0 currency snapshots on jsDelivr (with its pages.dev mirror): today's and yesterday's, so
+     every line shows its change since yesterday - the metals compare against the same snapshot. Both let a browser
+     read them with no key (measured 2026-09-15): 0 n8n executions, refreshed every 15 minutes while the tab is open.
+     Copper is not in the snapshots, so it shows its price alone. */
+  var METALS=[{sym:'XAU', name:'Gold', snap:'xau', unit:'oz'}, {sym:'XAG', name:'Silver', snap:'xag', unit:'oz'}, {sym:'XPT', name:'Platinum', snap:'xpt', unit:'oz'},
+    {sym:'XPD', name:'Palladium', snap:'xpd', unit:'oz'}, {sym:'HG', name:'Copper', snap:'', unit:'lb'}];
+  var FXS=[{name:'USD → MXN', rate:function(u){ return u.mxn }}, {name:'GBP → USD', rate:function(u){ return u.gbp ? 1/u.gbp : NaN }},
+    {name:'EUR → USD', rate:function(u){ return u.eur ? 1/u.eur : NaN }}];
+  var MK_MS=15*60*1000, lastMk=0;
+  function snapGet(tag){
+    function j(r){ if(!r.ok) throw new Error('snapshot '+r.status); return r.json() }
+    return fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@'+tag+'/v1/currencies/usd.min.json').then(j)
+      .catch(function(){ return fetch('https://'+tag+'.currency-api.pages.dev/v1/currencies/usd.min.json').then(j) })
+      .then(function(d){ return (d && d.usd && typeof d.usd==='object') ? d : null }).catch(function(){ return null });
+  }
+  function dayBefore(day){ var d=new Date(day+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()-1); return d.toISOString().slice(0,10) }
+  function loadMarkets(){
+    lastMk=Date.now();
+    var metals=Promise.all(METALS.map(function(m){
+      return fetch('https://api.gold-api.com/price/'+m.sym).then(function(r){ if(!r.ok) throw new Error('metal '+r.status); return r.json() })
+        .then(function(d){ return (d && num(d.price) && d.price>0) ? d.price : null }).catch(function(){ return null });
+    }));
+    var snaps=snapGet('latest').then(function(today){
+      if(!today || !/^\d{4}-\d\d-\d\d$/.test(String(today.date))) return [today, null];
+      return snapGet(dayBefore(today.date)).then(function(y){ return [today, y] });
+    });
+    return Promise.all([metals, snaps]).then(function(r){ paintMarkets(r[0], r[1][0], r[1][1]) });
+  }
+  function pct(now, before){ return (num(now) && num(before) && before>0) ? (now-before)/before*100 : null }
+  function mkItem(ul, name, value, unit, change){
+    var li=document.createElement('li'); li.className='mk';
+    var n=document.createElement('span'); n.className='mk-n'; n.textContent=name; li.appendChild(n);
+    var v=document.createElement('span'); v.className='mk-v'; v.textContent=value; li.appendChild(v);
+    if(unit){ var u=document.createElement('span'); u.className='mk-u'; u.textContent='/'+unit; li.appendChild(u) }
+    if(change!==null){
+      var c=document.createElement('span'), up=change>=0.005, down=change<=-0.005;
+      c.className='mk-c '+(up ? 'up' : down ? 'down' : 'flat');
+      c.textContent=(up ? '+' : down ? '−' : '')+Math.abs(change).toFixed(2)+'%';
+      li.appendChild(c);
+    }
+    ul.appendChild(li);
+  }
+  function paintMarkets(prices, today, yday){
+    var ml=$('mk-metals'), fl=$('mk-fx'), got=0; ml.textContent=''; fl.textContent='';
+    METALS.forEach(function(m, i){
+      var p=prices[i]; if(!num(p)) return; got++;
+      var y=(yday && m.snap) ? yday.usd[m.snap] : null;
+      mkItem(ml, m.name, '$'+p.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}), m.unit, pct(p, (num(y) && y>0) ? 1/y : null));
+    });
+    if(today) FXS.forEach(function(f){
+      var now=f.rate(today.usd); if(!num(now)) return; got++;
+      mkItem(fl, f.name, now.toFixed(now>=10 ? 2 : 4), '', yday ? pct(now, f.rate(yday.usd)) : null);
+    });
+    $('mk-note').textContent=got ? 'Change since yesterday · '+clockText(new Date()) : 'Market data unavailable right now';
+  }
+
+  /* ---------- the AI news brief ----------
+     Hector: "an AI summarize from all my news, that would be better and it would save me some space". One tap sends the
+     headlines the hub has to n8n's brief path: one grok-4.3 call that bypasses the Esquiffis agent, so nothing lands in
+     his memory or the session log. 1 execution and about 0.4 cents a brief (measured), never automatic. Grok may only
+     restate the headlines, and n8n drops any source name that was not in them. The last brief is kept on this device
+     (localStorage: public news only). */
+  var K_BRIEF='esq_brief', brief=null, briefing=false;
+  try{ var bs=JSON.parse(localStorage.getItem(K_BRIEF)||'null'); if(bs && Array.isArray(bs.points) && bs.t) brief=bs }catch(e){}
+  function newsForBrief(){
+    var all=((serverNews && serverNews.items) || []).concat(foxNews);
+    function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }
+    return all.slice().sort(function(a,b){ return ts(b)-ts(a) }).slice(0,30).map(function(h){ return {src:h.src, title:h.title, age:ago(h.t)} });
+  }
+  function paintBrief(){
+    var ul=$('brief-list'), meta=$('brief-meta'), go=$('brief-go'), t=tile('news'), pts=(brief && brief.points) || [];
+    ul.textContent='';
+    if(t) t.classList.toggle('has-brief', pts.length>0);
+    pts.forEach(function(p){
+      var li=document.createElement('li'); li.className='bp';
+      var tx=document.createElement('div'); tx.textContent=p.text; li.appendChild(tx);
+      var m=document.createElement('div'); m.className='bp-m';
+      p.sources.forEach(function(sn){ var sp=document.createElement('span'); sp.className='bp-s'; sp.textContent=sn; m.appendChild(sp) });
+      var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask'; b.setAttribute('data-text', p.text); m.appendChild(b);
+      li.appendChild(m); ul.appendChild(li);
+    });
+    go.disabled=briefing;
+    go.textContent=briefing ? 'Summarizing' : (pts.length ? 'Summarize again' : 'Summarize with Grok');
+    meta.textContent = briefing ? 'Grok is reading '+newsForBrief().length+' headlines…'
+      : (brief && brief.failed) ? (pts.length ? 'Grok did not answer. This brief is from '+clockText(new Date(brief.t))+'.' : 'Grok did not answer. Try again in a moment.')
+      : pts.length ? 'Summarized '+clockText(new Date(brief.t))+' from '+brief.n+' headlines'
+      : 'One tap: Grok sums up the headlines (1 execution).';
+  }
+  function runBrief(){
+    if(briefing || !pw) return;
+    var items=newsForBrief();
+    if(!items.length){ $('brief-meta').textContent='No headlines to summarize yet. Tap Refresh.'; return }
+    briefing=true; paintBrief();
+    function failed(){ brief={t:(brief && brief.t) || 0, n:(brief && brief.n) || 0, points:(brief && brief.points) || [], failed:true} }
+    post({action:'brief', password:pw, headlines:JSON.stringify(items)}).then(function(r){
+      if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.json().then(function(d){
+        var pts=(d && Array.isArray(d.points) ? d.points : []).filter(function(p){ return p && typeof p.text==='string' && p.text.trim() }).slice(0,6)
+          .map(function(p){ return {text:p.text.trim().slice(0,300), sources:(Array.isArray(p.sources) ? p.sources : []).filter(function(x){ return typeof x==='string' && x }).slice(0,5)} });
+        if(d && d.ok===true && pts.length){
+          brief={t:Date.now(), n:(typeof d.n==='number' && d.n>0) ? d.n : items.length, points:pts};
+          try{ localStorage.setItem(K_BRIEF, JSON.stringify(brief)) }catch(e){}
+          vc('news');
+        } else failed();
+      });
+    }).catch(failed).finally(function(){ briefing=false; paintBrief(); paintNews() });
+  }
+
+  /* ---------- live cameras ----------
+     Hector: "a mosaic option up to 4 cameras, 4 different frames ... select how many to reproduce, 1,2,3,4". Each frame
+     picks its own camera. YouTube's player is created on Play and removed on Stop, and plays muted so four streams do
+     not talk over each other (unmute inside a player). 0 n8n executions - but every playing camera is a live video
+     stream, so four at once is real CPU on a 2017 Mac. Streams measured live and embeddable in WebKit from this page's
+     address on 2026-09-15; a camera that ends its stream shows YouTube's "unavailable" - pick another. The count and the
+     picks are remembered on this device. */
+  var CAMS=[
+    {k:'wall', name:'Jerusalem · Western Wall', vid:'77akujLn4k8'},
+    {k:'mideast', name:'Middle East · Israel, Iran and more', vid:'AkqGOcpDvZU'},
+    {k:'kyiv', name:'Ukraine · Kyiv and more', vid:'IcZ-7sFi1HM'},
+    {k:'dc', name:'Washington · Washington Monument', vid:'oDCAAfOSqvA'},
+    {k:'wh', name:'Washington · White House', vid:'5p_KGD4fJZs'},
+    {k:'nyc', name:'New York · Times Square', vid:'JQ_jwk_7OVE'},
+    {k:'la', name:'Los Angeles · Hollywood', vid:'YHWJd_DNgKY'},
+    {k:'smpier', name:'Santa Monica · Pier', vid:'v97JpT3ZA0w'},
+    {k:'mecca', name:'Mecca · Masjid al-Haram', vid:'eC4LfEVxvKg'},
+    {k:'london', name:'London · Abbey Road', vid:'zMCea32gpmg'},
+    {k:'taipei', name:'Taipei · Taipei 101', vid:'z_fY1pj1VBw'},
+    {k:'tokyo', name:'Tokyo · Shibuya Crossing', vid:'dfVK7ld38Ys'},
+    {k:'iss', name:'Space · International Space Station', vid:'awQzjn72bI0'}];
+  var K_CAMS='esq_cams', cams={n:2, picks:['wall','mideast','kyiv','dc']}, camsOn=false, camsReady=false;
+  function camBy(k){ for(var i=0;i<CAMS.length;i++) if(CAMS[i].k===k) return CAMS[i]; return null }
+  try{
+    var cs0=JSON.parse(localStorage.getItem(K_CAMS)||'null');
+    if(cs0 && [1,2,3,4].indexOf(cs0.n)>-1) cams.n=cs0.n;
+    if(cs0 && Array.isArray(cs0.picks)) cs0.picks.slice(0,4).forEach(function(k,i){ if(camBy(k)) cams.picks[i]=k });
+  }catch(e){}
+  function camsSave(){ try{ localStorage.setItem(K_CAMS, JSON.stringify(cams)) }catch(e){} }
+  function camsInit(){
+    if(camsReady) return;
+    camsReady=true;
+    var g=$('cams-grid');
+    for(var i=0;i<4;i++){
+      var f=document.createElement('div'); f.className='cam'; f.setAttribute('data-i', String(i));
+      var sel=document.createElement('select'); sel.className='cam-pick'; sel.setAttribute('aria-label', 'Camera '+(i+1));
+      CAMS.forEach(function(c){ var o=document.createElement('option'); o.value=c.k; o.textContent=c.name; sel.appendChild(o) });
+      sel.value=cams.picks[i];
+      var scr=document.createElement('div'); scr.className='cam-screen';
+      f.appendChild(sel); f.appendChild(scr); g.appendChild(f);
+    }
+    camsPaint();
+  }
+  function camsPaint(){
+    if(!camsReady) return;
+    var g=$('cams-grid'); g.setAttribute('data-n', String(cams.n));
+    [].forEach.call($('cams-n').querySelectorAll('button'), function(b){ b.setAttribute('aria-pressed', +b.getAttribute('data-n')===cams.n ? 'true' : 'false') });
+    [].forEach.call(g.querySelectorAll('.cam'), function(f, i){
+      var on=i<cams.n, scr=f.querySelector('.cam-screen'), ifr=scr.querySelector('iframe'), c=camBy(cams.picks[i]);
+      f.hidden=!on;
+      if(camsOn && on && c){
+        if(!ifr){
+          ifr=document.createElement('iframe');
+          ifr.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen'); ifr.setAttribute('allowfullscreen', '');
+          ifr.referrerPolicy='strict-origin-when-cross-origin';   // YouTube refuses embeds that do not say which site they are on
+          scr.appendChild(ifr);
+        }
+        var want='https://www.youtube.com/embed/'+c.vid+'?autoplay=1&mute=1&playsinline=1&rel=0';
+        if(ifr.getAttribute('src')!==want){ ifr.src=want; ifr.title=c.name }
+      } else if(ifr) ifr.remove();
+    });
+    $('cams-play').hidden=camsOn; $('cams-stop').hidden=!camsOn;
+    var t=tile('cams'); if(t) t.classList.toggle('playing', camsOn);
+    $('cams-note').textContent=camsOn ? cams.n+(cams.n>1 ? ' cameras' : ' camera')+' playing, muted. Unmute inside a player.' : 'Nothing loads until you press Play. Cameras play muted.';
+  }
+  function camsStop(){ camsOn=false; camsPaint() }
 
   /* ---------- world events map ----------
      Earthquakes M4.5+ in the last day (USGS) and current disaster alerts (GDACS: cyclones, floods, volcanoes,
@@ -1392,6 +1632,24 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   }
   document.addEventListener('pointerup', dragEnd);
   document.addEventListener('pointercancel', dragEnd);
+  $('brief-go').addEventListener('click', runBrief);
+  $('brief-list').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
+    if(!b || busy) return;
+    box.value='Tell me more about this, from my news brief: "'+b.getAttribute('data-text')+'"';
+    send();
+  });
+  $('cams-play').addEventListener('click', function(){ camsOn=true; camsPaint() });
+  $('cams-stop').addEventListener('click', camsStop);
+  $('cams-n').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button[data-n]') : null; if(!b) return;
+    cams.n=+b.getAttribute('data-n'); camsSave(); camsPaint();
+  });
+  $('cams-grid').addEventListener('change', function(e){
+    var sel=e.target; if(!sel.classList || !sel.classList.contains('cam-pick')) return;
+    var i=+sel.parentNode.getAttribute('data-i');
+    if(camBy(sel.value)){ cams.picks[i]=sel.value; camsSave(); camsPaint() }
+  });
   $('tv-play').addEventListener('click', tvPlay);
   $('tv-stop').addEventListener('click', tvStop);
   $('tv-ch').addEventListener('click', function(e){
