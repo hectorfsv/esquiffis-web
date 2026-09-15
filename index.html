@@ -112,12 +112,12 @@ button{cursor:pointer}
 @keyframes heroIn{from{opacity:0;scale:1.06}to{opacity:1;scale:1}}
 .art::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.6) 20%,transparent 38%)}
 .lock-form{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:14px;
-  padding:14px max(18px,env(safe-area-inset-right)) 16px max(18px,env(safe-area-inset-left))}
+  padding:14px max(18px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
 .mark{font-family:var(--word);font-weight:400;font-size:100px;line-height:.84;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;
   color:var(--ink);text-align:center;padding-top:.05em;
   text-shadow:0 0 38px rgba(224,27,27,.32),0 2px 18px rgba(0,0,0,.65)}
 .mark span{display:inline-block}
-.gate{display:flex;flex-direction:column;gap:10px;width:100%}
+.gate{position:relative;display:flex;flex-direction:column;gap:10px;width:100%}
 .sub{display:none;color:var(--ink-dim);font-size:15px}
 .slot{display:flex;flex-direction:column;gap:10px}
 .slot input{width:100%;min-width:0;font-family:var(--mono);font-size:16px;letter-spacing:.28em;text-align:center;color:var(--ink);
@@ -397,17 +397,19 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .garg,.hub-floor{display:none}
 
 /* ---------- VaderClawd ----------
-   Phone lock screen: a strip under the card. Everywhere else he lives INSIDE the card: on a narrow screen
-   standing just above the chat box, on a wide one walking the bottom of the card behind the chat box
-   (Hector 2026-09-14). The page moves this one element between those homes (placePet). */
+   He always lives INSIDE the card. Lock screen (Hector 2026-09-15: "put the passphrase space all the way to the
+   bottom of the screen, put vaderclawd inside the box"): where the passphrase spans the screen he stands on it,
+   where it leaves open floor he walks the bottom behind it. Chat: on a narrow screen standing just above the chat
+   box, on a wide one his own floor under the hub. The page moves this one element between those homes (placePet). */
 .petbar{position:relative;z-index:2;flex:none;height:var(--pet);width:100%}
 .petbar::after{content:'';position:absolute;left:0;right:0;bottom:5px;height:1px;pointer-events:none;
   background:linear-gradient(90deg,transparent,var(--rule-hot) 15%,var(--rule-hot) 85%,transparent);opacity:.45}
 .petbar canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-@media (max-width:759px){ .app>.petbar{background:linear-gradient(180deg,var(--panel-lo),#000)} }
 .screen .petbar{position:absolute;left:0;right:0;bottom:0;width:auto;z-index:0;pointer-events:none}
 .chat .dock .petbar{bottom:100%;height:var(--petc);background:none}
 .chat .dock .petbar::after{display:none}
+.gate .petbar{bottom:100%;height:var(--petc)}   /* standing on the passphrase box */
+.gate .petbar::after{display:none}
 .app.kb .petbar{display:none}   /* the phone keyboard is up: the conversation needs the room */
 
 /* ---------- wide: the card ---------- */
@@ -459,7 +461,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .frame{padding-top:8px}
   .head{padding-top:6px;padding-bottom:6px}
   .sub{display:none}
-  .lock-form{padding-top:10px;padding-bottom:10px}
+  .lock-form{padding-top:10px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
 }
 /* narrow chat: he stands above the chat box, so the newest message stays above him; the chip is just its light */
 .chat .log{padding-bottom:calc(var(--petc) + 10px)}
@@ -681,12 +683,13 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     return 1.25;
   }
   window.PET_SCALE=petScale();
-  // his home right now: phone lock screen = under the card; narrow chat = above the chat box;
-  // wide lock screen = the bottom of the card; wide chat = his own floor under the hub widgets
+  // his home right now: narrow chat = above the chat box; wide chat = his own floor under the hub widgets;
+  // lock screen = on the passphrase box when it spans the screen (a phone held upright), otherwise the bottom of the
+  // lock screen behind it - measured, not another breakpoint
   function petHome(){
-    var chatting=$('scr-chat').classList.contains('on');
-    if(isWide()) return chatting ? $('hub-floor') : $('scr-lock');
-    return chatting ? $('dock') : app;
+    if($('scr-chat').classList.contains('on')) return isWide() ? $('hub-floor') : $('dock');
+    var scr=$('scr-lock'), gate=scr.querySelector('.gate');
+    return gate && gate.getBoundingClientRect().width>=scr.clientWidth*.7 ? gate : scr;
   }
   function placePet(){
     var st=$('vc-stage'), home=petHome();
@@ -920,7 +923,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      What each costs (Ninth Rule). The clock, the weather (Open-Meteo), Fox News and the Dodgers (MLB's own
      API) come straight from the browser: 0 n8n executions. BBC, Jerusalem Post and Times of Israel do not let a
      browser read their feeds, so Esquiffis fetches them inside the login call that already happens: 0 extra.
-     The inbox rides the same login call: 0 extra. Refresh (either button) asks for both again: 1 execution.
+     The inbox rides the same login call: 0 extra. Refresh (either button), or every 2 hours by itself, asks for both again: 1 execution.
      Gargantua is a still picture on this site: 0. The TV (YouTube) and the map (USGS, GDACS, CARTO tiles) are read
      by the browser (map tiles from Esri): 0. Nothing is fetched until you unlock, and the TV loads nothing until you press Play. */
   var WX_URL='https://api.open-meteo.com/v1/forecast?latitude=34.3917&longitude=-118.5426'
@@ -1002,7 +1005,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     $('h-more').hidden=hasBrief ? !pick.length : pick.length<=HL_SHUT;
     $('h-more').textContent=hasBrief ? 'Show all '+pick.length+' headlines' : (pick.length-HL_SHUT)+' more';
     $('h-note').textContent = !pick.length ? 'No headlines yet. Tap Refresh.'
-      : serverNews ? 'Updated '+clockText(new Date(serverNews.t)) : '';
+      : serverNews ? 'Updated '+clockText(new Date(serverNews.t))+' \u00B7 refreshes every 2 hours' : '';
     if(pick.length && !newsSaid){ newsSaid=true; setTimeout(function(){ vc('news') }, 5000) }
   }
   function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2) }
@@ -1034,14 +1037,18 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   }
   function startHub(fresh){
     hubInit(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
-    if(hubOn){ if(fresh) runBrief(); return }   // unlocking again in the same tab: a new brief, the rest is already running
+    if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
     loadWeather(); var fox=loadFox(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
     if(fresh){
+      lastServerTry=Date.now();   // the login call that just happened is the inbox and headlines refresh
       // the login just brought BBC and Jerusalem Post; let Fox land (or 4 s pass), then one brief for everything
       var fired=false, briefNow=function(){ if(!fired){ fired=true; runBrief() } };
       fox.then(briefNow, briefNow); setTimeout(briefNow, 4000);
-    } else lastBriefTry=(brief && brief.t) || Date.now();   // a reload: no brief until the kept one is 2 hours old
+    } else {   // a reload: nothing is spent until what the page kept is 2 hours old
+      lastBriefTry=(brief && brief.t) || Date.now();
+      lastServerTry=Math.max((inbox && inbox.t) || 0, (serverNews && serverNews.t) || 0) || Date.now();
+    }
     (function everyMinute(){ clock(); setTimeout(everyMinute, 60000-(Date.now()%60000)+50) })();
     setInterval(function(){ hubTick(Date.now()) }, 60000);
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) hubTick(Date.now()) });
@@ -1049,8 +1056,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   /* Everything the browser refreshes by itself - 0 n8n executions (Hector 2026-09-15: "the stuff than can be refresh
      auto without execution from N8N, do it"): weather, Fox headlines, the map's quakes and alerts, and markets every
      15 minutes, the Dodgers every 30, and anything stale the moment the tab comes back. Hidden tabs and the lock screen
-     fetch nothing. The brief needs an n8n execution and refreshes every 2 hours (Hector's choice); the inbox and the BBC
-     and Jerusalem Post headlines need one too and refresh only at login or on a tap. */
+     fetch nothing. The brief, and the inbox with the BBC and Jerusalem Post headlines (one login call), each need an n8n
+     execution: both refresh every 2 hours while the hub is open (Hector's choice), and on their Refresh buttons. */
   function hubTick(now){
     if(document.hidden || !$('scr-chat').classList.contains('on')) return;
     if(now-lastWx>=REFRESH_MS) loadWeather();
@@ -1058,7 +1065,9 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     if(now-lastMlb>=MLB_MS) loadMlb();
     if(now-lastMap>=MAP_MS) loadEvents();
     if(now-lastMk>=MK_MS) loadMarkets();
-    if(pw && !briefing && now-lastBriefTry>=BRIEF_MS) runBrief();   // the brief: 1 execution every 2 hours while the hub is open
+    var serverDue=pw && !refreshing && now-lastServerTry>=SERVER_MS, briefDue=pw && !briefing && now-lastBriefTry>=BRIEF_MS;
+    if(serverDue) refreshHub(null, briefDue);   // the inbox + BBC and Jerusalem Post headlines: 1 execution every 2 hours; a due brief waits for them
+    else if(briefDue) runBrief();               // the brief: 1 execution every 2 hours while the hub is open
   }
   // on a phone the hub folds away behind the time in the header
   function hubView(on){
@@ -1114,13 +1123,15 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     $('ib-more').hidden=inbox.items.length<=IB_SHUT; $('ib-more').textContent=(inbox.items.length-IB_SHUT)+' more';
     note.textContent = !inbox.items.length ? 'Nothing in Primary.'
       : inbox.failed ? 'Gmail did not answer at '+clockText(new Date(inbox.failed))+'. Showing '+clockText(new Date(inbox.t))+'.'
-      : 'Updated '+clockText(new Date(inbox.t));
+      : 'Updated '+clockText(new Date(inbox.t))+' \u00B7 refreshes every 2 hours';
   }
-  // one login call brings the headlines AND the inbox: 1 execution, whichever Refresh you tap
-  var refreshing=false;
-  function refreshHub(){
+  // one login call brings the headlines AND the inbox: 1 execution, whichever Refresh you tap - and every 2 hours by itself
+  // (Hector 2026-09-15: "The inbox, same than the headlines, just update every 2 hrs and manually"). thenBrief: the brief
+  // was due at the same moment, so it runs once the fresh headlines have landed.
+  var refreshing=false, lastServerTry=0, SERVER_MS=2*60*60*1000;
+  function refreshHub(e, thenBrief){
     if(refreshing || !pw) return;
-    refreshing=true;
+    refreshing=true; lastServerTry=Date.now();
     var btns=[$('h-refresh'), $('ib-refresh')];
     btns.forEach(function(b){ b.disabled=true; b.textContent='Refreshing' });
     loadFox();
@@ -1129,7 +1140,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       if(!r.ok) throw new Error('http '+r.status);
       return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox) });
     }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.' })
-      .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }) });
+      .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }); if(thenBrief === true) runBrief() });
   }
 
   /* ---------- the hub you arrange ----------

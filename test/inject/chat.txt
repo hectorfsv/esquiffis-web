@@ -167,8 +167,19 @@
       var p=R($('pw')), mid=document.elementFromPoint(Math.round((p.l+p.r)/2), Math.round((p.t+p.b)/2));
       T(mid===$('pw'), 'he walks behind the passphrase, never over it');
     } else {
-      T(pb.t>=pn.b-1 && pb.t>=R($('unlock')).b, 'VaderClawd roams below the card and the Unlock button');
-      T(Math.abs((pb.r-pb.l)-innerWidth)<=1, 'his strip spans the whole window ('+Math.round(pb.r-pb.l)+')');
+      // Hector 2026-09-15: "put the passphrase space all the way to the bottom of the screen, put vaderclawd inside the box"
+      var gate=document.querySelector('.gate'), gr=R(gate), ub=innerHeight-R($('unlock')).b;
+      T(Math.abs(pn.b-innerHeight)<=1, 'no strip under the card: the lock screen reaches the bottom of the screen ('+Math.round(pn.b)+' of '+innerHeight+')');
+      T(ub<=64, 'the passphrase is all the way down: under Unlock only the message line and the edge ('+Math.round(ub)+'px)');
+      T(pb.t>=pn.t && pb.b<=pn.b+1 && pb.l>=pn.l-1 && pb.r<=pn.r+1, 'VaderClawd is inside the box');
+      T(!hit(pb,face), 'VaderClawd stays clear of Vader\'s face');
+      if(innerWidth<760 && innerHeight>500) T(st.parentNode===gate && Math.abs(pb.b-gr.t)<=1 && pb.l>=gr.l-1 && pb.r<=gr.r+1, 'phone upright: he stands on the passphrase box, its width');
+      else if(st.parentNode===gate) T(Math.abs(pb.b-gr.t)<=1, 'he stands on the passphrase box');
+      else {
+        T(st.parentNode===$('scr-lock') && Math.abs(pb.b-scr.b)<=1, 'he walks the bottom of the lock screen, beside the passphrase');
+        var p2=R($('pw')), mid2=document.elementFromPoint(Math.round((p2.l+p2.r)/2), Math.round((p2.t+p2.b)/2));
+        T(mid2===$('pw'), 'he walks behind the passphrase, never over it');
+      }
     }
   }
   function petOK(tag, sized){
@@ -297,7 +308,7 @@
       T(!!a0 && a0.href==='https://mail.google.com/mail/u/0/#all/199a1b2c3d4e5f60' && a0.target==='_blank' && /noopener/.test(a0.rel), 'inbox: a message opens in Gmail in a new tab ('+(a0&&a0.href)+')');
       T(ibs.length===3 && !ibs[2].querySelector('a') && !$('ib-list').querySelector('b') && /<b>bold<\/b>/.test(ibs[1].textContent), 'inbox: a bad thread id is not a link, and markup in a subject stays text');
       T(JSON.stringify(localStorage).indexOf('Masterbuilt')<0 && (sessionStorage.getItem('esq_inbox')||'').indexOf('Masterbuilt')>-1, 'inbox: kept for this tab only, never in localStorage');
-      T(/Updated/.test($('ib-note').textContent), 'inbox: says when it was read ('+$('ib-note').textContent+')');
+      T(/Updated/.test($('ib-note').textContent) && /every 2 hours/.test($('ib-note').textContent), 'inbox: says when it was read, and that it refreshes every 2 hours ('+$('ib-note').textContent+')');
       var ibr=$('ib-list').querySelectorAll('.ib-from'), spill=[].filter.call(ibr, function(e){ return vis(e) && getComputedStyle(e).textOverflow!=='ellipsis' && e.scrollWidth>e.clientWidth+1 });
       T(spill.length===0, 'inbox: long sender names end in an ellipsis, never spill');
       if(mode!=='arrange'){
@@ -503,7 +514,7 @@
     setTimeout(function(){
       petOK('lock', true);   // his first frame sizes the canvas
       tapeOK('lock');        // after the webfont has had its chance to land
-      spotsOK('lock', WIDE ? [R(document.querySelector('.gate'))] : []);
+      spotsOK('lock', $('vc-stage').parentNode===$('scr-lock') ? [R(document.querySelector('.gate'))] : []);
       T(hubCalls.length===0, 'nothing is fetched for the hub before you unlock ('+hubCalls.join(',')+')');
       $('pw').value = mode==='badpw' ? 'wrong' : 'right';
       $('unlock').click();
@@ -563,13 +574,17 @@
         T(vis($('h-list')) && !tile('news').classList.contains('shut'), '"Show all" opens the headlines under the brief');
         var nN8n2=calls.length;
         var b3=briefCalls.length; if(typeof window.__esq.hubTick==='function') (window.__esq.hubTick)(Date.now()+2*60*60000+60000);
-        T(briefCalls.length===b3+1 && calls.length===nN8n2, 'the brief refreshes itself after 2 hours (one brief call, nothing else from n8n)');
+        // Hector 2026-09-15: "The inbox, same than the headlines, just update every 2 hrs and manually"
+        T(calls.length===nN8n2+1 && !!calls[nN8n2] && calls[nN8n2].a==='login' && briefCalls.length===b3,
+          'after 2 hours the inbox and headlines refresh by themselves (one login call), and the due brief waits for them');
         var ask=$('h-list').querySelector('.hl-ask'), n1=calls.length;
         if(!WIDE && $('scr-chat').className.indexOf('hubview')<0) $('now').click();
         ask.click();
         T(calls.length===n1+1 && calls[n1].a==='chat' && /ToI one/.test(calls[n1].msg||''), 'Ask sends the headline to Esquiffis ('+(calls[n1]&&calls[n1].msg)+')');
         T(vis($('log')) && $('scr-chat').className.indexOf('hubview')<0, 'and shows the conversation');
         setTimeout(function(){
+          T(briefCalls.length===b3+1, 'then the brief refreshes once, from the fresh headlines');
+          T(/every 2 hours/.test(tx('ib-note')) || /did not answer/.test(tx('ib-note')), 'the inbox says it refreshes every 2 hours ('+tx('ib-note')+')');
           floorOK('hub'); layout('hub');
           if(!WIDE) $('now').click();
           var ia=$('ib-list').querySelector('.hl-ask'), n2=calls.length; ia.click();
