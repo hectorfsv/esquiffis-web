@@ -180,15 +180,19 @@
     T(vis(st), tag+': VaderClawd is on screen');
     if(WIDE){
       // Hector 2026-09-15: VaderClawd inside the hub, never in the chat half, never inside a widget
-      var sd=R(document.querySelector('.side')), tk=R(document.querySelector('.talk')), hb=R($('hub'));
-      T(st.parentNode===$('hub-floor') && Math.abs(p.b-sd.b)<=1 && Math.abs(p.l-sd.l)<=1 && Math.abs(p.r-sd.r)<=2, tag+': his floor is the bottom of the hub half, its full width');
-      T(p.r<=tk.l+1, tag+': he never walks into the chat half ('+Math.round(p.r)+' <= '+Math.round(tk.l)+')');
-      T(hb.b<=p.t+1, tag+': the widgets end where his floor starts ('+Math.round(hb.b)+' <= '+Math.round(p.t)+')');
+      var sd=R(document.querySelector('.side')), tk=R(document.querySelector('.talk')), hb=R($('hub')), band=R($('hub-floor')), hubCs=getComputedStyle($('hub'));
+      T(st.parentNode===$('hub-floor') && Math.abs(p.b-sd.b)<=1 && Math.abs(p.l-sd.l)<=1 && Math.abs(p.r-sd.r)<=2, tag+': his floor is the bottom of the hub side, its full width');
+      // Hector 2026-09-15: "i like his size but i dont want to risk that much screen. blend him in"
+      T(band.b-band.t<=80 && p.b-p.t>=150, tag+': blended in - he keeps his size ('+Math.round(p.b-p.t)+'px canvas) but reserves only '+Math.round(band.b-band.t)+'px');
+      T(p.r<=tk.l+1, tag+': he never walks into the chat ('+Math.round(p.r)+' <= '+Math.round(tk.l)+')');
+      T(hb.b<=band.t+1, tag+': the widgets stop at his feet band ('+Math.round(hb.b)+' <= '+Math.round(band.t)+')');
+      T((+hubCs.zIndex)>(+getComputedStyle($('hub-floor')).zIndex), tag+': widgets pass in front of him, never under him');
+      T(parseFloat(hubCs.paddingBottom)>=(p.b-p.t)-(band.b-band.t), tag+': the last widgets can scroll clear above his head ('+hubCs.paddingBottom+')');
       var inTile='';
-      for(var x=p.l+4; x<p.r-4 && !inTile; x+=24){
-        [p.t+4, (p.t+p.b)/2, p.b-4].forEach(function(y){ var e=document.elementFromPoint(Math.round(x), Math.round(y)); if(e && e.closest && e.closest('.hb')) inTile=Math.round(x)+','+Math.round(y) });
+      for(var x=band.l+4; x<band.r-4 && !inTile; x+=24){
+        [band.t+4, band.b-4].forEach(function(y){ var e=document.elementFromPoint(Math.round(x), Math.round(y)); if(e && e.closest && e.closest('.hb')) inTile=Math.round(x)+','+Math.round(y) });
       }
-      T(!inTile, tag+': no widget anywhere on his floor (the Dodgers tile bug)'+(inTile?' at '+inTile:''));
+      T(!inTile, tag+': no widget in his feet band (the Dodgers tile bug)'+(inTile?' at '+inTile:''));
       spotsOK(tag, []);
     } else {
       T(st.parentNode===$('dock') && Math.abs(p.b-c.t)<=1, tag+': he stands just above the chat box, inside the card');
@@ -202,11 +206,15 @@
       // Hector 2026-09-15: "the chat can be half that size, in the right corner of the whole window. and center the vader image to the chat"
       var sc=R($('scr-chat')), tk=R(document.querySelector('.talk')), sd=R(document.querySelector('.side')), want=Math.min(640, Math.max(400, .25*(sc.r-sc.l)));
       T(Math.abs((tk.r-tk.l)-want)<=2 && Math.abs(tk.r-sc.r)<=1, 'the conversation is the right quarter of the window ('+Math.round(tk.r-tk.l)+' of '+Math.round(sc.r-sc.l)+')');
-      var ca=document.querySelector('.chat-art'), car=R(ca), vi=R(ca.querySelector('img')), faceX=vi.l+(vi.r-vi.l)*.38;
+      // Hector 2026-09-15: "make gargantua the background of the whole window, even the chat ... keep vader but turn the
+      // opacity down a lil bit, and center it better" - centered on the measured box of his whole figure (x .236-.885)
+      var ca=document.querySelector('.chat-art'), car=R(ca), vi=R(ca.querySelector('img')), figX=vi.l+(vi.r-vi.l)*.5605;
       T(vis(ca) && car.l>=tk.l-1 && car.r<=tk.r+1, 'the Vader art is the background of the chat column only');
-      T(Math.abs(faceX-(tk.l+tk.r)/2)<=4, 'Vader is centered in the chat ('+Math.round(faceX)+' vs '+Math.round((tk.l+tk.r)/2)+')');
-      var g=document.querySelector('.garg'), gr=R(g), gi=g.querySelector('img');
-      T(vis(g) && Math.abs(gr.l-sd.l)<=1 && Math.abs(gr.r-sd.r)<=1 && Math.abs(gr.t-sd.t)<=1 && Math.abs(gr.b-sd.b)<=1, 'Gargantua fills the hub side');
+      T(Math.abs(figX-(tk.l+tk.r)/2)<=4, 'Vader, saber and all, is centered in the chat ('+Math.round(figX)+' vs '+Math.round((tk.l+tk.r)/2)+')');
+      T(parseFloat(getComputedStyle(ca).opacity)<=.15, 'Vader is dimmer behind the chat ('+getComputedStyle(ca).opacity+')');
+      var g=document.querySelector('.garg'), gr=R(g), gi=g.querySelector('img'), scr=R($('scr-chat')), tkc=getComputedStyle(document.querySelector('.talk'));
+      T(vis(g) && Math.abs(gr.l-scr.l)<=1 && Math.abs(gr.r-scr.r)<=1 && Math.abs(gr.t-scr.t)<=1 && Math.abs(gr.b-scr.b)<=1, 'Gargantua is the background of the whole screen, the chat included');
+      T(tkc.backgroundColor==='rgba(0, 0, 0, 0)' && /rgba\(6, 4, 5, 0\.6/.test(tkc.backgroundImage), 'the chat is a dark veil over Gargantua, not a solid panel');
       T(!g.querySelector('video') && !!gi && /gargantua\.jpg$/.test(gi.getAttribute('src')), 'Gargantua is a still picture, no video');
       var hubEl=$('hub'), parts=[].filter.call(hubEl.querySelectorAll('.hb[data-w]'), vis), clash='';
       parts.forEach(function(a,i){ parts.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) clash=a.getAttribute('data-w')+' / '+b.getAttribute('data-w') }) });
@@ -290,11 +298,11 @@
     var before=ord('weather'); tile('inbox').querySelector('[data-act="prev"]').click();
     T(ord('inbox')<ord('weather') && ord('inbox')>ord('time'), 'moving the inbox earlier passes the hidden Dodgers and lands before Weather');
     var sz=tile('map').querySelector('[data-act="size"]');
-    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='S', 'the size button cycles: full width -> small');
+    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u00BC', 'the width button cycles: full -> a quarter');
     if(WIDE && innerWidth>=1900){ var hw=R($('hub')), mr=R(tile('map')); T(mr.r-mr.l<(hw.r-hw.l)/3, 'a small map takes one column ('+Math.round(mr.r-mr.l)+' of '+Math.round(hw.r-hw.l)+')'); }
-    sz.click(); T(tile('map').getAttribute('data-size')==='M', 'small -> medium');
+    sz.click(); T(tile('map').getAttribute('data-size')==='M' && sz.textContent==='\u00BD', 'a quarter -> half');
     if(WIDE && innerWidth>=1900){ var hw2=R($('hub')), mr2=R(tile('map')); T(mr2.r-mr2.l>(hw2.r-hw2.l)/3 && mr2.r-mr2.l<(hw2.r-hw2.l)*.7, 'a medium map takes two columns'); }
-    sz.click(); T(tile('map').getAttribute('data-size')==='L', 'medium -> full width');
+    sz.click(); T(tile('map').getAttribute('data-size')==='L' && sz.textContent==='\u00BE', 'half -> three quarters');
     tile('weather').querySelector('[data-act="hide"]').click();
     var wb=[].filter.call($('hub-add').querySelectorAll('button'), function(b){ return /Weather/.test(b.textContent) })[0];
     T(!vis(tile('weather')) && !!wb, 'hide takes Weather off and keeps it under Arrange');
@@ -307,7 +315,7 @@
     T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
     $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
     var saved=JSON.parse(localStorage.getItem('esq_hub')||'{}');
-    T(Array.isArray(saved.order) && saved.order.length===7 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.size && saved.size.map==='L' && saved.hidden.join()==='dodgers',
+    T(Array.isArray(saved.order) && saved.order.length===7 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===9 && saved.hidden.join()==='dodgers',
       'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
     T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
     if(WIDE){
@@ -319,10 +327,27 @@
       document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr.l+6), clientY:Math.round((tr.t+tr.b)/2), pointerId:1}));
       document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:1}));
       T(ord('news')<ord('time') && !tile('news').classList.contains('dragging'), 'dropping Headlines on the clock puts it before the clock');
+      // Hector 2026-09-15: "make each window of the hub free range, so i can make them smaller or bigger"
+      tile('tv').scrollIntoView({block:'center'});
+      var tvT=tile('tv'), r0=R(tvT), rz=tvT.querySelector('.ht-resize');
+      T(vis(rz), 'while arranging, every widget has a corner handle');
+      rz.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round(r0.r-4), clientY:Math.round(r0.b-4), pointerId:3}));
+      T(tvT.classList.contains('resizing'), 'grabbing the corner starts a resize');
+      document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(r0.r-4-(r0.r-r0.l)*.6), clientY:Math.round(r0.b-4+120), pointerId:3}));
+      document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:3}));
+      var r1=R(tvT), ts=R($('tv-screen'));
+      T((r1.r-r1.l)<(r0.r-r0.l)*.75 && Math.abs((r1.b-r1.t)-((r0.b-r0.t)+120))<=3 && !tvT.classList.contains('resizing'),
+        'dragging the corner makes the TV narrower and taller ('+Math.round(r0.r-r0.l)+'x'+Math.round(r0.b-r0.t)+' -> '+Math.round(r1.r-r1.l)+'x'+Math.round(r1.b-r1.t)+')');
+      T(ts.b<=r1.b+1 && ts.b-ts.t>150, 'the player grows to fill the taller window ('+Math.round(ts.b-ts.t)+'px)');
+      T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/4-16, 'but never narrower than a quarter of the hub ('+Math.round(r1.r-r1.l)+'px)');
+      var sv2=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+      T(!!sv2.h && Math.abs(sv2.h.tv-(r1.b-r1.t))<=1 && typeof sv2.span.tv==='number' && sv2.span.tv<6, 'the free size is remembered ('+JSON.stringify(sv2.h)+', width '+(sv2.span&&sv2.span.tv)+'/12)');
+      rz.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}));
+      T(!tvT.style.height && !tvT.classList.contains('sized'), 'double-clicking the handle fits the height to the content again');
     }
     $('hub-reset').click();
     T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('news')
-      && tile('news').classList.contains('shut') && tile('inbox').classList.contains('shut') && tile('map').getAttribute('data-size')==='M' && vis(tile('dodgers')), 'Reset layout puts everything back');
+      && tile('news').classList.contains('shut') && tile('inbox').classList.contains('shut') && tile('map').getAttribute('data-size')==='M' && vis(tile('dodgers')) && !tile('tv').style.height, 'Reset layout puts everything back');
     $('hub-arrange').click();
     T($('hub-arrange').getAttribute('aria-pressed')==='false' && !vis(tools), 'Done hides the tools again');
     if(!WIDE) $('now').click();
@@ -353,16 +378,20 @@
     T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
     var chips=$('tv-ch').querySelectorAll('button'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
     T(chips.length===5 && !!on && on.textContent==='FOX', 'TV: five channels, FOX first');
+    T(!!$('tv-ch').querySelector('[data-k="aje"]') && !$('tv-ch').querySelector('[data-k="nbc"]') && /Al Jazeera/.test($('tv-ch').querySelector('[data-k="aje"]').textContent), 'TV: Al Jazeera English in NBC\'s place');
+    T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: the YouTube frame is dark while nothing plays');
     $('tv-play').click();
     var f=scr.querySelectorAll('iframe');
     T(f.length===1 && f[0].src==='https://www.youtube.com/embed/wmqd8JBYcx8?autoplay=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
     T($('tv-play').hidden && !$('tv-stop').hidden, 'TV: Play becomes Stop');
+    T(tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor==='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).borderTopColor==='rgb(224, 27, 27)', 'TV: while it plays, the YouTube frame lights red');
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
     f=scr.querySelectorAll('iframe');
     T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&playsinline=1&rel=0' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
     T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('esq_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
     $('tv-stop').click();
     T(!document.querySelector('iframe') && !$('tv-play').hidden && /ABC/.test($('tv-play-t').textContent), 'TV: Stop removes the player completely');
+    T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: and the red goes out');
   }
   function go(){
     layout('lock');

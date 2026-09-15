@@ -37,7 +37,7 @@
   --disp:'Chakra Petch','Trebuchet MS',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --word:'Bebas Neue','Arial Narrow',Impact,sans-serif;
-  --notch:14px; --pet:112px; --petc:100px;
+  --notch:14px; --pet:96px; --petc:84px; --petband:72px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--void);color:var(--ink);font-family:var(--disp);font-size:16px;line-height:1.5;
@@ -308,6 +308,23 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .ht-grip{cursor:grab;touch-action:none}
 .ht-size{display:none}   /* one column on a phone: nothing to resize */
 .hb.dragging{opacity:.5}
+/* free size: a corner handle (while arranging, or on hover with a mouse); a widget given a height lays out as a column
+   whose list, player or map takes the room */
+.ht-resize{display:none;position:absolute;z-index:3;right:1px;bottom:1px;width:20px;height:20px;cursor:nwse-resize;touch-action:none;
+  background:linear-gradient(135deg,transparent 45%,var(--rule-hot) 45%,var(--rule-hot) 53%,transparent 53%,transparent 66%,var(--rule-hot) 66%,var(--rule-hot) 74%,transparent 74%)}
+.hub.arranging .ht-resize{display:block}
+@media (pointer:fine){ .hub .hb:hover>.ht-resize{display:block} }
+.hub .hb.shut>.ht-resize{display:none}
+.hb.resizing{outline:1px solid var(--red);outline-offset:-1px}
+.hub .hb.sized{display:flex;flex-direction:column;overflow:hidden}
+.hub .hb.sized>*{flex:none}
+.hb-inbox.sized .ib-list,.hb-news.sized .h-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.hb-tv.sized .tv-screen,.hb-map.sized .map-box{flex:1 1 auto;aspect-ratio:auto;min-height:120px}
+.hub .hb.shut{height:auto!important}
+.hub .hb.sized.shut{display:block}
+/* the TV on air: its frame and the YouTube button light red (Hector) */
+.hb-tv.playing .tv-screen{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(224,27,27,.4)}
+.hb-tv.playing .hb-link{color:#fff;border-color:var(--red);background:rgba(224,27,27,.24);box-shadow:0 0 12px rgba(224,27,27,.55)}
 /* below 1100px these wrappers do not exist as boxes: the hub is one column, exactly as before */
 .side{display:contents}
 .garg,.hub-floor{display:none}
@@ -363,7 +380,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .composer .in{max-width:724px}
   .chat-art{opacity:.12}
 }
-@media (min-width:760px) and (min-height:501px){ :root{--petc:150px} }
+@media (min-width:760px) and (min-height:501px){ :root{--petc:120px} }
 /* a short window (a phone on its side): the card and the strip give up height */
 @media (min-width:760px) and (max-height:500px){
   .art img{height:150%;top:-30%;left:22%}
@@ -391,15 +408,17 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .garg{display:block;position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#050304}
   .garg img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;opacity:.8}
   .garg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,4,.62) 0%,rgba(5,3,4,.2) 38%,rgba(5,3,4,.8) 100%)}
-  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row dense;align-content:start;align-items:start;gap:14px;flex:1 1 auto;min-height:0;padding:16px 16px 10px}
+  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row dense;align-content:start;align-items:start;gap:14px;flex:1 1 auto;min-height:0;
+    padding:16px 16px calc(var(--pet) - var(--petband) + 12px);z-index:2}   /* in front of VaderClawd; the last row scrolls clear above his head */
   .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:14px 16px}
   .hub .hub-bar{padding:0}
-  .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--pet)}
-  .chat .talk,.chat.hubview .talk{flex:0 0 clamp(400px,25%,640px);min-width:0}
+  .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--petband)}   /* his feet; the rest of his canvas rises behind the hub */
+  .hub-floor .petbar::after{display:none}
+  .chat .talk,.chat.hubview .talk{flex:0 0 clamp(400px,25%,640px);min-width:0;background:linear-gradient(180deg,rgba(6,4,5,.6),rgba(6,4,5,.76))}   /* Gargantua shows through */
   .chat.hubview .log{display:block}
-  .chat-art{left:0;right:0;width:auto;opacity:.2;
+  .chat-art{left:0;right:0;width:auto;opacity:.14;
     -webkit-mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
-  .chat-art img{right:auto;left:50%;top:-6%;height:112%;transform:translateX(-38%)}   /* his face (x .24-.52 of the art) on the column's center */
+  .chat-art img{right:auto;left:50%;top:-5%;height:112%;transform:translateX(-56%)}   /* his whole figure, saber included (x .236-.885 of the art, measured), on the column's center */
   .log{padding:22px 20px 16px}
   .chat .log{padding-bottom:24px}
   .composer{background:none;border-top:0;padding:12px 18px}
@@ -410,14 +429,13 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
    height. Sizes: S one column, M two, L the whole row. Order is CSS order, never a DOM move, so a playing TV and a
    drawn map survive being moved. */
 @container (min-width:640px){
-  .hub,.chat.hubview .hub{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .hub .hb[data-size="M"],.hub .hb[data-size="L"],.hub .hub-bar{grid-column:1/-1}
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .hub .hub-bar{grid-column:1/-1}
   .hub.arranging .ht-size{display:inline-block}
 }
+/* twelve columns on his desktop: widths are twelfths, set per widget by the page (applyHub) */
 @container (min-width:1100px){
-  .hub,.chat.hubview .hub{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .hub .hb[data-size="M"]{grid-column:span 2}
-  .hub .hb[data-size="L"]{grid-column:1/-1}
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(12,minmax(0,1fr))}
   .hb-news[data-size="M"] .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px}
   .hb-news[data-size="L"] .h-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px}
   .hb-inbox[data-size="L"]:not(.shut) .ib-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 24px}
@@ -466,8 +484,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       </section>
 
       <section id="scr-chat" class="screen chat" aria-label="Conversation">
+        <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
         <div class="side">
-          <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
           <aside id="hub" class="hub" aria-label="Hub">
             <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
             <section class="hb" data-w="time" aria-label="Clock">
@@ -571,8 +589,10 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   function vc(kind){ try{ if(window.pet && window.pet.react) window.pet.react(kind) }catch(e){} }
   /* his size (Hector 2026-09-15: "medium size ... a lil bit bigger"). The engine rounds scale x devicePixelRatio to whole
      screen pixels so the pixel art stays crisp: desktop 2.5 = 3 screen pixels per sprite pixel on a 1x monitor (was 2)
-     and 2.5 on retina (was 1.5); phone 1.25 = 4 on a 3x iPhone (was 3). His floor grew with him (112->168, 84->112,
-     76->100, 100->150) so the helmet, the saber and his speech bubbles still fit. A phone on its side keeps 1. */
+     and 2.5 on retina (was 1.5); phone 1.25 = 1.5 CSS px per sprite
+     pixel (the engine counts at most 2x; was 1). Then Hector: "i like his size but i dont want to risk that much
+     screen. blend him in" - on the desktop hub his canvas stays 168px tall but only a 72px band is reserved; above it
+     he stands BEHIND the widgets, which pass in front of him. A phone on its side keeps 1. */
   function petScale(){
     if(!window.matchMedia) return 1;
     if(matchMedia('(min-width:760px) and (min-height:501px)').matches) return 2.5;
@@ -1017,65 +1037,82 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   }
 
   /* ---------- the hub you arrange ----------
-     After WorldMonitor (Hector 2026-09-15). Arrange shows move / size / hide on every widget: arrows work everywhere
-     (the phone included), the grip drags on a desktop. Inbox, headlines, the TV and the map fold to a short summary
-     from their title. The layout is remembered on this device (localStorage: widget names only, never mail).
-     Order is CSS order and never a DOM move, so the TV keeps playing and the map keeps its view while widgets move. */
-  var WIDGETS=[{w:'time', name:'Clock', size:'S'}, {w:'weather', name:'Weather', size:'S'}, {w:'dodgers', name:'Dodgers', size:'S'},
-    {w:'inbox', name:'Inbox', size:'S', shut:true}, {w:'tv', name:'Live news', size:'M'}, {w:'map', name:'World events', size:'M'},
-    {w:'news', name:'Headlines', size:'L', shut:true}];
-  var K_HUB='esq_hub', SIZES=['S','M','L'], SIZE_WORD={S:'small', M:'medium', L:'full width'}, IB_SHUT=3, HL_SHUT=3;
-  var hub=null, arranging=false, hubReady=false, drag=null;
+     After WorldMonitor (Hector 2026-09-15). Arrange shows move / width / hide on every widget: arrows work everywhere
+     (the phone included), the grip drags on a desktop. Every widget is free-size (Hector: "free range, so i can make
+     them smaller or bigger"): drag its corner to any width in twelfths of the hub and any height; double-click the
+     corner to fit the height again. Inbox, headlines, the TV and the map fold from their title. The layout is
+     remembered on this device (localStorage: widget names and sizes, never mail). Order is CSS order and never a DOM
+     move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
+  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:90}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Dodgers', span:3, minH:90},
+    {w:'inbox', name:'Inbox', span:3, minH:110, shut:true}, {w:'tv', name:'Live news', span:6, minH:200}, {w:'map', name:'World events', span:6, minH:180},
+    {w:'news', name:'Headlines', span:12, minH:110, shut:true}];
+  var K_HUB='esq_hub', SPANS=[3,6,9,12], SPAN_WORD={3:'a quarter', 6:'half', 9:'three quarters', 12:'the full width'},
+      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=3, MAX_H=1400, IB_SHUT=3, HL_SHUT=3;
+  var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
+  function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
+  function wname(w){ var x=winfo(w); return x ? x.name : w }
   function hubDefault(){
-    var d={order:[], size:{}, hidden:[], shut:{}};
-    WIDGETS.forEach(function(x){ d.order.push(x.w); d.size[x.w]=x.size; d.shut[x.w]=!!x.shut });
+    var d={order:[], span:{}, h:{}, hidden:[], shut:{}};
+    WIDGETS.forEach(function(x){ d.order.push(x.w); d.span[x.w]=x.span; d.shut[x.w]=!!x.shut });
     return d;
   }
   function hubLoad(){
-    var d=hubDefault(), known={};
-    WIDGETS.forEach(function(x){ known[x.w]=1 });
+    var d=hubDefault();
     try{
       var sv=JSON.parse(localStorage.getItem(K_HUB)||'null');
       if(sv && typeof sv==='object'){
-        var order=(Array.isArray(sv.order) ? sv.order : []).filter(function(w,i,a){ return known[w]===1 && a.indexOf(w)===i });
+        var order=(Array.isArray(sv.order) ? sv.order : []).filter(function(w,i,a){ return !!winfo(w) && a.indexOf(w)===i });
         d.order.forEach(function(w){ if(order.indexOf(w)<0) order.push(w) });   // a widget added later still shows up
         d.order=order;
-        if(sv.size && typeof sv.size==='object') Object.keys(sv.size).forEach(function(w){ if(known[w]===1 && SIZES.indexOf(sv.size[w])>-1) d.size[w]=sv.size[w] });
-        if(Array.isArray(sv.hidden)) d.hidden=sv.hidden.filter(function(w,i,a){ return known[w]===1 && a.indexOf(w)===i });
-        if(sv.shut && typeof sv.shut==='object') Object.keys(sv.shut).forEach(function(w){ if(known[w]===1) d.shut[w]=sv.shut[w]===true });
+        if(sv.size && typeof sv.size==='object') Object.keys(sv.size).forEach(function(w){ if(winfo(w) && LEGACY_SPAN[sv.size[w]]) d.span[w]=LEGACY_SPAN[sv.size[w]] });   // saved before free sizes
+        if(sv.span && typeof sv.span==='object') Object.keys(sv.span).forEach(function(w){ var n=sv.span[w]; if(winfo(w) && typeof n==='number' && n===Math.round(n) && n>=MIN_SPAN && n<=12) d.span[w]=n });
+        if(sv.h && typeof sv.h==='object') Object.keys(sv.h).forEach(function(w){ var n=sv.h[w], x=winfo(w); if(x && typeof n==='number' && n>=x.minH && n<=MAX_H) d.h[w]=Math.round(n) });
+        if(Array.isArray(sv.hidden)) d.hidden=sv.hidden.filter(function(w,i,a){ return !!winfo(w) && a.indexOf(w)===i });
+        if(sv.shut && typeof sv.shut==='object') Object.keys(sv.shut).forEach(function(w){ if(winfo(w)) d.shut[w]=sv.shut[w]===true });
       }
     }catch(e){}
     return d;
   }
   function hubSave(){ try{ localStorage.setItem(K_HUB, JSON.stringify(hub)) }catch(e){} }
   function tile(w){ return $('hub').querySelector('.hb[data-w="'+w+'"]') }
-  function wname(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i].name; return w }
   function shown(w){ var t=tile(w); return !!t && !t.hidden && hub.hidden.indexOf(w)<0 }
+  // how many columns the hub grid has right now: 12 on his desktop, 6 when narrower, 1 on a phone
+  function gridCols(){ var g=getComputedStyle($('hub')).gridTemplateColumns; return (g && g!=='none') ? g.split(' ').filter(Boolean).length : 1 }
   function hubInit(){
     if(hubReady) return;
     hubReady=true; hub=hubLoad();
     WIDGETS.forEach(function(x){
       var t=tile(x.w); if(!t) return;
       var tools=document.createElement('div'); tools.className='hb-tools';
-      [['grip','\u2807','Drag to move '], ['prev','\u2190','Move earlier: '], ['next','\u2192','Move later: '], ['size','','Size of '], ['hide','\u2715','Hide ']].forEach(function(b){
+      [['grip','⠇','Drag to move '], ['prev','←','Move earlier: '], ['next','→','Move later: '], ['size','','Width of '], ['hide','✕','Hide ']].forEach(function(b){
         var el=document.createElement('button'); el.type='button'; el.className='ht ht-'+b[0]; el.setAttribute('data-act', b[0]);
         el.textContent=b[1]; el.setAttribute('aria-label', b[2]+x.name); tools.appendChild(el);
       });
       t.appendChild(tools);
+      var rz=document.createElement('div'); rz.className='ht-resize'; rz.title='Drag to resize '+x.name+'. Double-click to fit its height.';
+      t.appendChild(rz);
     });
     applyHub();
   }
   function applyHub(){
     if(!hub) return;
+    var cols=gridCols();
     hub.order.forEach(function(w, i){
       var t=tile(w); if(!t) return;
+      var span=hub.span[w], eff=cols>=12 ? span : Math.max(1, Math.round(span*cols/12));
       t.style.order=String(i+1);
-      t.setAttribute('data-size', hub.size[w]);
+      t.style.gridColumn=cols>1 ? 'span '+Math.min(cols, eff) : '';
+      t.setAttribute('data-size', span<=4 ? 'S' : span<=8 ? 'M' : 'L');
+      t.style.height=hub.h[w] ? hub.h[w]+'px' : '';
+      t.classList.toggle('sized', !!hub.h[w]);
       t.classList.toggle('off', hub.hidden.indexOf(w)>-1);
       t.classList.toggle('shut', !!hub.shut[w]);
       var f=t.querySelector('.hb-fold'); if(f) f.setAttribute('aria-expanded', hub.shut[w] ? 'false' : 'true');
       var sz=t.querySelector('.ht-size');
-      if(sz){ sz.textContent=hub.size[w]; sz.setAttribute('aria-label', 'Size of '+wname(w)+': '+SIZE_WORD[hub.size[w]]+'. Tap to change') }
+      if(sz){
+        sz.textContent=span===3 ? '¼' : span===6 ? '½' : span===9 ? '¾' : span===12 ? '1' : span+'/12';
+        sz.setAttribute('aria-label', 'Width of '+wname(w)+': '+(SPAN_WORD[span] || span+' twelfths')+'. Tap to change');
+      }
     });
     $('hub').classList.toggle('arranging', arranging);
     $('hub-arrange').setAttribute('aria-pressed', arranging ? 'true' : 'false');
@@ -1107,14 +1144,14 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 
   /* ---------- live news TV ----------
      YouTube's own player, created when you press Play and removed on Stop: until then it downloads nothing and
-     costs no CPU. 0 n8n executions. Measured 2026-09-15 in WebKit from this page's own address: ABC, NBC, CBS and
+     costs no CPU. 0 n8n executions. Measured 2026-09-15 in WebKit from this page's own address: ABC, CBS and
      Bloomberg play as "the channel's live stream", which follows their 24/7 stream when it restarts. LiveNOW from
      FOX refuses that form, so FOX plays its current live video by id; when FOX ends that stream the id goes stale,
      and the YouTube button always opens the channel's live page. Fox News itself does not stream on YouTube. */
   var TV=[
     {k:'fox', short:'FOX', name:'LiveNOW from FOX', vid:'wmqd8JBYcx8', page:'https://www.youtube.com/@LiveNOWFOX/live'},
     {k:'abc', short:'ABC', name:'ABC News Live', ch:'UCBi2mrWuNuyYy4gbM6fU18Q', page:'https://www.youtube.com/@ABCNews/live'},
-    {k:'nbc', short:'NBC', name:'NBC News NOW', ch:'UCeY0bbntWzzVIaj2z3QigXg', page:'https://www.youtube.com/@NBCNews/live'},
+    {k:'aje', short:'Al Jazeera', name:'Al Jazeera English', vid:'gCNeDWCI0vo', page:'https://www.youtube.com/@aljazeeraenglish/live'},   // in NBC's place (Hector 2026-09-15); its channel-live embed did not play
     {k:'cbs', short:'CBS', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
     {k:'bbg', short:'Bloomberg', name:'Bloomberg', ch:'UCIALMKvObZNtJ6AmdCLP7Lg', page:'https://www.youtube.com/@markets/live'}];
   var K_TV='esq_tv', tvPick=TV[0];
@@ -1139,10 +1176,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     }
     f.src=tvSrc(tvPick);
     $('tv-play').hidden=true; $('tv-stop').hidden=false; $('tv-note').textContent=tvPick.name;
+    $('tv-screen').parentNode.classList.add('playing');
   }
   function tvStop(){
     var f=$('tv-screen').querySelector('iframe'); if(f) f.remove();
     $('tv-play').hidden=false; $('tv-stop').hidden=true; $('tv-note').textContent='Nothing loads until you press Play.';
+    $('tv-screen').parentNode.classList.remove('playing');
   }
 
   /* ---------- world events map ----------
@@ -1300,16 +1339,42 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     var act=b.getAttribute('data-act'); if(!act || !w || !arranging) return;
     if(act==='prev') hubStep(w, -1);
     else if(act==='next') hubStep(w, 1);
-    else if(act==='size'){ hub.size[w]=SIZES[(SIZES.indexOf(hub.size[w])+1)%SIZES.length]; applyHub(); hubSave() }
+    else if(act==='size'){ var cur=hub.span[w], nx=SPANS.filter(function(x){ return x>cur })[0] || SPANS[0]; hub.span[w]=nx; applyHub(); hubSave() }
     else if(act==='hide'){ if(hub.hidden.indexOf(w)<0) hub.hidden.push(w); applyHub(); hubSave() }
   });
-  // drag by the grip: pointer events, so a mouse, a pen and a finger all work
+  // double-click a corner handle: the height fits the content again
+  $('hub').addEventListener('dblclick', function(e){
+    var h=e.target.closest ? e.target.closest('.ht-resize') : null; if(!h || !hub) return;
+    delete hub.h[h.parentNode.getAttribute('data-w')]; applyHub(); hubSave();
+  });
+  // pointer events, so a mouse, a pen and a finger all work: the corner handle resizes, the grip moves
   $('hub').addEventListener('pointerdown', function(e){
-    var g=e.target.closest ? e.target.closest('.ht-grip') : null; if(!g || !arranging) return;
-    var t=g.closest('.hb[data-w]'); if(!t) return;
-    e.preventDefault(); drag={w:t.getAttribute('data-w'), el:t, last:''}; t.classList.add('dragging');
+    if(!hub || !e.target.closest) return;
+    var rz=e.target.closest('.ht-resize');
+    if(rz){
+      var t=rz.parentNode; if(t.classList.contains('shut')) return;
+      var r=t.getBoundingClientRect(), cs=getComputedStyle($('hub')), tr=(cs.gridTemplateColumns || '').split(' ').filter(Boolean);
+      e.preventDefault();
+      resizing={w:t.getAttribute('data-w'), el:t, x0:e.clientX, y0:e.clientY, w0:r.width, h0:r.height, cols:gridCols(),
+        colw:parseFloat(tr[0]) || r.width, gap:parseFloat(cs.columnGap) || 14};
+      t.classList.add('resizing');
+      return;
+    }
+    var g=e.target.closest('.ht-grip'); if(!g || !arranging) return;
+    var tt=g.closest('.hb[data-w]'); if(!tt) return;
+    e.preventDefault(); drag={w:tt.getAttribute('data-w'), el:tt, last:''}; tt.classList.add('dragging');
   });
   document.addEventListener('pointermove', function(e){
+    if(resizing){
+      var z=resizing, x=winfo(z.w), nw=z.w0+(e.clientX-z.x0);
+      if(z.cols>1){
+        var eff=Math.max(1, Math.min(z.cols, Math.round((nw+z.gap)/(z.colw+z.gap))));
+        hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // never narrower than a quarter: a one-column TV was 120px
+      }
+      hub.h[z.w]=Math.round(Math.max(x.minH, Math.min(MAX_H, z.h0+(e.clientY-z.y0))));
+      applyHub();
+      return;
+    }
     if(!drag) return;
     // near the top or bottom edge of the hub, scroll it, so a widget can be carried to a spot that is out of view
     var hr=$('hub').getBoundingClientRect();
@@ -1320,7 +1385,11 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     if(key===drag.last) return;
     drag.last=key; hubDragTo(drag.w, t.getAttribute('data-w'), after);
   });
-  function dragEnd(){ if(!drag) return; drag.el.classList.remove('dragging'); drag=null; hubSave() }
+  function dragEnd(){
+    if(resizing){ resizing.el.classList.remove('resizing'); resizing=null; hubSave() }
+    if(!drag) return;
+    drag.el.classList.remove('dragging'); drag=null; hubSave();
+  }
   document.addEventListener('pointerup', dragEnd);
   document.addEventListener('pointercancel', dragEnd);
   $('tv-play').addEventListener('click', tvPlay);
@@ -1365,7 +1434,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   // sizeTape adds copies, which resizes the observed box: do it just after the notification, not inside it (WebKit reports a 'ResizeObserver loop' otherwise)
   if(window.ResizeObserver && $('tape')) try{ new ResizeObserver(function(){ setTimeout(sizeTape, 0) }).observe($('tape').firstElementChild) }catch(e){}
   window.addEventListener('resize', function(){
-    fitMark(); placePet(); sizeTape(); startMap();
+    fitMark(); placePet(); sizeTape(); if(hub) applyHub(); else startMap();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape() });
