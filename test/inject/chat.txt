@@ -18,7 +18,7 @@
    scrolls, every text field is 16px or more (iOS zooms otherwise), and the
    composer is on screen. */
 (function(){
-  var S=String.fromCharCode(167), out=[], q=new URLSearchParams(location.search), mode=q.get('t')||'ok', calls=[], hubCalls=[];
+  var S=String.fromCharCode(167), out=[], q=new URLSearchParams(location.search), mode=q.get('t')||'ok', calls=[], hubCalls=[], briefCalls=[];
   var FAIL_HUB=mode==='hubfail';
   function $(i){return document.getElementById(i)}
   function T(c,m){out.push((c?'PASS':'FAIL')+'  '+m); flush()}
@@ -98,8 +98,8 @@
     if(/currency-api/.test(url)){ hubCalls.push('snap'); if(FAIL_HUB) return Promise.reject(new Error('down'));
       return /latest/.test(url) ? res(200,SNAP_TODAY) : /2026-09-14/.test(url) ? res(200,SNAP_YDAY) : res(404,'') }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
-    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, heads:(b&&b.get)?b.get('headlines'):null, json:!!(o&&o.headers)});
-    if(a==='brief') return pwd==='right' ? res(200, FAIL_HUB ? {ok:false, points:[], n:0} : BRIEF) : res(401,{error:'unauthorized'});
+    if(a==='brief'){ briefCalls.push({heads:(b&&b.get)?b.get('headlines'):null}); return pwd==='right' ? res(200, (FAIL_HUB || mode==='guard') ? {ok:false, points:[], n:0} : BRIEF) : res(401,{error:'unauthorized'}) }
+    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, json:!!(o&&o.headers)});
     if(a==='login'){
       if(pwd!=='right') return res(401,{error:'unauthorized'});
       logins++;
@@ -260,13 +260,14 @@
       T($('h-list').children.length===0 && /Refresh/.test($('h-note').textContent), 'no headlines: it says to tap Refresh');
       T($('h-mlb').hidden, 'no Dodgers data: the tile stays hidden');
       T(!!$('mk-metals') && qa('mk-metals').length===0 && qa('mk-fx').length===0 && /unavailable/.test(tx('mk-note')), 'markets down: it says so');
+      T(briefCalls.length===0 && /No headlines to summarize yet/.test(tx('brief-meta')), 'news: with no headlines at all, no brief is spent and it says why ('+tx('brief-meta')+')');
       T($('ib-list').children.length===0 && /Refresh/.test($('ib-note').textContent) && $('ib-count').textContent==='', 'no inbox from an older workflow: it says to tap Refresh ('+$('ib-note').textContent+')');
     } else {
       T($('h-temp').textContent==='71' && $('now-temp').textContent==='71°', 'the temperature in the hub and the header');
       T($('h-cond').textContent==='Mostly clear' && /H 88/.test($('h-range').textContent) && /L 60/.test($('h-range').textContent), 'sky and high/low ('+$('h-range').textContent+')');
       var lis=$('h-list').querySelectorAll('li'), srcs=[].map.call(lis, function(l){ return l.querySelector('.hl-s').textContent });
-      T(lis.length===6, 'headlines: bad links dropped, BBC capped at 3 ('+lis.length+')');
-      T(srcs.filter(function(s){ return s==='BBC' }).length===3 && srcs.indexOf('Fox News')>-1 && srcs.indexOf('Times of Israel')>-1, 'from BBC, Times of Israel and Fox News ('+srcs.join(', ')+')');
+      T(lis.length===3, 'headlines: one per source now that the brief sums them up; bad links dropped ('+lis.length+')');
+      T(srcs.filter(function(s){ return s==='BBC' }).length===1 && srcs.indexOf('Fox News')>-1 && srcs.indexOf('Times of Israel')>-1, 'one each from BBC, Times of Israel and Fox News ('+srcs.join(', ')+')');
       T(lis.length && lis[0].querySelector('.hl-t').textContent==='ToI one' && /20m/.test(lis[0].textContent), 'newest first, with its age');
       T([].every.call($('h-list').querySelectorAll('a'), function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'every headline opens safely in a new tab');
       T(!$('h-mlb').hidden && /Dodgers 5, Padres 2/.test($('h-last').textContent) && /at Giants/.test($('h-next').textContent), 'the Dodgers tile ('+$('h-last').textContent+' / '+$('h-next').textContent+')');
@@ -280,8 +281,13 @@
       T(fls.length===3 && /GBP \u2192 USD/.test(fls[1].textContent) && /1\.3484/.test(fls[1].textContent) && /\u22120\.15%/.test(fls[1].textContent), 'markets: the pound in dollars ('+(fls[1]&&fls[1].textContent)+')');
       T(/since yesterday/.test(tx('mk-note')), 'markets: says what the change compares to');
       T(hubCalls.indexOf('gold')>-1 && hubCalls.indexOf('snap')>-1, 'markets come from the browser, not n8n');
-      T(!!$('brief-list') && qa('brief-list').length===0 && /One tap/.test(tx('brief-meta')) && /Summarize with Grok/.test(tx('brief-go')) && calls.every(function(c){ return c.a!=='brief' }),
-        'news: no brief and no Grok call until you tap Summarize');
+      // Hector 2026-09-15: "make it to load once at logging in, and refresh it's manually, maybe an auto-refresh every 2 hrs"
+      if(mode==='guard') T(briefCalls.length===1 && qa('brief-list').length===0 && /did not answer/.test(tx('brief-meta')) && /Summarize with Grok/.test(tx('brief-go')) && !$('brief-go').disabled,
+        'news: when the login brief fails it says so, and the button is ready ('+tx('brief-meta')+')');
+      else T(briefCalls.length===1 && qa('brief-list').length===3 && /Summarized/.test(tx('brief-meta')) && /every 2 hours/.test(tx('brief-meta')) && /Refresh brief/.test(tx('brief-go')),
+        'news: the AI brief loads once at login, by itself ('+briefCalls.length+' call, '+tx('brief-meta')+')');
+      var sentAtLogin=[]; try{ sentAtLogin=JSON.parse(briefCalls[0].heads||'[]') }catch(e){}
+      T(sentAtLogin.some(function(h){ return h.src==='Fox News' }) && sentAtLogin.some(function(h){ return h.src==='BBC' }), 'news: the login brief waits for Fox, so it covers every source ('+sentAtLogin.length+' headlines)');
       var ibs=$('ib-list').querySelectorAll('li');
       T(ibs.length===3, 'inbox: three messages, the malformed one dropped ('+ibs.length+')');
       T($('ib-count').textContent==='6 unread', 'inbox: the unread count ('+$('ib-count').textContent+')');
@@ -297,9 +303,9 @@
       if(mode!=='arrange'){
         T(tile('inbox').classList.contains('shut') && $('ib-h').getAttribute('aria-expanded')==='false' && vis(ibs[0]) && !vis(ibs[0].querySelector('.ib-snip')) && $('ib-more').hidden,
           'inbox starts folded: a line per message, previews hidden (3 messages, so no "more")');
-        var hls=$('h-list').querySelectorAll('li');
-        T(tile('news').classList.contains('shut') && vis(hls[2]) && !vis(hls[3]) && !$('h-more').hidden && /^3 more$/.test($('h-more').textContent),
-          'headlines start folded: the top 3 and "3 more" ('+$('h-more').textContent+')');
+        if(mode==='guard') T(tile('news').classList.contains('shut') && !tile('news').classList.contains('has-brief') && vis($('h-list')) && $('h-more').hidden, 'news without a brief: the three headlines show folded');
+        else T(tile('news').classList.contains('shut') && tile('news').classList.contains('has-brief') && !vis($('h-list')) && vis($('h-more')) && /Show all 3 headlines/.test(tx('h-more')),
+          'news starts folded: the login brief on top, the headlines behind "Show all 3 headlines" ('+tx('h-more')+')');
       }
     }
     T(hubCalls.indexOf('wx')>-1 && hubCalls.indexOf('fox')>-1 && hubCalls.indexOf('mlb')>-1, 'weather, Fox and the Dodgers came from the browser, not n8n');
@@ -342,7 +348,7 @@
     T(vis(tile('weather')) && !$('hub-add').querySelector('[data-show="weather"]'), 'and + Weather brings it back');
     // folding
     $('news-h').click();
-    T(!tile('news').classList.contains('shut') && $('news-h').getAttribute('aria-expanded')==='true' && vis($('h-list').querySelectorAll('li')[5]), 'Headlines unfold to all six');
+    T(!tile('news').classList.contains('shut') && $('news-h').getAttribute('aria-expanded')==='true' && vis($('h-list').querySelectorAll('li')[2]), 'the news unfolds to show its headlines');
     $('tv-h').click();
     T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
     $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
@@ -477,12 +483,12 @@
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: the YouTube frame is dark while nothing plays');
     $('tv-play').click();
     var f=scr.querySelectorAll('iframe');
-    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/v6dJAqft5NU?autoplay=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/v6dJAqft5NU?autoplay=1&mute=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, muted, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
     T($('tv-play').hidden && !$('tv-stop').hidden, 'TV: Play becomes Stop');
     T(tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor==='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).borderTopColor==='rgb(224, 27, 27)', 'TV: while it plays, the YouTube frame lights red');
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
     f=scr.querySelectorAll('iframe');
-    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&playsinline=1&rel=0' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&mute=1&playsinline=1&rel=0' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
     T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('esq_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
     $('tv-stop').click();
     T(!document.querySelector('iframe') && !$('tv-play').hidden && /ABC/.test($('tv-play-t').textContent), 'TV: Stop removes the player completely');
@@ -524,11 +530,11 @@
     if(mode==='hub'){
       if(!WIDE) $('now').click();
       var n0=calls.length; $('h-refresh').click();
-      var nb=calls.length; tap('brief-go');
-      var bc=calls[nb], sentHeads=[]; try{ sentHeads=JSON.parse((bc && bc.heads) || '[]') }catch(e){}
-      T(calls[n0] && calls[n0].a==='login', 'Refresh asks n8n once, through the login call');
-      T(!!bc && bc.a==='brief' && calls.length===n0+2 && sentHeads.length>=6 && sentHeads.some(function(h){ return h.src==='Fox News' }) && sentHeads.some(function(h){ return h.src==='BBC' })
-        && sentHeads.every(function(h){ return typeof h.title==='string' && !('link' in h) }), 'Summarize sends the headlines to the brief path, one call, titles only ('+sentHeads.length+')');
+      var nb=briefCalls.length; tap('brief-go');
+      var bc=briefCalls[nb], sentHeads=[]; try{ sentHeads=JSON.parse((bc && bc.heads) || '[]') }catch(e){}
+      T(calls[n0] && calls[n0].a==='login' && calls.length===n0+1, 'Refresh asks n8n once, through the login call');
+      T(!!bc && briefCalls.length===nb+1 && sentHeads.length>=6 && sentHeads.some(function(h){ return h.src==='Fox News' }) && sentHeads.some(function(h){ return h.src==='BBC' })
+        && sentHeads.every(function(h){ return typeof h.title==='string' && !('link' in h) }), 'Refresh brief sends every headline to the brief path, one call, titles only ('+sentHeads.length+')');
       T(!!$('brief-go') && $('brief-go').disabled && /reading/.test(tx('brief-meta')), 'while Grok reads, the button waits');
       setTimeout(function(){
         T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
@@ -544,17 +550,20 @@
           'auto refresh: 16 minutes later weather, Fox, the map and markets refresh with no n8n call ('+fresh.filter(function(k,i,a){ return a.indexOf(k)===i }).join(',')+')');
         var h1=hubCalls.length; if(typeof tick==='function') tick(Date.now()+31*60000);
         T(typeof tick==='function' && hubCalls.slice(h1).indexOf('mlb')>-1 && calls.length===nN8n, 'auto refresh: the Dodgers every 30 minutes, still no n8n call');
-        var h2=hubCalls.length; if(typeof tick==='function') tick(Date.now()+60000);
-        T(hubCalls.length===h2, 'auto refresh: nothing is fetched again before it is due');
+        var h2=hubCalls.length, b2=briefCalls.length; if(typeof tick==='function') tick(Date.now()+60000);
+        T(hubCalls.length===h2 && briefCalls.length===b2, 'auto refresh: nothing is fetched again before it is due, the brief included');
         var bps=qa('brief-list');
         T(bps.length===3 && !$('brief-list').querySelector('b') && /<b>bold<\/b>/.test(bps[0].textContent), 'the brief shows its points, as text');
         T([].map.call(bps[1] ? bps[1].querySelectorAll('.bp-s') : [], function(x){ return x.textContent }).join('|')==='Fox News|Times of Israel' && !!bps[0].querySelector('.hl-ask'), 'each point names its sources and has Ask');
-        T(tile('news').classList.contains('has-brief') && tile('news').classList.contains('shut') && !vis($('h-list')) && vis($('h-more')) && /Show all 6 headlines/.test(tx('h-more')),
+        T(tile('news').classList.contains('has-brief') && tile('news').classList.contains('shut') && !vis($('h-list')) && vis($('h-more')) && /Show all 3 headlines/.test(tx('h-more')),
           'with a brief, the headline list folds away behind "Show all" ('+$('h-more').textContent+')');
-        T(/Summarized/.test(tx('brief-meta')) && /7 headlines/.test(tx('brief-meta')) && !!$('brief-go') && !$('brief-go').disabled && /again/.test(tx('brief-go')), 'it says when, and from how many headlines ('+tx('brief-meta')+')');
+        T(/Summarized/.test(tx('brief-meta')) && /7 headlines/.test(tx('brief-meta')) && !!$('brief-go') && !$('brief-go').disabled && /Refresh brief/.test(tx('brief-go')), 'it says when, and from how many headlines ('+tx('brief-meta')+')');
         T((localStorage.getItem('esq_brief')||'').indexOf('Point two')>-1, 'the brief is kept on this device');
         $('h-more').click();
         T(vis($('h-list')) && !tile('news').classList.contains('shut'), '"Show all" opens the headlines under the brief');
+        var nN8n2=calls.length;
+        var b3=briefCalls.length; if(typeof window.__esq.hubTick==='function') (window.__esq.hubTick)(Date.now()+2*60*60000+60000);
+        T(briefCalls.length===b3+1 && calls.length===nN8n2, 'the brief refreshes itself after 2 hours (one brief call, nothing else from n8n)');
         var ask=$('h-list').querySelector('.hl-ask'), n1=calls.length;
         if(!WIDE && $('scr-chat').className.indexOf('hubview')<0) $('now').click();
         ask.click();

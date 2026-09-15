@@ -779,7 +779,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     placePet();
   }
   function enter(fresh){
-    show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub();
+    show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub(fresh);
     if(fresh) setTimeout(function(){ vc('greet') }, 900);
     // a focused field on the phone pops the keyboard over the conversation; only the desktop wants it
     if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ box.focus() }, 50);
@@ -962,7 +962,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   function webLink(s){ return /^https?:\/\//i.test(String(s||'')) }
   function loadFox(){
     lastFox=Date.now();
-    fetch(FOX_URL).then(function(r){ if(!r.ok) throw new Error('fox '+r.status); return r.text() }).then(function(x){
+    return fetch(FOX_URL).then(function(r){ if(!r.ok) throw new Error('fox '+r.status); return r.text() }).then(function(x){
       var doc=new DOMParser().parseFromString(x,'application/xml'), out=[];
       [].slice.call(doc.getElementsByTagName('item'), 0, 10).forEach(function(it){
         function g(n){ var e=it.getElementsByTagName(n)[0]; return e ? e.textContent.trim() : '' }
@@ -986,7 +986,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     var all=((serverNews&&serverNews.items)||[]).concat(foxNews), per={}, pick=[];
     function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }   // future-dated stories count as now
     all.sort(function(a,b){ return ts(b)-ts(a) });
-    all.forEach(function(h){ per[h.src]=(per[h.src]||0)+1; if(per[h.src]<=3 && pick.length<10) pick.push(h) });
+    all.forEach(function(h){ per[h.src]=(per[h.src]||0)+1; if(per[h.src]<=1 && pick.length<10) pick.push(h) });   // one per source (Hector: the brief sums up the rest)
     var ol=$('h-list'); ol.textContent='';
     pick.forEach(function(h){
       var li=document.createElement('li'); li.className='hl';
@@ -1032,11 +1032,16 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
         $('h-mlb').hidden=false;
       }).catch(function(){ $('h-mlb').hidden=true });
   }
-  function startHub(){
+  function startHub(fresh){
     hubInit(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
-    if(hubOn) return;
+    if(hubOn){ if(fresh) runBrief(); return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
-    loadWeather(); loadFox(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
+    loadWeather(); var fox=loadFox(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
+    if(fresh){
+      // the login just brought BBC and Jerusalem Post; let Fox land (or 4 s pass), then one brief for everything
+      var fired=false, briefNow=function(){ if(!fired){ fired=true; runBrief() } };
+      fox.then(briefNow, briefNow); setTimeout(briefNow, 4000);
+    } else lastBriefTry=(brief && brief.t) || Date.now();   // a reload: no brief until the kept one is 2 hours old
     (function everyMinute(){ clock(); setTimeout(everyMinute, 60000-(Date.now()%60000)+50) })();
     setInterval(function(){ hubTick(Date.now()) }, 60000);
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) hubTick(Date.now()) });
@@ -1044,8 +1049,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   /* Everything the browser refreshes by itself - 0 n8n executions (Hector 2026-09-15: "the stuff than can be refresh
      auto without execution from N8N, do it"): weather, Fox headlines, the map's quakes and alerts, and markets every
      15 minutes, the Dodgers every 30, and anything stale the moment the tab comes back. Hidden tabs and the lock screen
-     fetch nothing. The inbox, the BBC and Jerusalem Post headlines and the brief need an n8n execution, so they
-     refresh only at login or on a tap until Hector chooses otherwise. */
+     fetch nothing. The brief needs an n8n execution and refreshes every 2 hours (Hector's choice); the inbox and the BBC
+     and Jerusalem Post headlines need one too and refresh only at login or on a tap. */
   function hubTick(now){
     if(document.hidden || !$('scr-chat').classList.contains('on')) return;
     if(now-lastWx>=REFRESH_MS) loadWeather();
@@ -1053,6 +1058,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     if(now-lastMlb>=MLB_MS) loadMlb();
     if(now-lastMap>=MAP_MS) loadEvents();
     if(now-lastMk>=MK_MS) loadMarkets();
+    if(pw && !briefing && now-lastBriefTry>=BRIEF_MS) runBrief();   // the brief: 1 execution every 2 hours while the hub is open
   }
   // on a phone the hub folds away behind the time in the header
   function hubView(on){
@@ -1248,7 +1254,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     {k:'mmty', short:'Multimedios MTY', name:'Multimedios Monterrey', vid:'SM864ZgPpG8', page:'https://www.youtube.com/@Multimedios/live'}];   // Canal 6 Monterrey, the official Multimedios live stream (Hector 2026-09-15)
   var K_TV='esq_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
-  function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&playsinline=1&rel=0' }
+  function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0' }   // Hector: the TV starts on his click, muted
   function tvPaint(){
     var bar=$('tv-ch');
     if(!bar.children.length) TV.forEach(function(c){
@@ -1337,10 +1343,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   /* ---------- the AI news brief ----------
      Hector: "an AI summarize from all my news, that would be better and it would save me some space". One tap sends the
      headlines the hub has to n8n's brief path: one grok-4.3 call that bypasses the Esquiffis agent, so nothing lands in
-     his memory or the session log. 1 execution and about 0.4 cents a brief (measured), never automatic. Grok may only
+     his memory or the session log. 1 execution and about 0.4 cents a brief (measured). Hector 2026-09-15: it runs once
+     at every unlock, again every 2 hours while the hub stays open ("for news 2 hrs it's a good gap"), and on Refresh
+     brief; a reload with a remembered session does not spend one unless the kept brief is 2 hours old. Grok may only
      restate the headlines, and n8n drops any source name that was not in them. The last brief is kept on this device
      (localStorage: public news only). */
-  var K_BRIEF='esq_brief', brief=null, briefing=false;
+  var K_BRIEF='esq_brief', brief=null, briefing=false, lastBriefTry=0, BRIEF_MS=2*60*60*1000;
   try{ var bs=JSON.parse(localStorage.getItem(K_BRIEF)||'null'); if(bs && Array.isArray(bs.points) && bs.t) brief=bs }catch(e){}
   function newsForBrief(){
     var all=((serverNews && serverNews.items) || []).concat(foxNews);
@@ -1360,14 +1368,15 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       li.appendChild(m); ul.appendChild(li);
     });
     go.disabled=briefing;
-    go.textContent=briefing ? 'Summarizing' : (pts.length ? 'Summarize again' : 'Summarize with Grok');
+    go.textContent=briefing ? 'Summarizing' : (pts.length ? 'Refresh brief' : 'Summarize with Grok');
     meta.textContent = briefing ? 'Grok is reading '+newsForBrief().length+' headlines…'
       : (brief && brief.failed) ? (pts.length ? 'Grok did not answer. This brief is from '+clockText(new Date(brief.t))+'.' : 'Grok did not answer. Try again in a moment.')
-      : pts.length ? 'Summarized '+clockText(new Date(brief.t))+' from '+brief.n+' headlines'
-      : 'One tap: Grok sums up the headlines (1 execution).';
+      : pts.length ? 'Summarized '+clockText(new Date(brief.t))+' from '+brief.n+' headlines \u00B7 refreshes every 2 hours'
+      : 'Grok sums up the headlines at login and every 2 hours (1 execution each).';
   }
   function runBrief(){
     if(briefing || !pw) return;
+    lastBriefTry=Date.now();
     var items=newsForBrief();
     if(!items.length){ $('brief-meta').textContent='No headlines to summarize yet. Tap Refresh.'; return }
     briefing=true; paintBrief();
