@@ -929,9 +929,19 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   var WX_URL='https://api.open-meteo.com/v1/forecast?latitude=34.3917&longitude=-118.5426'
     +'&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min'
     +'&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=1';
-  var FOX_URL='https://moxie.foxnews.com/google-publisher/world.xml';
+  /* The free feeds the browser reads itself - every one measured 2026-09-15 sending access-control-allow-origin:*,
+     so they cost 0 n8n executions (Hector picked Fox US, Fox Politics, DW and Arutz Sheva on top of Fox World).
+     The list shows ONE headline per source and the brief gets them all. DW is an RDF feed: its items carry no
+     pubDate, the date lives in dc:date. */
+  var FEEDS=[
+    {k:'fox',    src:'Fox News',     url:'https://moxie.foxnews.com/google-publisher/world.xml'},
+    {k:'foxus',  src:'Fox US',       url:'https://moxie.foxnews.com/google-publisher/us.xml'},
+    {k:'foxpol', src:'Fox Politics', url:'https://moxie.foxnews.com/google-publisher/politics.xml'},
+    {k:'dw',     src:'DW',           url:'https://rss.dw.com/rdf/rss-en-all'},
+    {k:'arutz',  src:'Arutz Sheva',  url:'https://www.israelnationalnews.com/Rss.aspx'}
+  ];
   var REFRESH_MS=15*60*1000, MLB_MS=30*60*1000;
-  var hubOn=false, serverNews=null, foxNews=[], newsSaid=false, hotSaid=false, lastWx=0, lastFox=0, lastMlb=0;
+  var hubOn=false, serverNews=null, webNews={}, newsSaid=false, hotSaid=false, lastWx=0, lastFeeds=0, lastMlb=0;
   function clockText(d){ return d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) }
   function clock(){
     var d=new Date(), t=clockText(d);
@@ -963,17 +973,28 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     return m<60 ? m+'m' : m<1440 ? Math.round(m/60)+'h' : Math.round(m/1440)+'d';
   }
   function webLink(s){ return /^https?:\/\//i.test(String(s||'')) }
-  function loadFox(){
-    lastFox=Date.now();
-    return fetch(FOX_URL).then(function(r){ if(!r.ok) throw new Error('fox '+r.status); return r.text() }).then(function(x){
-      var doc=new DOMParser().parseFromString(x,'application/xml'), out=[];
-      [].slice.call(doc.getElementsByTagName('item'), 0, 10).forEach(function(it){
-        function g(n){ var e=it.getElementsByTagName(n)[0]; return e ? e.textContent.trim() : '' }
-        var title=g('title'), link=g('link')||g('guid'), at=Date.parse(g('pubDate'));
-        if(title && webLink(link) && out.length<4) out.push({src:'Fox News', title:title.slice(0,220), link:link, t:isFinite(at)?new Date(at).toISOString():null});
-      });
-      foxNews=out; paintNews();
-    }).catch(function(){ paintNews() });
+  function feedItems(x, f){
+    var doc=new DOMParser().parseFromString(x,'application/xml'), out=[];
+    [].slice.call(doc.getElementsByTagName('item'), 0, 10).forEach(function(it){
+      function g(n){ var e=it.getElementsByTagName(n)[0]; return e ? e.textContent.trim() : '' }
+      function dc(){   // DW's RDF feed: the date is dc:date, and a namespaced tag is not found by plain name everywhere
+        var e=it.getElementsByTagName('dc:date')[0];
+        if(!e && it.getElementsByTagNameNS) e=it.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/','date')[0];
+        return e ? e.textContent.trim() : '';
+      }
+      var title=g('title'), link=g('link')||g('guid'), at=Date.parse(g('pubDate') || dc());
+      if(title && webLink(link) && out.length<4) out.push({src:f.src, title:title.slice(0,220), link:link, t:isFinite(at)?new Date(at).toISOString():null});
+    });
+    return out;
+  }
+  function webItems(){ var all=[]; FEEDS.forEach(function(f){ all=all.concat(webNews[f.k]||[]) }); return all }
+  // every feed is fetched at once and one repaint follows them all; a feed that fails keeps whatever it had
+  function loadFeeds(){
+    lastFeeds=Date.now();
+    return Promise.all(FEEDS.map(function(f){
+      return fetch(f.url).then(function(r){ if(!r.ok) throw new Error(f.k+' '+r.status); return r.text() })
+        .then(function(x){ webNews[f.k]=feedItems(x, f) }).catch(function(){});
+    })).then(function(){ paintNews() });
   }
   function setServerNews(list){
     if(!Array.isArray(list)) return;
@@ -986,10 +1007,10 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     try{ var s=JSON.parse(localStorage.getItem(K_NEWS)||'null'); if(s && Array.isArray(s.items)) serverNews=s }catch(e){}
   }
   function paintNews(){
-    var all=((serverNews&&serverNews.items)||[]).concat(foxNews), per={}, pick=[];
+    var all=((serverNews&&serverNews.items)||[]).concat(webItems()), per={}, pick=[];
     function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }   // future-dated stories count as now
     all.sort(function(a,b){ return ts(b)-ts(a) });
-    all.forEach(function(h){ per[h.src]=(per[h.src]||0)+1; if(per[h.src]<=1 && pick.length<10) pick.push(h) });   // one per source (Hector: the brief sums up the rest)
+    all.forEach(function(h){ per[h.src]=(per[h.src]||0)+1; if(per[h.src]<=1 && pick.length<12) pick.push(h) });   // one per source (Hector: the brief sums up the rest)
     var ol=$('h-list'); ol.textContent='';
     pick.forEach(function(h){
       var li=document.createElement('li'); li.className='hl';
@@ -1039,12 +1060,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     hubInit(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
     if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
-    loadWeather(); var fox=loadFox(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
+    loadWeather(); var feeds=loadFeeds(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
     if(fresh){
       lastServerTry=Date.now();   // the login call that just happened is the inbox and headlines refresh
       // the login just brought BBC and Jerusalem Post; let Fox land (or 4 s pass), then one brief for everything
       var fired=false, briefNow=function(){ if(!fired){ fired=true; runBrief() } };
-      fox.then(briefNow, briefNow); setTimeout(briefNow, 4000);
+      feeds.then(briefNow, briefNow); setTimeout(briefNow, 4000);
     } else {   // a reload: nothing is spent until what the page kept is 2 hours old
       lastBriefTry=(brief && brief.t) || Date.now();
       lastServerTry=Math.max((inbox && inbox.t) || 0, (serverNews && serverNews.t) || 0) || Date.now();
@@ -1061,7 +1082,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   function hubTick(now){
     if(document.hidden || !$('scr-chat').classList.contains('on')) return;
     if(now-lastWx>=REFRESH_MS) loadWeather();
-    if(now-lastFox>=REFRESH_MS) loadFox();
+    if(now-lastFeeds>=REFRESH_MS) loadFeeds();
     if(now-lastMlb>=MLB_MS) loadMlb();
     if(now-lastMap>=MAP_MS) loadEvents();
     if(now-lastMk>=MK_MS) loadMarkets();
@@ -1134,7 +1155,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     refreshing=true; lastServerTry=Date.now();
     var btns=[$('h-refresh'), $('ib-refresh')];
     btns.forEach(function(b){ b.disabled=true; b.textContent='Refreshing' });
-    loadFox();
+    loadFeeds();
     post({action:'login', password:pw}).then(function(r){
       if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
       if(!r.ok) throw new Error('http '+r.status);
@@ -1362,7 +1383,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   var K_BRIEF='esq_brief', brief=null, briefing=false, lastBriefTry=0, BRIEF_MS=2*60*60*1000;
   try{ var bs=JSON.parse(localStorage.getItem(K_BRIEF)||'null'); if(bs && Array.isArray(bs.points) && bs.t) brief=bs }catch(e){}
   function newsForBrief(){
-    var all=((serverNews && serverNews.items) || []).concat(foxNews);
+    var all=((serverNews && serverNews.items) || []).concat(webItems());   // every source the hub holds, the free feeds included
     function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }
     return all.slice().sort(function(a,b){ return ts(b)-ts(a) }).slice(0,30).map(function(h){ return {src:h.src, title:h.title, age:ago(h.t)} });
   }
