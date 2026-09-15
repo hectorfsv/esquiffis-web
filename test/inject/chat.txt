@@ -47,15 +47,42 @@
     var small=[].filter.call(document.querySelectorAll('input,textarea'), function(el){ return vis(el) && parseFloat(getComputedStyle(el).fontSize)<16 });
     T(small.length===0, tag+': no visible text field under 16px ('+small.length+')');
   }
+  function R(el){ var r=el.getBoundingClientRect(); return {l:r.left,r:r.right,t:r.top,b:r.bottom} }
+  function hit(a,b){ return a.l<b.r && a.r>b.l && a.t<b.b && a.b>b.t }
+  function art(){
+    // Hector: Vader behind the letters, never his face covered; VaderClawd under the passphrase, across the window
+    var img=$('art'); T(!!img && img.naturalWidth>0, 'the Vader art is loaded on the lock screen');
+    if(!img) return;
+    var a=R(img), w=a.r-a.l, h=a.b-a.t, scr=R($('scr-lock'));
+    // measured on the 736x1408 art: helmet and face x .24-.52, y .45-.62
+    var face={l:a.l+w*.24, r:a.l+w*.52, t:a.t+h*.45, b:a.t+h*.62};
+    T(face.t>=scr.t && face.b<=scr.b && face.l>=scr.l && face.r<=scr.r, 'his whole face is on screen');
+    var rg=document.createRange(); rg.selectNodeContents($('mark-t')); var rr=rg.getBoundingClientRect();
+    var m={l:rr.left,r:rr.right,t:rr.top,b:rr.bottom};
+    T(!hit(m,face), 'the letters do not cover his face');
+    T(hit(m,a), 'the letters sit over the art (Vader behind the letters)');
+    T(!hit(R($('pw')),face) && !hit(R($('unlock')),face), 'the passphrase and Unlock do not cover his face');
+    var pb=R($('vc-stage')), pn=R(document.querySelector('.panel'));
+    T(pb.t>=pn.b-1 && pb.t>=R($('unlock')).b, 'VaderClawd roams below the card and the Unlock button');
+    T(Math.abs((pb.r-pb.l)-innerWidth)<=1, 'his strip spans the whole window ('+Math.round(pb.r-pb.l)+')');
+  }
+  function petOK(tag){
+    var p=window.pet; T(!!p && !!p.state, tag+': VaderClawd is running');
+    if(!p) return null;
+    var s=p.state(); T(s.scene==='roam' && s.W>0 && s.H>0, tag+': he roams his strip ('+s.scene+' '+s.W+'x'+s.H+')');
+    return s;
+  }
   function go(){
     layout('lock');
     T(vis($('mark')), 'the name is on the lock screen');
     var mk=$('mark'); T(mk.scrollWidth<=mk.clientWidth+1, 'the wordmark fits its box ('+mk.scrollWidth+' in '+mk.clientWidth+')');
+    art();
     $('pw').value = mode==='badpw' ? 'wrong' : 'right';
     $('unlock').click();
     setTimeout(step2, 200);
   }
   function step2(){
+    petOK('after load');   // his first frame sizes the canvas: checked once the page has had a moment
     if(mode==='badpw'){
       T($('scr-lock').classList.contains('on'), 'a wrong passphrase stays on the lock screen');
       T(/not right/.test($('lock-msg').textContent), 'and says so ('+$('lock-msg').textContent+')');
@@ -90,6 +117,10 @@
         T(notes.length===1 && /two minutes/.test(notes[0].textContent), 'a note explains the wait ran out ('+(notes[0]?notes[0].textContent.slice(0,40):'none')+')');
         T(!$('send').disabled && $('sweep').hidden, 'and the page is usable again');
         T($('status').textContent==='Ready', 'status back to Ready');
+        // two minutes of roaming: never a show, never gone from the page
+        var s=petOK('after 2 min');
+        if(s){ T(['exit','travel','gone','tie'].indexOf(s.mode)<0 && !s.hidden, 'still on the page after two minutes ('+s.mode+')');
+          T(s.x>-60*s.S && s.x<s.W, 'and inside his strip (x '+s.x+' of '+s.W+')'); }
         done();
       }, 125000);
       return;
@@ -119,6 +150,8 @@
       T(!esq.querySelector('script') && !esq.querySelector('img') && window.__pwned===undefined, 'script and img are stripped, nothing ran');
       T(/• one/.test(esq.textContent) && /• two/.test(esq.textContent), 'line breaks and bullets are kept');
       T(!document.querySelector('#col .m.esq .tag'), 'an ordinary reply has no guard tag');
+      var ps=petOK('reply');
+      if(ps) T(ps.act==='celebrate' || !!ps.bubble, 'VaderClawd reacts to the reply ('+(ps.act||ps.bubble)+')');
     }
     T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'the page is ready again');
     var l=$('log'); T(Math.abs(l.scrollTop+l.clientHeight-l.scrollHeight)<=2 || l.scrollHeight<=l.clientHeight, 'the conversation is scrolled to the newest message');

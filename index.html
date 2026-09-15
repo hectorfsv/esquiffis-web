@@ -8,167 +8,292 @@
 <title>Esquiffis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
 /* Esquiffis, the web door. One assistant, three ways in: Telegram on the phone,
    this page, and the desktop pet. This page talks to the SAME agent (memory,
    tools, guard) through the access point on the Esquiffis workflow.
 
-   Design notes (2026-09-14 redesign): the conversation is the product, so
-   nothing competes with the words. Two faces only - Bebas Neue for the name,
-   Barlow for everything read. One red, one rule. The wordmark on the lock
-   screen is the single loud element; the sweep under the header is the only
-   motion, and it answers a send. Nothing is position:fixed, so iOS Safari's
-   moving address bar and keyboard have nothing to break. */
+   2026-09-14 (Hector): the Render Rig's chrome - notched card, red corner
+   brackets, running tape, chips - with the rig's Vader art BEHIND the letters
+   on the lock screen (never over his face), and VaderClawd, the desktop pet's
+   own engine, roaming a strip under the card across the whole window.
+   The pet lives in the last script block, between the VADERCLAWD markers, and is
+   written by tools/build-pet.py - edit the pet or the rig, not that block.
+   Nothing is position:fixed, so iOS Safari's moving address bar and keyboard
+   have nothing to break. */
 :root{
-  --void:#0A0708;
-  --panel:#171214;
-  --rule:rgba(255,120,110,.14);
-  --ink:#F2EAE8;
-  --smoke:#928789;
-  --red:#E01B1B;
-  --red-deep:#9E1212;
-  --disp:'Bebas Neue','Arial Narrow',Impact,sans-serif;
-  --text:'Barlow','Helvetica Neue',Arial,sans-serif;
+  --void:#0A0708; --panel:#15100F; --panel-hi:#1F1817; --panel-lo:#100C0B; --stage:#060405;
+  --rule:rgba(255,120,110,.11); --rule-hot:rgba(224,27,27,.42);
+  --ink:#F2EAE8; --ink-dim:#9A8C8A; --ink-faint:#5E5250;
+  --red:#E01B1B; --red-hot:#FF3B30; --red-deep:#7A0F0F; --amber:#E8A33D; --go:#3FD07A;
+  --disp:'Chakra Petch','Trebuchet MS',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --word:'Bebas Neue','Arial Narrow',Impact,sans-serif;
+  --notch:14px; --pet:84px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--void);color:var(--ink);font-family:var(--text);
-  font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%;overflow:hidden}
+html,body{height:100%;background:var(--void);color:var(--ink);font-family:var(--disp);font-size:16px;line-height:1.5;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;overflow:hidden}
 button,input,textarea{font:inherit;color:inherit;background:none;border:0;border-radius:0}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--red);outline-offset:2px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 [hidden]{display:none!important}
+@keyframes blip{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
 
-/* the app is one column the height of the visible viewport; the keyboard
-   handler below sets an explicit height when iOS shrinks the visual viewport */
-.app{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-.screen{display:none;flex:1;min-height:0}
-.screen.on{display:flex}
+/* ---------- the room ---------- */
+.app{position:relative;height:100dvh;display:flex;flex-direction:column;overflow:hidden;isolation:isolate}
+.bloom{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.7;
+  background:radial-gradient(60% 45% at 50% 42%,rgba(224,27,27,.14),transparent 70%)}
+.app.thinking .bloom{animation:breathe 3.4s ease-in-out infinite}
+.grain{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.14;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
 
-/* ---------- lock ---------- */
-.lock{align-items:center;justify-content:center;padding:24px}
-.lock-form{width:min(100%,480px);display:flex;flex-direction:column;align-items:flex-start;gap:26px}
-/* The name is the one loud thing. Its size is fitted to the form in JS after the
-   font lands (fitMark), because a vw clamp cannot know the glyph widths of the
-   face that actually loaded - at 168px it ran 516px wide in a 420px form. */
-.mark{font-family:var(--disp);font-weight:400;font-size:clamp(72px,22vw,150px);line-height:.86;
-  letter-spacing:.01em;color:var(--ink);text-transform:uppercase;white-space:nowrap;
-  padding-bottom:.08em;border-bottom:6px solid var(--red);width:100%}
-.slot{display:flex;width:100%;border:1px solid var(--rule);background:var(--panel)}
-.slot input{flex:1;min-width:0;padding:14px 16px;font-size:17px;letter-spacing:.04em}
-.slot input::placeholder{color:var(--smoke)}
-.slot button{padding:0 22px;background:var(--red);color:#fff;font-weight:600;font-size:16px;letter-spacing:.01em}
-.slot button:disabled{background:var(--red-deep);color:rgba(255,255,255,.7);cursor:default}
-.msg{min-height:1.4em;color:var(--smoke);font-size:15px}
-.msg.err{color:#FF6B6B}
+.frame{position:relative;z-index:1;flex:1;min-height:0;display:flex;gap:12px;width:100%}
+.rail{display:none}
+.panel{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;background:var(--panel-lo);border-bottom:1px solid var(--rule)}
+.brk{display:none}
 
-/* ---------- chat ---------- */
-.chat{flex-direction:column}
-.top{position:relative;flex:none;display:flex;align-items:center;gap:14px;
-  padding:10px max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));
-  padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--rule)}
-.who{display:flex;align-items:center;gap:10px;min-width:0}
-.face{width:30px;height:30px;object-fit:cover;flex:none;display:block}
-.name{font-family:var(--disp);font-size:26px;line-height:1;letter-spacing:.03em;text-transform:uppercase;padding-top:2px}
-.status{flex:1;min-width:0;color:var(--smoke);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font-variant-numeric:tabular-nums}
-.status.busy{color:var(--ink)}
-.status.bad{color:#FF6B6B}
-.ghost{color:var(--smoke);font-size:15px;padding:6px 2px;border-bottom:1px solid transparent;white-space:nowrap}
-.ghost:hover{color:var(--ink);border-bottom-color:var(--ink)}
-/* the one motion: a red sweep under the header while Esquiffis is thinking */
-.sweep{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--red);
+/* ---------- header ---------- */
+.head{position:relative;flex:none;display:flex;align-items:center;gap:10px;
+  padding:10px max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left));padding-top:max(10px,env(safe-area-inset-top));
+  border-bottom:1px solid var(--rule);background:linear-gradient(90deg,rgba(224,27,27,.10),transparent 62%),var(--panel-hi)}
+.who{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.face{width:28px;height:28px;object-fit:cover;flex:none;display:block;border:1px solid var(--rule)}
+.name{font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;text-shadow:0 0 22px rgba(224,27,27,.5)}
+.model{display:none;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--red);text-transform:uppercase;white-space:nowrap}
+.head-r{display:flex;align-items:center;gap:8px;flex:none}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border:1px solid var(--rule);font-family:var(--mono);font-size:11px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ink-faint);flex:none}
+.chip.ok::before{background:var(--go);box-shadow:0 0 8px rgba(63,208,122,.6)}
+.chip.busy{color:var(--ink);border-color:rgba(232,163,61,.35)}
+.chip.busy::before{background:var(--amber);animation:blip 1s infinite}
+.chip.bad{color:var(--red-hot)}
+.chip.bad::before{background:var(--red-hot)}
+.gbtn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);
+  background:rgba(0,0,0,.32);border:1px solid var(--rule);padding:5px 9px;white-space:nowrap}
+.gbtn:hover{border-color:var(--rule-hot);color:var(--ink)}
+.gbtn .more{display:none}
+/* while Esquiffis is thinking, a red sweep runs under the header */
+.sweep{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--red);box-shadow:0 0 10px rgba(224,27,27,.7);
   transform-origin:left;transform:scaleX(0);animation:sweep 1.6s cubic-bezier(.4,0,.2,1) infinite}
 @keyframes sweep{0%{transform:scaleX(0);transform-origin:left}55%{transform:scaleX(1);transform-origin:left}
   56%{transform-origin:right}100%{transform:scaleX(0);transform-origin:right}}
-@media (prefers-reduced-motion:reduce){.sweep{animation:none;transform:none}}
 
-.log{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+.screen{display:none;flex:1;min-height:0;position:relative}
+.screen.on{display:flex}
+
+/* ---------- lock ----------
+   The art is pure black around the figure, so the screen is black and the picture
+   has no edge. Measured on the 736x1408 art: helmet and face x .24-.52, y .45-.62,
+   the saber tip at y .29. The letters live above y .40 and the controls below the
+   hand, so neither touches his face (asserted by test/inject/chat.txt). */
+.lock{background:#000;overflow:hidden}
+.art{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.art img{position:absolute;display:block;max-width:none;width:auto;height:125%;top:-20%;left:50%;transform:translateX(-50%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 4%,#000 20%,#000 84%,transparent 97%);mask-image:linear-gradient(90deg,transparent 4%,#000 20%,#000 84%,transparent 97%);
+  animation:heroIn 1.6s cubic-bezier(.16,1,.3,1) both}
+@keyframes heroIn{from{opacity:0;scale:1.06}to{opacity:1;scale:1}}
+.art::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.6) 20%,transparent 38%)}
+.lock-form{position:relative;z-index:1;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:14px;
+  padding:14px max(18px,env(safe-area-inset-right)) 16px max(18px,env(safe-area-inset-left))}
+.mark{font-family:var(--word);font-weight:400;font-size:100px;line-height:.84;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;
+  color:var(--ink);text-align:center;padding-top:.05em;
+  text-shadow:0 0 38px rgba(224,27,27,.32),0 2px 18px rgba(0,0,0,.65)}
+.mark span{display:inline-block}
+.gate{display:flex;flex-direction:column;gap:10px;width:100%}
+.sub{display:none;color:var(--ink-dim);font-size:15px}
+.slot{display:flex;flex-direction:column;gap:10px}
+.slot input{width:100%;min-width:0;font-family:var(--mono);font-size:16px;letter-spacing:.28em;text-align:center;color:var(--ink);
+  background:rgba(0,0,0,.6);border:1px solid var(--rule);padding:13px}
+.slot input::placeholder{color:var(--ink-faint)}
+.slot input:focus{outline:none;border-color:var(--rule-hot);box-shadow:0 0 0 1px var(--rule-hot)}
+.go{flex:none;font-weight:700;font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:#fff;padding:14px 26px;
+  background:linear-gradient(180deg,var(--red) 0%,#C41616 62%,var(--red-deep) 100%);
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.go:hover{background:linear-gradient(180deg,var(--red-hot) 0%,var(--red) 62%,#9E1212 100%)}
+.go:disabled{filter:saturate(.45) brightness(.7);cursor:default}
+.go:focus-visible{outline:2px solid #fff;outline-offset:-5px}
+.msg{min-height:1.3em;color:var(--ink-dim);font-size:14px;text-align:center}
+.msg.err{color:var(--red-hot)}
+
+/* ---------- chat ---------- */
+.chat{flex-direction:column;background:var(--stage);overflow:hidden}
+.chat-art{position:absolute;right:0;bottom:0;height:100%;width:60%;overflow:hidden;pointer-events:none;opacity:.09;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 45%);mask-image:linear-gradient(90deg,transparent,#000 45%)}
+.chat-art img{position:absolute;display:block;max-width:none;height:130%;width:auto;top:-20%;right:-8%}
+.log{position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:18px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left))}
-.col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
-.empty{color:var(--smoke);padding:12px 0 0;max-width:36ch}
-.empty .lead{color:var(--ink);font-size:22px;font-weight:500;line-height:1.2;margin-bottom:6px}
+.col{width:100%;max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.empty{padding:8px 0 0}
+.empty .lead{font-size:26px;font-weight:600;line-height:1.15;letter-spacing:.01em;margin-bottom:6px;text-wrap:balance}
+.empty .hint{color:var(--ink-dim);font-size:15px;max-width:42ch;margin-bottom:16px}
+.asks{display:flex;flex-wrap:wrap;gap:8px}
+.asks button{font-weight:600;font-size:15px;color:var(--ink);background:rgba(0,0,0,.4);border:1px solid var(--rule);padding:9px 13px;
+  clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+.asks button:hover{border-color:var(--rule-hot);background:rgba(224,27,27,.1)}
+.asks button span{color:var(--ink-dim);font-weight:500}
 
 .m{display:flex;flex-direction:column;max-width:100%}
-.m .body{white-space:pre-wrap;overflow-wrap:anywhere}
-.m .when{color:var(--smoke);font-size:13px;margin-top:4px;font-variant-numeric:tabular-nums}
-/* Hector: a panel, on the right, no ornament */
-.m.me{align-self:flex-end;max-width:min(78%,52ch);align-items:flex-end}
-.m.me .body{background:var(--panel);padding:10px 14px;border-radius:2px}
-/* Esquiffis: his words on the void, marked by the red rule */
-.m.esq{align-self:flex-start;max-width:min(100%,68ch)}
-.m.esq .body{border-left:3px solid var(--red);padding:2px 0 2px 14px}
-.m.esq .body b,.m.esq .body strong{font-weight:600}
-.m.esq .body code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;background:var(--panel);padding:1px 5px}
-.m.esq .body pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--panel);
-  padding:12px 14px;overflow-x:auto;white-space:pre;margin:6px 0}
+.m .body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:16px;line-height:1.55}
+.m .when{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--ink-faint);margin-top:6px;font-variant-numeric:tabular-nums}
+.m .by{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+/* Hector: a notched panel on the right */
+.m.me{align-self:flex-end;max-width:min(82%,54ch);align-items:flex-end}
+.m.me .body{background:rgba(255,255,255,.04);border:1px solid var(--rule);padding:10px 14px;
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+/* Esquiffis: his words on the stage, marked by the red rule */
+.m.esq{align-self:flex-start;max-width:min(100%,70ch)}
+.m.esq .body{border-left:3px solid var(--red);padding:4px 0 4px 14px;background:linear-gradient(90deg,rgba(224,27,27,.07),transparent 45%)}
+.m.esq .body b,.m.esq .body strong{font-weight:700}
+.m.esq .body code{font-family:var(--mono);font-size:.9em;background:var(--panel);padding:1px 5px}
+.m.esq .body pre{font-family:var(--mono);font-size:.88em;background:var(--panel);padding:12px 14px;overflow-x:auto;white-space:pre;margin:6px 0}
 .m.esq .body pre code{background:none;padding:0}
 .m.esq .body a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
-.m .tag{color:var(--smoke);font-size:13px;margin-top:4px}
+.m .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--amber);margin-top:6px}
 /* a note from the page itself (never from Esquiffis) */
 .m.note{align-self:flex-start;max-width:60ch}
-.m.note .body{color:var(--smoke);border-left:3px solid var(--rule);padding:2px 0 2px 14px}
+.m.note .body{color:var(--ink-dim);border-left:3px solid var(--ink-faint);padding:2px 0 2px 14px}
 
-.composer{flex:none;display:flex;gap:10px;align-items:flex-end;border-top:1px solid var(--rule);
-  padding:10px max(16px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-.composer .in{flex:1;min-width:0;display:flex;background:var(--panel);border:1px solid var(--rule)}
-.composer textarea{flex:1;min-width:0;resize:none;padding:11px 14px;font-size:17px;line-height:1.4;max-height:160px}
-.composer textarea::placeholder{color:var(--smoke)}
-.send{flex:none;width:46px;height:46px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center}
-.send:disabled{background:var(--red-deep);cursor:default}
+.composer{position:relative;z-index:1;flex:none;display:flex;gap:10px;align-items:flex-end;border-top:1px solid var(--rule);background:var(--panel-lo);
+  padding:10px max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left))}
+.composer .in{flex:1;min-width:0;display:flex;background:rgba(0,0,0,.45);border:1px solid var(--rule)}
+.composer .in:focus-within{border-color:var(--rule-hot)}
+.composer textarea{flex:1;min-width:0;resize:none;padding:11px 13px;font-size:16px;line-height:1.45;max-height:160px;outline:none}
+.composer textarea::placeholder{color:var(--ink-faint)}
+.send{flex:none;width:48px;height:46px;color:#fff;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,var(--red) 0%,#C41616 62%,var(--red-deep) 100%);
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.send:disabled{filter:saturate(.45) brightness(.7);cursor:default}
 .send svg{width:20px;height:20px;fill:currentColor}
 
-@media (min-width:900px){
-  .top{padding-left:max(28px,env(safe-area-inset-left));padding-right:max(28px,env(safe-area-inset-right))}
+/* ---------- VaderClawd: under the card, the whole width of the window ---------- */
+.petbar{position:relative;z-index:2;flex:none;height:var(--pet);width:100%}
+.petbar::after{content:'';position:absolute;left:0;right:0;bottom:5px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--rule-hot) 15%,var(--rule-hot) 85%,transparent);opacity:.45}
+.petbar canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+@media (max-width:759px){ .petbar{background:linear-gradient(180deg,var(--panel-lo),#000)} }
+.app.kb .petbar{display:none}   /* the phone keyboard is up: the conversation needs the room */
+
+/* ---------- wide: the card ---------- */
+@media (min-width:760px){
+  :root{--pet:112px}
+  .frame{padding:22px 26px 0;justify-content:center}
+  .rail{display:block;width:24px;flex:0 0 24px;position:relative;overflow:hidden;border-left:1px solid var(--rule);
+    -webkit-mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent)}
+  .tape{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;animation:tape 46s linear infinite}
+  .tape span{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+    white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg)}
+  @keyframes tape{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+  .panel{flex:0 1 1200px;border:1px solid var(--rule);box-shadow:0 30px 90px rgba(0,0,0,.6);
+    background:linear-gradient(180deg,var(--panel-hi) 0%,var(--panel) 26%,var(--panel-lo) 100%);
+    clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+  .brk{display:block;position:absolute;width:16px;height:16px;pointer-events:none;z-index:5}
+  .brk.tr{top:6px;right:6px;border-top:2px solid var(--red);border-right:2px solid var(--red)}
+  .brk.bl{bottom:6px;left:6px;border-bottom:2px solid var(--red);border-left:2px solid var(--red)}
+  .head{padding:14px 18px}
+  .name{font-size:18px}
+  .model{display:inline}
+  .gbtn .more{display:inline}
+  .art img{height:150%;top:-24%;left:50%}
+  .art::after{background:linear-gradient(0deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.45) 18%,transparent 32%)}
+  .lock-form{padding:24px 32px 30px}
+  .gate{max-width:620px;margin:0 auto}
+  .sub{display:block;text-align:center}
+  .slot{flex-direction:row;gap:0}
+  .slot input{flex:1;text-align:left;padding:14px 16px;letter-spacing:.22em}
+  .go{padding:0 34px}
   .log{padding:28px 28px 16px}
-  .composer{padding-left:28px;padding-right:28px;justify-content:center}
-  .composer .in{max-width:704px}
+  .composer{padding:12px 28px;justify-content:center}
+  .composer .in{max-width:724px}
+  .chat-art{opacity:.12}
+}
+/* a short window (a phone on its side): the card and the strip give up height */
+@media (min-width:760px) and (max-height:500px){
+  .art img{height:150%;top:-30%;left:22%}
+  .mark{text-align:left}
+  .gate{max-width:46%;margin:0}
+}
+@media (max-height:500px){
+  :root{--pet:72px}
+  .frame{padding-top:8px}
+  .head{padding-top:6px;padding-bottom:6px}
+  .sub{display:none}
+  .lock-form{padding-top:10px;padding-bottom:10px}
+}
+@media (prefers-reduced-motion:reduce){
+  .sweep,.tape,.chip.busy::before,.app.thinking .bloom{animation:none}
+  .sweep{transform:none}
+  .art img{animation:none}
 }
 </style>
 </head>
 <body>
 <div id="app" class="app">
-
-  <section id="scr-lock" class="screen lock on" aria-labelledby="mark">
-    <form id="lock-form" class="lock-form" autocomplete="on">
-      <h1 id="mark" class="mark">Esquiffis</h1>
-      <label class="sr" for="pw">Passphrase</label>
-      <div class="slot">
-        <input id="pw" type="password" placeholder="Passphrase" autocomplete="current-password" autocapitalize="off" spellcheck="false">
-        <button id="unlock" type="submit">Unlock</button>
-      </div>
-      <p id="lock-msg" class="msg" role="alert"></p>
-    </form>
-  </section>
-
-  <section id="scr-chat" class="screen chat" aria-label="Conversation">
-    <header class="top">
-      <div class="who">
-        <img class="face" id="face" alt="" width="30" height="30">
-        <span class="name">Esquiffis</span>
-      </div>
-      <div id="status" class="status" aria-live="polite">Ready</div>
-      <button id="clear" class="ghost" type="button">Clear screen</button>
-      <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
-    </header>
-    <main id="log" class="log">
-      <div class="col" id="col">
-        <div id="empty" class="empty">
-          <p class="lead">Ask anything.</p>
-          <p>Same Esquiffis as on your phone. He remembers both.</p>
+  <div class="bloom" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div>
+  <div class="frame">
+    <div class="rail" aria-hidden="true"><div class="tape"><span>Grok 4.20 — Gmail — Calendar — Perplexity — Reminders — Drive — Contacts — Weather — MLB — Memory — </span><span>Grok 4.20 — Gmail — Calendar — Perplexity — Reminders — Drive — Contacts — Weather — MLB — Memory — </span></div></div>
+    <div class="panel">
+      <span class="brk tr" aria-hidden="true"></span><span class="brk bl" aria-hidden="true"></span>
+      <header class="head">
+        <div class="who">
+          <img class="face" id="face" alt="" width="28" height="28">
+          <span class="name">Esquiffis</span><span class="model">Grok 4.20</span>
         </div>
-      </div>
-    </main>
-    <form id="composer" class="composer">
-      <label class="sr" for="box">Message</label>
-      <div class="in"><textarea id="box" rows="1" placeholder="Message Esquiffis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
-      <button id="send" class="send" type="submit" aria-label="Send">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 8h-5v10H9V11H4z"/></svg>
-      </button>
-    </form>
-  </section>
+        <div class="head-r">
+          <span id="status" class="chip" aria-live="polite">Locked</span>
+          <button id="clear" class="gbtn" type="button" hidden>Clear<span class="more"> screen</span></button>
+        </div>
+        <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
+      </header>
 
+      <section id="scr-lock" class="screen lock on" aria-labelledby="mark">
+        <div class="art" aria-hidden="true"><img id="art" src="hero.webp" alt="" width="736" height="1408" draggable="false"></div>
+        <form id="lock-form" class="lock-form" autocomplete="on">
+          <h1 id="mark" class="mark"><span id="mark-t">Esquiffis</span></h1>
+          <div class="gate">
+            <p class="sub">Same Esquiffis as on your phone, with the same memory.</p>
+            <label class="sr" for="pw">Passphrase</label>
+            <div class="slot">
+              <input id="pw" type="password" placeholder="passphrase" autocomplete="current-password" autocapitalize="off" spellcheck="false">
+              <button id="unlock" class="go" type="submit">Unlock</button>
+            </div>
+            <p id="lock-msg" class="msg" role="alert"></p>
+          </div>
+        </form>
+      </section>
+
+      <section id="scr-chat" class="screen chat" aria-label="Conversation">
+        <div class="chat-art" aria-hidden="true"><img src="hero.webp" alt="" width="736" height="1408"></div>
+        <main id="log" class="log">
+          <div class="col" id="col">
+            <div id="empty" class="empty">
+              <p class="lead">What do you need?</p>
+              <p class="hint">Same Esquiffis as on your phone. He remembers both.</p>
+              <div class="asks" id="asks">
+                <button type="button" data-ask="give me my morning coffee">Morning coffee <span>the briefing</span></button>
+                <button type="button" data-ask="anything important in my inbox?">My inbox</button>
+                <button type="button" data-ask="what's on my calendar today?">Calendar today</button>
+                <button type="button" data-ask="what's the weather right now?">Weather</button>
+                <button type="button" data-ask="MLB scores from last night">MLB scores</button>
+              </div>
+            </div>
+          </div>
+        </main>
+        <form id="composer" class="composer">
+          <label class="sr" for="box">Message</label>
+          <div class="in"><textarea id="box" rows="1" placeholder="Message Esquiffis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
+          <button id="send" class="send" type="submit" aria-label="Send">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 8h-5v10H9V11H4z"/></svg>
+          </button>
+        </form>
+      </section>
+    </div>
+  </div>
+  <div id="vc-stage" class="petbar" aria-hidden="true"><canvas id="vc-cv"></canvas></div>
 </div>
 <script>
 (function(){
@@ -186,7 +311,13 @@ button{cursor:pointer}
   var FACE='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QKORXhpZgAATU0AKgAAAAgAAwEOAAIAAAD4AAAAMgE7AAIAAAAlAAABKodpAAQAAAABAAABUAAAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AGNhZTYyMWY4LTVmN2QtNGFhNC1iZDMwLTI0YzFhMGE5NWI0NgAAAASShgAHAAAA/wAAAYagAQADAAAAAQABAACgAgAEAAAAAQAAACqgAwAEAAAAAQAAAFAAAAAAQVNDSUkAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AP/tADhQaG90b3Nob3AgMy4wADhCSU0EBAAAAAAAADhCSU0EJQAAAAAAENQdjNmPALIE6YAJmOz4Qn7/wAARCABQACoDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAD/9oADAMBAAIRAxEAPwD+f+iiigAooooAKKUqw5IpKAP/0P5/6KKKACtCxtDcPgVTiTzHCk4HfvXsvwv8Cap418VaV4W0SIz3mq3EcEK9t0jADJ9B1J7CoqTUU2zrwWFlWqxpQ3Zgal4K1TTtFtNau7SSK0vt4glZSEkMeA+0ng7SRnHSuDMKgkYr68/aZ8YaReeI7fwX4UlEnhvwbbrpViy9JvJJM9x9Z5i8n0IHavkMzqSTWWGqSlDmkehnuEo0MQ6VJ3S0+fX8T//R/n/q5p9jPqV5DY2w3STMqKOOSxwOuB+ZqnXTeHNT/s3U7GW0tlnuI5Q4DgENID8gIJAKg8kHg9+2BAdvoXgR410nUrieK40/WlAikUHcsynDRsDjG08EjIr7C+F+lw/CL4Y+KPjTOQmo3vmaD4fPGftFxH/plwv/AFwgbYCOjyKeoryTwZZXXi9NC8JaLqiXniC8vNk9g8aQRRTGZhGYJDIyyFjKxbaseBwVYjcO4/aw8W6Raa5p3wm8JXCzeH/h9a/2ZC6H5Li7B3Xtzx182ctg/wBxVHavNxc3OSpI+54fpQw1CePk9UrR9X/X59j4v8RXzXE7ZOdxrk6t3cpllZjVSvRirKx8XWqOUnJn/9L+f+nI7RsHQlWU5BHBBHpTaKAPSPDfi64bxBeazqgNxf3MUjRuh8qT7SR8rpsGN5Iyemee5rltQ1i4vSzzOXZuSSckn1rCR3jdZI2KuhBBHBBHQimkk8mlZbmntZcvLfQUnJzSUUUzM//T/n/ooooAKKKKACiiigD/2Q==';
 
   function $(id){return document.getElementById(id)}
-  var pw='', log=[], busy=false, tick=null, t0=0, aborter=null;
+  var pw='', log=[], busy=false, tick=null, t0=0, aborter=null, waited=false;
+  var app=$('app');
+
+  /* ---------- VaderClawd reacts (the page never depends on him) ---------- */
+  function vc(kind){ try{ if(window.pet && window.pet.react) window.pet.react(kind) }catch(e){} }
+  function petScale(){ return (window.matchMedia && matchMedia('(min-width:760px) and (min-height:501px)').matches) ? 1.5 : 1 }
+  window.PET_SCALE=petScale();
 
   /* ---------- remembered things ---------- */
   function savePw(v){ try{ sessionStorage.setItem(K_PW, JSON.stringify({v:v,t:Date.now()})) }catch(e){} }
@@ -217,9 +348,9 @@ button{cursor:pointer}
     $('unlock').disabled=true; lockMsg('');
     post({action:'login', password:v})
       .then(function(r){
-        if(r.status===401){ lockMsg('That passphrase is not right.', true); return }
+        if(r.status===401){ lockMsg('That passphrase is not right.', true); vc('locked'); return }
         if(!r.ok){ lockMsg('Esquiffis did not answer ('+r.status+'). Try again.', true); return }
-        pw=v; savePw(v); enter();
+        pw=v; savePw(v); enter(true);
       })
       .catch(function(){ lockMsg("Can't reach Esquiffis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
@@ -230,9 +361,13 @@ button{cursor:pointer}
   }
   function show(id){
     ['scr-lock','scr-chat'].forEach(function(s){ $(s).classList.toggle('on', s===id) });
+    var locked=id==='scr-lock';
+    $('clear').hidden=locked;
+    if(locked){ setStatus('Locked'); fitMark(); }
   }
-  function enter(){
-    show('scr-chat'); loadLog(); render(); setStatus('Ready');
+  function enter(fresh){
+    show('scr-chat'); loadLog(); render(); setStatus('Ready','ok');
+    if(fresh) setTimeout(function(){ vc('greet') }, 900);
     // a focused field on the phone pops the keyboard over the conversation; only the desktop wants it
     if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ $('box').focus() }, 50);
   }
@@ -285,6 +420,7 @@ button{cursor:pointer}
   function when(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }catch(e){ return '' } }
   function node(m){
     var art=document.createElement('article'); art.className='m '+m.r;
+    if(m.r==='esq'){ var by=document.createElement('div'); by.className='by'; by.textContent='Esquiffis'; art.appendChild(by) }
     var body=document.createElement('div'); body.className='body';
     if(m.r==='esq') body.appendChild(sanitize(m.m)); else body.textContent=m.m;
     art.appendChild(body);
@@ -303,14 +439,18 @@ button{cursor:pointer}
   function toBottom(){ var l=$('log'); l.scrollTop=l.scrollHeight }
 
   /* ---------- status ---------- */
-  function setStatus(t, cls){ var s=$('status'); s.textContent=t; s.className='status'+(cls?' '+cls:'') }
+  function setStatus(t, cls){ var s=$('status'); s.textContent=t; s.className='chip'+(cls?' '+cls:'') }
   function fmt(s){ var m=Math.floor(s/60), r=s%60; return m+':'+(r<10?'0':'')+r }
   function setBusy(on){
-    busy=on; $('send').disabled=on; $('sweep').hidden=!on;
-    clearInterval(tick); tick=null;
+    busy=on; $('send').disabled=on; $('sweep').hidden=!on; app.classList.toggle('thinking', on);
+    clearInterval(tick); tick=null; waited=false;
     if(on){ t0=Date.now(); setStatus('Thinking 0:00','busy');
-      tick=setInterval(function(){ setStatus('Thinking '+fmt(Math.floor((Date.now()-t0)/1000)),'busy') },1000); }
-    else setStatus('Ready');
+      tick=setInterval(function(){
+        var s=Math.floor((Date.now()-t0)/1000);
+        setStatus('Thinking '+fmt(s),'busy');
+        if(s>=30 && !waited){ waited=true; vc('waiting') }
+      },1000); }
+    else setStatus('Ready','ok');
   }
 
   /* ---------- sending ---------- */
@@ -321,7 +461,7 @@ button{cursor:pointer}
     if(!pw){ lockOut('Enter the passphrase again.'); return }
     box.value=''; box.style.height='auto';
     add({r:'me', m:text, t:new Date().toISOString()});
-    setBusy(true);
+    setBusy(true); vc('thinking');
     aborter = (typeof AbortController!=='undefined') ? new AbortController() : null;
     var timer=setTimeout(function(){ if(aborter) aborter.abort() }, WAIT_MS);
     post({action:'chat', password:pw, message:text, source:'web'}, aborter&&aborter.signal)
@@ -331,7 +471,9 @@ button{cursor:pointer}
         return r.json().then(function(d){
           var reply=(d && typeof d.response==='string') ? d.response.trim() : '';
           if(!reply) throw new Error('empty');
-          add({r:'esq', m:reply, t:new Date().toISOString(), g:d.blocked===true});
+          var guarded=d.blocked===true;
+          add({r:'esq', m:reply, t:new Date().toISOString(), g:guarded});
+          vc(guarded ? 'guard' : 'reply');
         });
       })
       .catch(function(err){
@@ -340,6 +482,7 @@ button{cursor:pointer}
           ? 'No reply in two minutes. Esquiffis may still finish it on his side; ask again in a moment.'
           : 'Something failed on the way back. Try again.';
         add({r:'note', m:why, t:new Date().toISOString()});
+        vc('failed');
       })
       .finally(function(){ clearTimeout(timer); aborter=null; if(pw) setBusy(false); });
   }
@@ -354,6 +497,11 @@ button{cursor:pointer}
   box.addEventListener('keydown', function(e){
     if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send() }
   });
+  $('asks').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button[data-ask]') : null;
+    if(!b || busy) return;
+    box.value=b.getAttribute('data-ask'); send();
+  });
   $('clear').addEventListener('click', function(){
     log=[]; saveLog(); render();   // the screen only: Esquiffis's memory is his, on the server
   });
@@ -361,32 +509,2003 @@ button{cursor:pointer}
      viewport alone, so a 100dvh column would sit under the keys. Size the app to
      what is actually visible and pin it to the top of it. Nothing is fixed. */
   if(window.visualViewport){
-    var vv=window.visualViewport, app=$('app');
+    var vv=window.visualViewport;
     function fit(){
-      var h=Math.round(vv.height);
-      if(h>0 && Math.abs(window.innerHeight-h)>40){ app.style.height=h+'px'; app.style.transform='translateY('+Math.round(vv.offsetTop)+'px)'; }
+      var h=Math.round(vv.height), kb=h>0 && Math.abs(window.innerHeight-h)>40;
+      if(kb){ app.style.height=h+'px'; app.style.transform='translateY('+Math.round(vv.offsetTop)+'px)'; }
       else { app.style.height=''; app.style.transform=''; }
+      app.classList.toggle('kb', kb);
       toBottom();
     }
     vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit);
   }
-  /* the wordmark must fit its form whatever face rendered it: measure, then step down */
+  /* The name spans the lock screen: size it to the width it has, whatever face
+     rendered it, but never taller than the space above his helmet. */
   function fitMark(){
-    var mk=$('mark'); if(!mk) return;
-    mk.style.fontSize='';
-    var size=parseFloat(getComputedStyle(mk).fontSize), guard=0;
-    while(mk.scrollWidth>mk.clientWidth && size>40 && guard++<40){ size-=4; mk.style.fontSize=size+'px' }
+    var mk=$('mark'), t=$('mark-t'), scr=$('scr-lock'); if(!mk||!t||!scr.classList.contains('on')) return;
+    mk.style.fontSize='100px';
+    var w=t.getBoundingClientRect().width, avail=mk.clientWidth, h=scr.clientHeight;
+    if(!w||!avail||!h) return;
+    var wide=window.matchMedia && matchMedia('(min-width:760px)').matches;
+    var size=Math.floor(Math.min(100*avail/w*.985, h*(wide?.25:.2), 300));
+    mk.style.fontSize=Math.max(40,size)+'px';
+    var guard=0;
+    while(mk.scrollWidth>mk.clientWidth && size>40 && guard++<40){ size-=3; mk.style.fontSize=size+'px' }
   }
   fitMark();
-  window.addEventListener('resize', fitMark);
+  window.addEventListener('resize', function(){
+    fitMark();
+    var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
+  });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitMark);
+  // a hidden tab does not need him drawing
+  document.addEventListener('visibilitychange', function(){ try{ window.pet.pause(document.hidden) }catch(e){} });
 
   pw=loadPw();
-  if(pw) enter(); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
+  if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
   window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE };
 })();
+</script>
+<script>
+/* VaderClawd - generated by tools/build-pet.py from the desktop pet and the Render Rig. Do not edit here. */
+/*VADERCLAWD-BEGIN*/
+(function(){
+  var reduce=false;
+  var cv=document.getElementById('vc-cv'),ctx=cv.getContext('2d');
+
+/* ---------- sprites ---------- */
+  var COL={K:'#0a0a0d',E:'#3b3f47',G:'#26282e',H:'#7f8693',L:'#434d5f',W:'#d8e0ec',
+    S:'#a3aab4',s:'#30343b',O:'#d97757',o:'#ac5a3e',k:'#2b1b17',D:'#1b1c21',e:'#4a4e57',
+    P:'#4d525b',M:'#c0c6ce',m:'#474c55',lr:'#ff3b30',lb:'#3d8cff',lg:'#3fd07a',
+    T:'#eef1f5',t:'#9aa3b0',X:'#121317',g:'#5f6772',B:'#2a2d34',b:'#6a717d',
+    C:'#9a6a3f',c:'#5c3a22',n:'#c79660'};
+  var N4=[[1,0],[-1,0],[0,1],[0,-1]];
+  function K(x,y){return x+','+y}
+  function grouped(px){var g={};Object.keys(px).forEach(function(k){var c=COL[px[k]],p=k.split(',');
+    (g[c]=g[c]||[]).push(+p[0],+p[1]);});return g;}
+  function painter(px){return function(x0,x1,y0,y1,c){for(var x=x0;x<=x1;x++)for(var y=y0;y<=y1;y++)px[K(x,y)]=c}}
+  function rim(px,from,to,maxY){Object.keys(px).forEach(function(k){
+    if(px[k]!==from) return; var p=k.split(','),x=+p[0],y=+p[1]; if(y>maxY) return;
+    if(N4.some(function(d){return !px[K(x+d[0],y+d[1])]})) px[k]=to;});}
+  // leg frames: 0 standing, 1 and 2 walking, 3 squashed on landing
+  function legs(rect,leg,c){[8,12,22,26].forEach(function(x,i){
+    if(leg===3){rect(x,x+1,16,17,c);return;}
+    var lifted=leg!==0&&((i%2===0)===(leg===1)); rect(x,x+1,16,lifted?18:19,c);});}
+  function rifle(rect){rect(30,40,8,9,'B'); rect(38,40,7,7,'B'); rect(41,41,8,8,'b'); rect(32,34,10,12,'B'); rect(35,36,10,10,'b');}
+  // Clawd as on the Claude Code start screen; `gun` arms him, `scared` throws his arms up
+  function buildClawd(leg,gun,scared){
+    var px={},rect=painter(px);
+    rect(6,29,0,15,'O'); rect(6,29,15,15,'o'); legs(rect,leg,'O');
+    if(scared){rect(2,5,2,5,'O'); rect(30,33,2,5,'O');
+      rect(9,12,3,7,'W'); rect(23,26,3,7,'W'); rect(10,11,5,6,'k'); rect(24,25,5,6,'k'); rect(16,19,10,11,'k');}
+    else{rect(2,5,8,11,'O'); rect(30,33,8,11,'O'); rect(10,11,4,7,'k'); rect(24,25,4,7,'k');}
+    if(gun) rifle(rect);
+    return grouped(px);
+  }
+  // the same body, black and rimmed, under Vader's helmet; `reach` raises the hand for the Force
+  function buildVader(leg,lights,reach){
+    var px={},rect=painter(px);
+    rect(6,29,0,15,'D'); rect(2,5,11,13,'D'); rect(30,33,11,13,'D'); legs(rect,leg,'D');
+    if(reach){rect(31,33,8,10,'D'); rect(34,38,6,8,'D');}
+    Object.keys(px).forEach(function(k){var p=k.split(','),x=+p[0],y=+p[1];
+      if(N4.some(function(d){return !px[K(x+d[0],y+d[1])]})) px[k]='e';});
+    rect(13,22,11,13,'P'); px['15,12']=lights[0]; px['17,12']=lights[1]; px['19,12']=lights[2];
+    var dome={'-6':[12,23],'-5':[9,26],'-4':[7,28],'-3':[6,29],'-2':[5,30],'-1':[5,30]};
+    Object.keys(dome).forEach(function(y){rect(dome[y][0],dome[y][1],+y,+y,'K')});
+    rect(5,30,0,7,'K'); rect(4,11,8,8,'K'); rect(24,31,8,8,'K');
+    rect(3,7,9,9,'K'); rect(28,32,9,9,'K'); rect(3,5,10,10,'K'); rect(30,32,10,10,'K');
+    Object.keys(px).filter(function(k){return px[k]==='K'}).forEach(function(k){
+      var p=k.split(','),x=+p[0],y=+p[1];
+      if(N4.some(function(d){var n=px[K(x+d[0],y+d[1])];return n!=='K'&&n!=='E'})) px[k]='E';});
+    rect(8,27,0,0,'G');
+    [[1,8,13],[2,9,14],[3,11,14]].forEach(function(r){rect(r[1],r[2],r[0],r[0],'L');rect(35-r[2],35-r[1],r[0],r[0],'L')});
+    px['9,1']='W'; px['26,1']='W'; rect(17,18,1,5,'G');
+    [[13,4],[14,5],[22,4],[21,5]].forEach(function(p){px[K(p[0],p[1])]='G'});
+    [[5,16,19],[6,15,20],[7,14,21],[8,15,20],[9,16,19]].forEach(function(r){
+      for(var x=r[1];x<=r[2];x++) px[K(x,r[0])]=((x+r[0])%2===0)?'S':'s';});
+    [[12,-5],[13,-5],[14,-5],[10,-4],[11,-4],[8,-3],[9,-3],[7,-2]].forEach(function(p){px[K(p[0],p[1])]='H'});
+    return grouped(px);
+  }
+  // a stormtrooper Clawd: white body, black undersuit, teardrop lenses and frown, rifle across the front
+  function buildTrooper(leg){
+    var px={},rect=painter(px);
+    rect(6,29,0,15,'T'); rect(2,5,8,11,'T'); rect(30,33,8,11,'T'); legs(rect,leg,'T');
+    var dome={'-5':[11,24],'-4':[9,26],'-3':[8,27],'-2':[7,28],'-1':[6,29]};
+    Object.keys(dome).forEach(function(y){rect(dome[y][0],dome[y][1],+y,+y,'T')});
+    rect(5,30,0,9,'T');
+    rim(px,'T','t',15);
+    rect(6,29,13,13,'X'); rect(12,14,13,13,'g'); rect(21,23,13,13,'g');
+    [8,12,22,26].forEach(function(x){if(px[K(x,16)]){px[K(x,16)]='X'; px[K(x+1,16)]='X';}});
+    rect(9,14,3,4,'X'); rect(11,14,5,5,'X'); rect(13,14,6,6,'X');
+    rect(21,26,3,4,'X'); rect(21,24,5,5,'X'); rect(21,22,6,6,'X');
+    rect(17,18,2,6,'t'); rect(13,22,8,8,'g'); px['12,7']='g'; px['23,7']='g';
+    [14,16,19,21].forEach(function(x){px[K(x,9)]='X'});
+    rect(7,9,6,7,'g'); rect(26,28,6,7,'g'); rect(12,23,-4,-4,'t');
+    rect(27,39,11,12,'B'); rect(37,39,10,10,'b'); rect(30,31,13,14,'B');
+    return grouped(px);
+  }
+  // a saber at any angle: a 4-pixel hilt from the hand, a 2-pixel core, a 1-pixel halo
+  function buildSaber(hx,hy,deg,len){
+    var a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a),hilt=[],core={},halo={},hiltSet={};
+    for(var t=0;t<4;t++){var x=Math.round(hx+t*c),y=Math.round(hy-t*s); hilt.push(x,y,t%2); hiltSet[K(x,y)]=1;}
+    var steep=Math.abs(s)>.7;
+    for(var u=4;u<4+len;u++){var bx=Math.round(hx+u*c),by=Math.round(hy-u*s);
+      core[K(bx,by)]=1; core[steep?K(bx+1,by):K(bx,by+1)]=1;}
+    Object.keys(core).forEach(function(k){var p=k.split(','),x=+p[0],y=+p[1];
+      N4.forEach(function(d){var n=K(x+d[0],y+d[1]); if(!core[n]&&!hiltSet[n]) halo[n]=1;});});
+    function flat(o){var r=[];Object.keys(o).forEach(function(k){var p=k.split(',');r.push(+p[0],+p[1])});return r;}
+    return {hilt:hilt,core:flat(core),halo:flat(halo),
+      base:[hx+4*c,hy-4*s],tip:[hx+(3+Math.max(len,1))*c,hy-(3+Math.max(len,1))*s]};
+  }
+  // props: a crate (whole or either half after a cut), a mouse droid, a dropped blaster
+  function buildCrate(part){
+    var px={},rect=painter(px);
+    rect(0,13,0,11,'C'); rect(1,12,1,1,'n');
+    rect(0,13,0,0,'c'); rect(0,13,11,11,'c'); rect(0,0,0,11,'c'); rect(13,13,0,11,'c'); rect(1,12,5,6,'c');
+    for(var i=1;i<=10;i++) px[K(i+1,i)]='c';
+    if(part) Object.keys(px).forEach(function(k){var x=+k.split(',')[0]; if(part===1?x>6:x<7) delete px[k];});
+    return grouped(px);
+  }
+  function buildDroid(){
+    var px={},rect=painter(px);
+    rect(1,11,0,0,'g'); rect(0,12,1,4,'X'); rect(2,9,2,2,'b'); rect(3,6,3,3,'e'); px['11,2']='lr';
+    rect(1,3,5,5,'g'); rect(9,11,5,5,'g');
+    return grouped(px);
+  }
+  function buildGun(){var px={},rect=painter(px); rect(0,10,1,2,'B'); rect(8,10,0,0,'B'); rect(11,11,1,1,'b'); rect(2,4,3,5,'B'); return grouped(px);}
+  var cache={};
+  function memo(k,fn){return cache[k]||(cache[k]=fn())}
+
+  /* ---------- engine ---------- */
+  var host=null,kind='stage',W=0,H=0,dpr=1,S=4,FLOOR=0;
+  var actors=[],props=[],sparks=[],waves=[],bolts=[],shake=0,shakeOff=0,flash=0;
+
+  function size(){
+    if(!host){W=H=0;return}
+    var r=host.getBoundingClientRect(),w=Math.round(r.width),h=Math.round(r.height);
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    if(w===W&&h===H&&cv.width===Math.round(w*dpr)) return;
+    W=w; H=h; cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+    if(!W||!H) return;
+    // one sprite pixel = a whole number of DEVICE pixels, so it stays crisp.
+    // Stage: capped at 5 CSS px (small to medium). Hub strip: 94px tall, so 2-3 px.
+    // lock: the empty space left of the lock card; pet: the window height IS the size
+    var P=kind==='stage'||kind==='lock'
+      ?Math.max(2,Math.floor(Math.min(H/64,W/140,5)*dpr))
+      :kind==='pet'?Math.max(2,Math.round((window.PET_SCALE||H/64)*dpr))
+      :Math.max(2,Math.floor(Math.min(H/40,W/200,3)*dpr));
+    S=P/dpr;
+    // a short stage (a phone) puts the floor lower so the fight stays under the dial
+    FLOOR=Math.round((kind==='stage'?H*(H<600?.92:.84):H-6)*dpr/P)*P;
+  }
+  function spd(){return Math.max(22,W/S/10)}   // walking pace in sprite px/s, faster on a long strip
+
+  function Actor(kind,x,dir){
+    var a=this; a.kind=kind; a.x=x; a.dir=dir; a.target=x; a.speed=0; a.leg=0; a.legT=0; a.legRate=.12;
+    a.lift=0; a.vy=0; a.held=false; a.landed=false; a.squash=0; a.lunge=0;
+    a.saber=false; a.deg=90; a.blade=0; a.bladeTo=0; a.reach=false; a.waveT=0; a.auraT=0;
+    a.lights=['lr','lb','lg']; a.lightT=0; a.gun=false; a.scared=false; a.emote=0;
+    a.hand=kind==='clawd'?[33,10]:[33,12];
+    a.core=kind==='vader'?'#ffeded':'#eaf4ff'; a.halo=kind==='vader'?'#ff2a2a':'#3d8cff';
+    a.glow=kind==='vader'?'255,34,34':'61,140,255';
+  }
+  function walk(a,x,speed){a.target=x; a.speed=speed*S; a.legRate=Math.max(.05,Math.min(.14,.12*22/speed));}
+  function here(a){return Math.abs(a.x-a.target)<.5}
+  function geom(a){
+    var P=S*dpr,bob=0;
+    if(a.squash>0) bob=2; else if(a.leg===2&&a.lift===0) bob=-1;
+    var ox=Math.round((a.x+a.dir*a.lunge*S+shakeOff)*dpr);
+    var oy=FLOOR-(20-bob)*P-Math.round(a.lift)*P;
+    return {P:P,ox:ox,oy:oy,X:function(x){return ox+(a.dir>0?x:35-x)*P}};
+  }
+  function pt(a,sx,sy){var g=geom(a); return [g.X(sx)+g.P/2,g.oy+sy*g.P+g.P/2];}
+
+  function stepActor(a,dt){
+    if(a.squash>0){a.squash-=dt; if(a.squash<=0) a.leg=0;}
+    var d=a.target-a.x,st=a.speed*dt;
+    if(Math.abs(d)>.5){a.x+=Math.abs(d)<=st?d:Math.sign(d)*st; a.legT+=dt;
+      if(a.legT>a.legRate){a.legT=0; a.leg=a.leg===1?2:1;}}
+    else{a.x=a.target; if(a.lift===0&&a.squash<=0) a.leg=0;}
+    if(a.held&&a.lift>0){a.legT+=dt; if(a.legT>.08){a.legT=0; a.leg=a.leg===1?2:1;}}   // kicking in the air
+    if(!a.held&&(a.lift>0||a.vy<0)){
+      a.vy+=190*dt; a.lift-=a.vy*dt;
+      if(a.lift<=0){var hard=a.vy>60; a.lift=0; a.vy=0;
+        if(hard){a.squash=.3; a.leg=3; dust((a.x+18*S)*dpr); shake=.16; a.landed=true;}}
+    }
+    var r=a.bladeTo>a.blade?1/.35:1/.28;
+    a.blade=a.bladeTo>a.blade?Math.min(a.bladeTo,a.blade+r*dt):Math.max(a.bladeTo,a.blade-r*dt);
+    if(a.kind==='vader'){a.lightT-=dt; if(a.lightT<=0){a.lightT=.45;
+      a.lights=['lr','lb','lg'].map(function(c){return Math.random()<.7?c:'P'});}
+      if(a.reach){a.waveT-=dt; if(a.waveT<=0){a.waveT=.28; waves.push({a:a,r:3*S*dpr,life:.75});}}
+      else a.waveT=0;}
+    if(a.held&&a.lift>2) aura(dt,a,(a.x+4*S)*dpr,geom(a).oy,28,20);
+    if(a.emote>0) a.emote-=dt;
+  }
+
+  function Prop(spr,w,h,x,dir){
+    return {spr:spr,w:w,h:h,x:x,dir:dir||1,lift:0,vx:0,vy:0,held:false,heavy:false,onFloor:true,
+      flipV:false,spin:0,spinT:0,wob:0,alpha:1,fade:0,emote:0,auraT:0,dead:false};
+  }
+  function stepProp(p,dt){
+    if(p.spin){p.spinT-=dt; if(p.spinT<=0){p.spinT=p.spin; p.flipV=!p.flipV;}}
+    if(p.held){p.wob+=dt; if(p.lift>2) aura(dt,p,p.x*dpr,FLOOR-(p.h+Math.round(p.lift))*S*dpr,p.w,p.h);}
+    else{
+      p.x+=p.vx*S*dt;
+      if(p.lift>0||p.vy<0){p.onFloor=false; p.vy+=190*dt; p.lift-=p.vy*dt;
+        if(p.lift<=0){p.lift=0;
+          if(p.vy>70){dust((p.x+p.w*S/2)*dpr); if(p.heavy) shake=Math.max(shake,.16);}
+          if(p.vy>50){p.vy=-p.vy*.25; p.vx*=.5;}
+          else{p.vy=0; p.vx=0; p.onFloor=true; p.spin=0; p.flipV=false;}}}
+    }
+    if(p.emote>0) p.emote-=dt;
+    if(p.fade){p.alpha-=dt/p.fade; if(p.alpha<=0) p.dead=true;}
+    if(p.x>W+90*S||p.x<-90*S) p.dead=true;
+  }
+
+  /* ---------- effects ---------- */
+  function dust(xd){
+    var P=S*dpr,cols=['#8c7d72','#62564e','#b0a194'];
+    for(var i=0;i<16;i++){var side=i%2?1:-1;
+      sparks.push({x:xd+side*(6+Math.random()*8)*P,y:FLOOR-P,vx:side*(40+Math.random()*110)*dpr,
+        vy:-(20+Math.random()*70)*dpr,life:.3+Math.random()*.25,c:cols[i%3],g:260});}
+  }
+  function burst(x,y,n,cols,speed){
+    for(var i=0;i<n;i++){var ang=Math.random()*Math.PI*2,sp=(speed*.4+Math.random()*speed)*dpr;
+      sparks.push({x:x,y:y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-40*dpr,life:.22+Math.random()*.3,c:cols[i%cols.length],g:420});}
+  }
+  // pale motes rising off anything held by the Force
+  function aura(dt,o,x0,y0,w,h){
+    o.auraT-=dt; if(o.auraT>0) return; o.auraT=.05; var P=S*dpr;
+    sparks.push({x:x0+Math.random()*w*P,y:y0+Math.random()*h*P,vx:(Math.random()-.5)*20*dpr,
+      vy:-(25+Math.random()*40)*dpr,life:.35+Math.random()*.3,c:'rgba(200,220,255,.85)',g:0});
+  }
+
+  /* ---------- drawing ---------- */
+  function blit(spr,X,Y){Object.keys(spr).forEach(function(c){ctx.fillStyle=c; var a=spr[c];
+    for(var i=0;i<a.length;i+=2) ctx.fillRect(X(a[i]),Y(a[i+1]),S*dpr,S*dpr);});}
+  function emote(x,y){var P=S*dpr; ctx.fillStyle='#ffd35a';
+    ctx.fillRect(x,y-6*P,2*P,4*P); ctx.fillRect(x,y-P,2*P,P);}
+  function drawActor(a){
+    var g=geom(a),P=g.P,body=a.kind==='clawd'
+      ?memo('c'+a.leg+(a.gun?'g':'')+(a.scared?'s':''),function(){return buildClawd(a.leg,a.gun,a.scared)})
+      :a.kind==='trooper'?memo('t'+a.leg,function(){return buildTrooper(a.leg)})
+      :memo('v'+a.leg+a.lights.join('')+(a.reach?'r':''),function(){return buildVader(a.leg,a.lights,a.reach)});
+    var sw=Math.max(8,26-a.lift*.6),fade=Math.max(.12,1-a.lift/40),cx=g.ox+18*P;
+    ctx.fillStyle='rgba(0,0,0,'+(.38*fade).toFixed(3)+')'; ctx.fillRect(Math.round(cx-sw/2*P),FLOOR,Math.round(sw)*P,P);
+    ctx.fillStyle='rgba(0,0,0,'+(.2*fade).toFixed(3)+')'; ctx.fillRect(Math.round(cx-(sw-6)/2*P),FLOOR+P,Math.round(sw-6)*P,P);
+    blit(body,g.X,function(y){return g.oy+y*P});
+    if(a.emote>0) emote(g.ox+17*P,g.oy-7*P);
+  }
+  function saberOf(a){
+    var len=Math.round(20*a.blade),deg=Math.round(a.deg);
+    return memo('s'+a.hand[0]+','+a.hand[1]+','+deg+','+len,function(){return buildSaber(a.hand[0],a.hand[1],deg,len)});
+  }
+  function drawSaber(a,glow){
+    var g=geom(a),P=g.P,sab=saberOf(a),i;
+    if(sab.core.length){
+      ctx.save(); ctx.shadowColor='rgba('+a.glow+','+(.9*glow).toFixed(3)+')';
+      ctx.shadowBlur=P*(6+flash*40); ctx.fillStyle=a.halo;
+      for(var pass=0;pass<2;pass++) for(i=0;i<sab.halo.length;i+=2) ctx.fillRect(g.X(sab.halo[i]),g.oy+sab.halo[i+1]*P,P,P);
+      ctx.restore();
+      ctx.fillStyle=a.halo; for(i=0;i<sab.halo.length;i+=2) ctx.fillRect(g.X(sab.halo[i]),g.oy+sab.halo[i+1]*P,P,P);
+      ctx.fillStyle=a.core; for(i=0;i<sab.core.length;i+=2) ctx.fillRect(g.X(sab.core[i]),g.oy+sab.core[i+1]*P,P,P);
+    }
+    for(i=0;i<sab.hilt.length;i+=3){ctx.fillStyle=sab.hilt[i+2]?COL.m:COL.M;
+      ctx.fillRect(g.X(sab.hilt[i]),g.oy+sab.hilt[i+1]*P,P,P);}
+  }
+  function drawProp(p){
+    var P=S*dpr,ox=Math.round((p.x+shakeOff)*dpr)+(p.held&&(Math.floor(p.wob*14)%2)?P:0),
+        oy=FLOOR-p.h*P-Math.round(p.lift)*P;
+    ctx.globalAlpha=Math.max(0,p.alpha);
+    blit(p.spr,function(x){return ox+(p.dir>0?x:p.w-1-x)*P},function(y){return oy+(p.flipV?p.h-1-y:y)*P});
+    ctx.globalAlpha=1;
+    if(p.emote>0) emote(ox+(p.w/2-1)*P,oy-2*P);
+  }
+  // Force ripples: pixel arcs out of the raised hand, in the direction he faces, kept near the hand
+  function drawWaves(dt){
+    waves=waves.filter(function(w){
+      var maxR=44*S*dpr;
+      w.life-=dt; w.r+=120*S*dpr*dt;
+      if(w.life<=0||w.r>=maxR||!w.a.reach&&w.life<.5) return false;
+      var g=geom(w.a),P=g.P,hx=g.X(38)+P/2,hy=g.oy+7*P;
+      var alpha=Math.min(w.life/.75,1-w.r/maxR)*.5,stepA=P/w.r;
+      ctx.fillStyle='rgba(190,212,255,'+alpha.toFixed(3)+')';
+      for(var an=-.55;an<=.55;an+=stepA)
+        ctx.fillRect(Math.round((hx+Math.cos(an)*w.r*w.a.dir)/P)*P,Math.round((hy+Math.sin(an)*w.r)/P)*P,P,P);
+      return true;
+    });
+  }
+  function drawBolt(b){
+    var P=S*dpr,x=Math.round(b.x/P)*P,y=Math.round(b.y/P)*P,held=b.state==='held'||b.state==='grip',
+        j=held&&Math.random()<.5?-P:0,len=held?6:8;
+    ctx.save(); ctx.shadowColor='rgba(61,140,255,.95)'; ctx.shadowBlur=P*(held?5+Math.random()*5:5);
+    ctx.fillStyle='#3d8cff'; ctx.fillRect(x-len*P,y-P+j,(len+1)*P,3*P); ctx.restore();
+    ctx.fillStyle='#eaf4ff'; ctx.fillRect(x-(len-1)*P,y+j,len*P,P);
+  }
+  function reset(){actors=[];props=[];sparks=[];waves=[];bolts=[];shake=0;shakeOff=0;flash=0;}
+
+  /* ---------- scripting: a scene is a list of steps, each returns true when done ---------- */
+  function seq(list){var i=0; return function(dt){while(i<list.length){if(!list[i](dt)) return false; i++;} return true;};}
+  function run(fn){return function(){fn(); return true}}
+  function wait(s){var t=s; return function(dt){t-=dt; return t<=0}}
+  function until(c){return function(){return !!c()}}
+  function during(s,fn){var t=0; return function(dt){t=Math.min(s,t+dt); fn(t/s); return t>=s}}
+  function ease(k){return k*k*(3-2*k)}
+
+  /* ---------- the duel: the rendering screen ---------- */
+  // each beat: [Clawd angle, Vader angle, seconds, clash?] - angles measured up from "forward"
+  var PHRASES=[
+    [[70,10,.22],[45,45,.14,1],[15,70,.22],[45,45,.14,1],[80,30,.22],[40,50,.15,1]],
+    [[20,60,.2],[45,40,.14,1],[-20,75,.22],[30,55,.14,1],[60,20,.22],[45,45,.16,1]],
+    [[75,75,.26],[50,40,.14,1],[25,65,.2],[45,45,.14,1],[70,15,.2],[35,55,.14,1]]
+  ];
+  function bladeWorld(a){var g=geom(a),sab=saberOf(a);
+    function w(p){return [g.X(p[0])+g.P/2,g.oy+p[1]*g.P+g.P/2]} return [w(sab.base),w(sab.tip)];}
+  function cross(p1,p2,p3,p4){
+    var d=(p2[0]-p1[0])*(p4[1]-p3[1])-(p2[1]-p1[1])*(p4[0]-p3[0]); if(Math.abs(d)<1e-6) return null;
+    var ua=((p3[0]-p1[0])*(p4[1]-p3[1])-(p3[1]-p1[1])*(p4[0]-p3[0]))/d;
+    var ub=((p3[0]-p1[0])*(p2[1]-p1[1])-(p3[1]-p1[1])*(p2[0]-p1[0]))/d;
+    if(ua<0||ua>1||ub<0||ub>1) return null;
+    return [p1[0]+ua*(p2[0]-p1[0]),p1[1]+ua*(p2[1]-p1[1])];
+  }
+  var sheathed=false;
+  function sceneDuel(opts){
+    var A=new Actor('clawd',0,-1),B=new Actor('vader',0,1); A.saber=B.saber=true; A.deg=60;
+    actors=[B,A]; sheathed=false;
+    function spots(){var c=W/2; return {v:c-45*S,c:c+10*S,v2:c-69*S,c2:c+34*S};}
+    var p=spots(),limit=(opts&&opts.rounds)||0,rounds=0;
+    var st='ignite',t=.45,phrase=null,bi=0,beatT=0,sparkT=0,hold=0;
+    // on the render they are simply there; as a cameo they walk in from opposite
+    // sides, fight `rounds` rounds and walk away again
+    if(limit){B.x=B.target=-44*S; A.x=A.target=W+10*S; walk(B,p.v2,40); walk(A,p.c2,40); st='enter';}
+    else{B.x=B.target=p.v2; A.x=A.target=p.c2;}
+    // how high Clawd can be lifted and still be whole in frame (the hub strip is 94px)
+    function liftMax(){return Math.max(8,Math.min(26,Math.floor(FLOOR/(S*dpr))-22));}
+    function clash(n){ if(A.blade<.9) return;
+      var q=cross.apply(null,bladeWorld(A).concat(bladeWorld(B))); if(!q) return;   // a miss throws no sparks
+      flash=.09; burst(q[0],q[1],n,['#ffffff','#fff4c2','#ffd35a',A.halo,B.halo],150);}
+    function apart(speed){walk(B,p.v2,speed); walk(A,p.c2,speed);}
+    return function(dt){
+      p=spots(); A.lunge=0; B.lunge=0;
+      // the render is done: sabers out, both step back, nothing else starts
+      if(sheathed){ if(st!=='sheathed'){st='sheathed'; A.bladeTo=B.bladeTo=0; B.reach=false; A.held=false; apart(34);}
+        A.deg=90; B.deg=90; return false; }
+      switch(st){
+        case 'enter': A.deg=90; B.deg=90; if(here(A)&&here(B)){st='ignite'; t=.3;} break;
+        case 'exit': A.deg=90; B.deg=90; if(B.x<-40*S&&A.x>W+6*S) return true; break;
+        case 'ignite': t-=dt; if(t<=0){A.bladeTo=B.bladeTo=1; st='rest';} break;
+        case 'rest': A.deg=90; B.deg=90; if(A.blade>.95){st='standoff'; t=.7;} break;
+        case 'standoff': A.deg=60; B.deg=90; t-=dt; if(t<=0){st='approach'; walk(B,p.v,22); walk(A,p.c,22);} break;
+        case 'approach': A.deg=45; B.deg=80;
+          if(here(A)&&here(B)){st='exchange'; phrase=PHRASES[Math.floor(Math.random()*PHRASES.length)];
+            bi=0; beatT=phrase[0][2]; if(phrase[0][3]) clash(14);}
+          break;
+        case 'exchange':
+          var beat=phrase[bi]; A.deg=beat[0]; B.deg=beat[1]; if(beat[3]){A.lunge=1; B.lunge=1;}
+          beatT-=dt;
+          if(beatT<=0){bi++;
+            if(bi>=phrase.length){if(Math.random()<.5){st='lock'; t=1.1; sparkT=0;}else{st='break'; apart(70);}}
+            else{beatT=phrase[bi][2]; if(phrase[bi][3]) clash(14);}}
+          break;
+        case 'lock':
+          A.deg=45; B.deg=45; A.lunge=Math.random()<.5?1:0; B.lunge=Math.random()<.5?1:0;
+          t-=dt; sparkT-=dt; if(sparkT<=0){sparkT=.07; clash(4);}
+          if(t<=0){st='break'; apart(70);}
+          break;
+        case 'break': A.deg=-20; B.deg=-20; if(here(A)&&here(B)){st='raise'; t=.45;} break;
+        // THE FORCE: blade lowered, hand raised, Clawd rises kicking, hangs, is let go
+        case 'raise': B.reach=true; B.deg=-70; A.deg=-20; t-=dt; if(t<=0){st='lift'; t=1.1; A.held=true;} break;
+        case 'lift':
+          B.reach=true; B.deg=-70; A.deg=-60;
+          var k=Math.min(1,1-t/1.1); A.lift=liftMax()*(1-Math.pow(1-k,3)); t-=dt;
+          if(t<=0){st='hold'; t=.75; hold=0;}
+          break;
+        case 'hold':
+          B.reach=true; B.deg=-70; A.deg=-60; hold+=dt; A.lift=liftMax()+(Math.sin(hold*9)>0?1:0); t-=dt;
+          if(t<=0){st='drop'; B.reach=false; A.held=false; A.vy=0; A.landed=false;}
+          break;
+        case 'drop': B.deg=90; A.deg=-60; if(A.landed){st='land'; t=.6;} break;
+        case 'land': A.deg=60; B.deg=90; t-=dt;
+          if(t<=0){rounds++;
+            if(limit&&rounds>=limit){st='exit'; A.bladeTo=B.bladeTo=0; B.dir=-1; A.dir=1; walk(B,-60*S,30); walk(A,W+60*S,30);}
+            else{st='standoff'; t=.7+Math.random()*.8;}}
+          break;
+      }
+      return false;   // the duel never ends on its own: the render ends it
+    };
+  }
+
+  /* ---------- cameo: ambush ---------- */
+  function sceneAmbush(){
+    var sp=spd(),V=new Actor('vader',-44*S,1),C=new Actor('clawd',-60*S,1),bolt=null,gun=null;
+    C.gun=true; actors=[V,C]; walk(V,W+60*S,sp);
+    function stopX(){return geom(V).X(38)-8*S*dpr}   // just short of Vader Clawd's raised hand
+    function fire(){
+      var m=pt(C,41,8),P=S*dpr;
+      burst(m[0],m[1],10,['#ffffff','#bcd6ff','#3d8cff'],90);
+      bolt={x:m[0],y:m[1],state:'fly',v:0,crT:0,dead:false};
+      bolt.v=Math.max(60*S*dpr,(Math.round(V.x*dpr)-11*P-bolt.x)/.6);
+      bolt.update=function(dt){
+        if(bolt.state==='fly'){bolt.x+=bolt.v*dt;
+          if(bolt.x>=stopX()-14*P){bolt.state='grip'; V.target=V.x; V.dir=-1; V.reach=true;}}
+        else if(bolt.state==='grip'){var s=stopX(); bolt.x+=(s-bolt.x)*Math.min(1,dt*11);
+          if(Math.abs(s-bolt.x)<P*.6) bolt.state='held';}
+        else if(bolt.state==='held'){bolt.crT-=dt;
+          if(bolt.crT<=0){bolt.crT=.12; burst(bolt.x-3*P,bolt.y,2,['#bcd6ff','#3d8cff'],40);}}
+        else if(bolt.state==='go'){bolt.v*=1+dt*3; bolt.x+=bolt.v*dt; if(bolt.x>W*dpr+30*P) bolt.dead=true;}
+      };
+      bolts.push(bolt);
+    }
+    return seq([
+      until(function(){return V.x>W*.1}),
+      run(function(){walk(C,W*.05,sp*1.3)}),                  // sneaks in behind him
+      until(function(){return here(C)&&V.x>W*.5}),
+      wait(.15),
+      run(fire),
+      wait(.14), run(function(){V.target=V.x}),               // he stops
+      wait(.12), run(function(){V.dir=-1; V.vy=-28}),         // turns
+      wait(.1),  run(function(){V.reach=true}),               // and raises a hand
+      until(function(){return bolt.state==='held'}),
+      wait(.8),
+      run(function(){C.gun=false; C.scared=true; C.emote=.8; C.vy=-45;
+        gun=Prop(memo('gun',buildGun),12,6,C.x+30*S,1); gun.lift=7; gun.vx=-8; gun.vy=-25; gun.spin=.09;
+        props.push(gun);}),
+      wait(.75), run(function(){C.dir=-1; walk(C,-80*S,sp*3.2)}),  // runs for it
+      wait(.5),  run(function(){V.reach=false}),                   // the bolt stays where it is
+      wait(.9),  run(function(){V.dir=1; walk(V,W+60*S,sp)}),
+      until(function(){return V.x>W+4*S}),
+      wait(.5),
+      run(function(){bolt.state='go'; if(gun) gun.fade=.9}),        // and only now lets go
+      until(function(){return !bolts.length&&!props.length}),
+      wait(.3)
+    ]);
+  }
+
+  /* ---------- cameo: parade ---------- */
+  function sceneParade(){
+    // LEAD: the boss walks alone - about one body length of empty floor before the
+    // first trooper (Hector: "they are too close to the boss")
+    var sp=spd()*1.15,gap=38,lead=72,V=new Actor('vader',-44*S,1),T=[];
+    actors=[V];
+    function end(i){return W+(60+lead+i*gap)*S}
+    for(var i=0;i<4;i++){var tr=new Actor('trooper',-44*S-(lead+i*gap)*S,1); T.push(tr); actors.push(tr); walk(tr,end(i),sp);}
+    walk(V,W+60*S,sp);
+    var last=T[3],mid=T[2];
+    walk(last,end(3),sp*.9); last.legT=.06;                  // out of step, falling behind
+    return seq([
+      until(function(){return last.x>W*.1}),                 // only once he is fully in view
+      run(function(){last.emote=.6; last.vy=-35}),
+      wait(.45),
+      run(function(){walk(last,end(3),sp*2.4)}),              // hurries
+      until(function(){return last.x>=mid.x-37*S}),
+      run(function(){last.x-=4*S; last.target=last.x; last.squash=.28; last.leg=3; shake=.1;   // bump
+        mid.target=mid.x; mid.dir=-1; mid.emote=.8;}),
+      wait(.8),
+      run(function(){mid.dir=1; walk(mid,end(2),sp*1.5); walk(last,end(3),sp*1.5); last.leg=mid.leg; last.legT=mid.legT;}),
+      until(function(){return mid.x>=T[1].x-gap*S||mid.x>W}),
+      run(function(){walk(mid,end(2),sp); walk(last,end(3),sp); last.leg=mid.leg; last.legT=mid.legT;}),  // back in step
+      until(function(){return last.x>W+2*S}),
+      wait(.3)
+    ]);
+  }
+
+  /* ---------- cameo: rampage ---------- */
+  // Pace, Hector 2026-09-14: the first cut was "kinda slow" (~20s), the second
+  // "too fast" (~12s). This one sits between them (~15s) and keeps every move.
+  function sceneRampage(){
+    var sp=spd(),fast=sp*1.35,V=new Actor('vader',-44*S,1),cr=memo('crate',function(){return buildCrate(0)});
+    V.saber=true; V.bladeTo=1; actors=[V];
+    var A=Prop(cr,14,12,W*.34,1),B=Prop(cr,14,12,W*.62,1),droid=null,fromX=0,fromL=0;
+    A.heavy=B.heavy=true; props=[A,B];
+    walk(V,W*.1,fast);
+    return seq([
+      until(function(){return here(V)}),
+      run(function(){droid=Prop(memo('droid',buildDroid),13,6,W+6*S,-1); droid.vx=-fast*1.1; props.push(droid)}),
+      during(.65,function(k){V.deg=90+720*ease(k)}),          // double twirl
+      run(function(){V.deg=90; flash=.14; V.vy=-40}),
+      wait(.35),
+      // pull the first crate in and cut it in two
+      run(function(){V.reach=true; V.deg=-70; A.held=true}),
+      during(.5,function(k){A.lift=14*(1-Math.pow(1-k,3))}),
+      wait(.1),
+      run(function(){fromX=A.x; fromL=A.lift}),
+      during(.3,function(k){var e=k*k,to=V.x+34*S;
+        A.x=fromX+(to-fromX)*e; A.lift=fromL+(8-fromL)*e;
+        if(k>.45){V.reach=false; V.deg=Math.round(120-(k-.45)/.55*160);}}),
+      run(function(){
+        var cx=(A.x+7*S)*dpr,cy=FLOOR-14*S*dpr;
+        A.dead=true;
+        var L=Prop(memo('crateL',function(){return buildCrate(1)}),14,12,A.x,1),
+            R=Prop(memo('crateR',function(){return buildCrate(2)}),14,12,A.x,1);
+        L.lift=R.lift=8; L.vx=-12; L.vy=-60; L.spin=.08; L.fade=1.8;
+        R.vx=26; R.vy=-80; R.spin=.07; R.fade=1.8;
+        props.push(L,R);
+        burst(cx,cy,22,['#fff4c2','#ffd35a','#ff6a3d','#9a6a3f','#c79660'],190);
+        flash=.12; shake=.14; V.deg=-40;}),
+      wait(.3),
+      // the droid that rolled in during all that gets grabbed and thrown
+      run(function(){V.deg=90; V.reach=true; droid.held=true; droid.vx=0; droid.spin=.1; droid.emote=.6}),
+      during(.45,function(k){droid.lift=16*(1-Math.pow(1-k,3))}),
+      wait(.15),
+      run(function(){droid.held=false; droid.vx=fast*4; droid.vy=-80; droid.spin=.05; V.reach=false}),
+      wait(.3),
+      // charge the second crate: up, slammed into the floor, flung away
+      run(function(){walk(V,B.x-48*S,fast)}),
+      until(function(){return here(V)}),
+      run(function(){V.reach=true; V.deg=-70; B.held=true}),
+      during(.55,function(k){B.lift=22*(1-Math.pow(1-k,3))}),
+      wait(.2),
+      run(function(){B.held=false; B.vy=190; V.reach=false}),
+      until(function(){return B.onFloor&&B.lift===0&&B.vy===0}),
+      wait(.15),
+      run(function(){V.reach=true}),
+      wait(.25),
+      run(function(){B.vx=fast*3.5; B.vy=-90; B.spin=.07}),
+      wait(.35),
+      // victory: a twirl in the air, sabre out, and off
+      run(function(){V.reach=false; V.vy=-60}),
+      during(.6,function(k){V.deg=90-720*ease(k)}),
+      run(function(){V.deg=90; flash=.12}),
+      wait(.4),
+      run(function(){V.bladeTo=0}),
+      wait(.4),
+      run(function(){walk(V,W+60*S,fast)}),
+      until(function(){return V.x>W+4*S&&!props.length}),
+      wait(.2)
+    ]);
+  }
+
+  
+
+  /* =====================================================================
+     VADERCLAWD - everything below lives only in the desktop pet
+     ===================================================================== */
+  host=document.getElementById('vc-stage'); kind='pet';
+  function post(o){ try{ window.webkit.messageHandlers.pet.postMessage(o) }catch(e){} }
+  function pickOne(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+  // glow: 'pixel' rings or the old 'shadow' blur; sched: 'raf' (60 Hz callbacks, most skipped) or 'timer'
+  // (called only at the draw rate); fps: the draw rate while anything moves. Switchable live for measuring.
+  // Measured live 2026-09-14 (LG ULTRAGEAR, standing): 60 Hz rAF 4.8% of a core, woken only at the draw rate 1.1%.
+  // The WebKit test harnesses fake the clock through rAF, so they set window.PET_SCHED='raf'.
+  var opts={night:false,sound:false,bubbles:true,climb:false,march:false,glow:'pixel',sched:window.PET_SCHED||'timer',fps:30,skip:true,sign:false};
+  var sys={cpu:0,cpuKnown:false,hotCount:0,hot:false,thermal:0,battery:100,onAC:true,low:false,music:{playing:false,title:'',artist:''}};
+  var neighbors={left:false,right:false,home:0,atHome:true,hasHome:false},roam=null,cursor=null,platforms=[];
+  var pendingAct=null,lastCelebrate=-1e9,viaTie=false,climbWanted=false;
+  function freshExtras(){ return {flyer:null,orbit:null,ring:null,bubble:null,tie:null,cpuCrate:null,notes:[],
+    flights:[],lasers:[],drones:[],scan:null,gym:null}; }
+  var extras=freshExtras();
+  // meditation hours: midnight to 9 AM (Hector 2026-09-14; was 11 PM to 6 AM)
+  function isNight(){ if(!opts.night) return false; return new Date().getHours()<9; }
+
+  /* ---------- speech bubbles (parody lines, never movie quotes) ---------- */
+  var LINES={
+    idle:['Ask him something.','Esquiffis is listening.','*mechanical breathing*','The web door is open.',
+          'Check the smoker, pitmaster.','Hydrate, apprentice.','Same Esquiffis. Same Empire.','Your inbox fears you.',
+          'I find your lack of questions disturbing.','Join the dark side. We have coffee.','I am watching this page.'],
+    greet:['Welcome back, Hector.','The web door. I approve.','Same Esquiffis as your phone.'],
+    thinking:['He is looking. Patience.','Esquiffis is on it.','Checking. Stand by.','Give him a moment.'],
+    waiting:['Still on it.','A big one. He is still working.','Patience, apprentice.'],
+    reply:['There. Answered.','Esquiffis delivers.','Read it, apprentice.'],
+    guard:['The guard caught that one.','He almost made that up. Blocked.'],
+    failed:['The line went dead. Ask again.','No answer. Try once more.'],
+    locked:['Access denied.','Wrong code, rebel.'],
+    hello:['Greetings, Hector.','Still here. Still watching.','Hi. Keep working.'],
+    workout:['Leg day. Every day.','Do you even lift, rebel?','The Empire needs strong arms.'],
+    gains:['Gains.','Feel the burn. The Dark Side burn.','Workout complete.'],
+    cpuLow:['CPU {t}%. The Force is calm.','Only {t}% CPU. Too easy.'],
+    cpuMid:['CPU {t}%. You are working hard.','{t}% CPU. Acceptable.'],
+    cpuHigh:['CPU {t}%. I feel a disturbance.','{t}% CPU. Close something.'],
+    celebrate:['Answered. Impressive.','Esquiffis delivers.','Another one for the Empire.'],
+    cpu:['The CPU is strong with this one.','Too... much... load.','Who is running all these processes?'],
+    cool:['Much better.','The fans can rest now.'],
+    lowBattery:['Low power. Charge me.','My suit needs a charger.'],
+    charged:['Power restored.'],
+    climb:['I have the higher window.','The view from up here...'],
+    choke:['You tripped. Again.','Watch your step, trooper.'],
+    music:['♪ {t}'],
+    march:['Now THAT is music.'],
+    tie:['Ready my ship.'],
+    noclimb:['No window to climb here.','Nothing up there for me.'],
+    storm:['Incoming crates!','It is raining crates.','More crates? Fine.'],
+    drone:['A delivery? For me?','I did not order this.'],
+    dronehit:['Return to sender.','Do not drop things on me.'],
+    probe:['Scanning a Sith? Bold.','Report THIS back.','Imperial property. Stop scanning.'],
+    swarm:['Pests.','Who ordered drones?','Buzz off.'],
+    salute:['My squadron.','Nice flying.','For the Empire.']
+  };
+  function say(key,sub,dur,who){
+    if(!opts.bubbles||!LINES[key]) return;
+    var l=pickOne(LINES[key]); if(sub!==undefined&&sub!==null) l=l.replace('{t}',sub);
+    extras.bubble={text:l,t:0,dur:dur||3.2,who:who||null};
+  }
+
+  /* ---------- sound: synthesised in code, off unless turned on in the menu ---------- */
+  var snd=(function(){
+    var ac=null,master=null,hum=null,humGain=null,lastBreath=-99,on=false,mch=null,marchNotes=0;
+    // the audio context exists as soon as anything needs it: the effects (Sound effects switch)
+    // or the parade's march (its own switch, on by default)
+    function make(){ if(ac) return true;
+      try{ var A=window.AudioContext||window.webkitAudioContext; ac=new A(); master=ac.createGain(); master.gain.value=.2; master.connect(ac.destination); }
+      catch(e){ ac=null; return false; }
+      return true; }
+    function ok(){ return on&&make(); }
+
+    /* the Imperial March for the parade: a small synthesised brass section, a drum on the three
+       big notes, a low G underneath. Lives only in the pet (a local build), never in the public rig. */
+    var BEAT=.58,TUNE=[[196,1],[196,1],[196,1],[155.56,.75],[233.08,.25],[196,1],[155.56,.75],[233.08,.25],[196,2],
+      [293.66,1],[293.66,1],[293.66,1],[311.13,.75],[233.08,.25],[185,1],[155.56,.75],[233.08,.25],[196,2]];
+    function track(m,n){ m.nodes.push(n); n.onended=function(){ var i=m.nodes.indexOf(n); if(i>-1) m.nodes.splice(i,1); }; }
+    function brass(m,freq,t,dur,vol){
+      var f=ac.createBiquadFilter(),g=ac.createGain(),end=t+dur;
+      f.type='lowpass'; f.Q.value=2;
+      f.frequency.setValueAtTime(350,t); f.frequency.linearRampToValueAtTime(2600,t+.05);
+      f.frequency.exponentialRampToValueAtTime(1200,t+Math.max(.08,Math.min(.35,dur*.7)));
+      g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+.03);
+      g.gain.setValueAtTime(vol,Math.max(t+.04,end-.09)); g.gain.linearRampToValueAtTime(.0001,end-.01);
+      f.connect(g); g.connect(m.bus);
+      [[freq,'sawtooth',1],[freq*1.003,'sawtooth',.7],[freq*2,'sawtooth',.28],[freq/2,'square',.22]].forEach(function(v){
+        var o=ac.createOscillator(),og=ac.createGain(); o.type=v[1]; o.frequency.value=v[0]; og.gain.value=v[2];
+        o.connect(og); og.connect(f); o.start(t); o.stop(end+.02); track(m,o); });
+    }
+    function drum(m,t,peak){
+      var o=ac.createOscillator(),g=ac.createGain(); o.type='sine';
+      o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(48,t+.25);
+      g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(peak,t+.008); g.gain.exponentialRampToValueAtTime(.0001,t+.45);
+      o.connect(g); g.connect(m.bus); o.start(t); o.stop(t+.5); track(m,o);
+      var n=noise(.12),f=filt('lowpass',900),ng=ac.createGain();
+      ng.gain.setValueAtTime(peak*.5,t); ng.gain.exponentialRampToValueAtTime(.0001,t+.12);
+      n.connect(f); f.connect(ng); ng.connect(m.bus); n.start(t); n.stop(t+.13); track(m,n);
+    }
+    function bass(m,freq,t,dur){
+      var o=ac.createOscillator(),f=filt('lowpass',260),g=ac.createGain(); o.type='sawtooth'; o.frequency.value=freq;
+      g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(.18,t+.05);
+      g.gain.setValueAtTime(.18,t+dur-.15); g.gain.linearRampToValueAtTime(.0001,t+dur);
+      o.connect(f); f.connect(g); g.connect(m.bus); o.start(t); o.stop(t+dur+.02); track(m,o);
+    }
+    function scheduleLoop(m,t0){
+      var t=t0;
+      TUNE.forEach(function(nt,i){ var d=nt[1]*BEAT; brass(m,nt[0],t,d,.3); if(i%9<3) drum(m,t,.55); t+=d; marchNotes++; });
+      for(var b=0;b<4;b++) bass(m,98,t0+b*4*BEAT,4*BEAT);
+      m.nextAt=t;
+    }
+    function noise(dur){ var n=Math.max(1,Math.floor(ac.sampleRate*dur)),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);
+      for(var i=0;i<n;i++) d[i]=Math.random()*2-1; var s=ac.createBufferSource(); s.buffer=b; return s; }
+    function shape(node,peak,attack,hold,release,at){ var g=ac.createGain(),t=at||ac.currentTime;
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+attack);
+      g.gain.setValueAtTime(peak,t+attack+hold); g.gain.exponentialRampToValueAtTime(.0001,t+attack+hold+release);
+      node.connect(g); g.connect(master); return t+attack+hold+release; }
+    function filt(type,freq,q){ var f=ac.createBiquadFilter(); f.type=type; f.frequency.value=freq; if(q) f.Q.value=q; return f; }
+    function sweep(from,to,dur,peak,type){ var o=ac.createOscillator(),t=ac.currentTime; o.type=type||'sawtooth';
+      o.frequency.setValueAtTime(from,t); o.frequency.exponentialRampToValueAtTime(to,t+dur);
+      var f=filt('lowpass',1200); o.connect(f); var end=shape(f,peak,.02,dur*.4,dur*.6); o.start(t); o.stop(end+.05); }
+    function burstNoise(dur,type,freq,peak){ var n=noise(dur),f=filt(type,freq); n.connect(f); var end=shape(f,peak,.005,dur*.2,dur*.8); n.start(); n.stop(end+.05); }
+    return {
+      set:function(b){ on=!!b; if(on){ if(ok()&&ac.state==='suspended') ac.resume(); } else this.humLevel(0,true); },
+      ignite:function(){ if(!ok()) return; sweep(60,140,.45,.45); burstNoise(.35,'bandpass',1600,.18); },
+      retract:function(){ if(!ok()) return; sweep(140,50,.35,.35); },
+      clash:function(){ if(!ok()) return; burstNoise(.16,'highpass',2400,.5); sweep(1600,900,.08,.12,'square'); },
+      thud:function(){ if(!ok()) return; burstNoise(.28,'lowpass',260,.6); },
+      whine:function(){ if(!ok()) return; var o=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain(),t=ac.currentTime;
+        o.type='sawtooth'; o.frequency.setValueAtTime(620,t); o.frequency.linearRampToValueAtTime(880,t+1.4);
+        l.frequency.value=34; lg.gain.value=40; l.connect(lg); lg.connect(o.frequency);
+        var f=filt('bandpass',900,1.2); o.connect(f); var end=shape(f,.25,.15,.9,.5); o.start(t); l.start(t); o.stop(end+.05); l.stop(end+.05); },
+      breathe:function(){ if(!ok()) return; var t=ac.currentTime; if(t-lastBreath<5) return; lastBreath=t;
+        [[0,700],[1.5,420]].forEach(function(p){ var n=noise(1.4),f=filt('bandpass',p[1],.9); n.connect(f); shape(f,.3,.5,.2,.6,t+p[0]); n.start(t+p[0]); n.stop(t+p[0]+1.4); }); },
+      // a TIE screaming past, panned from one side to the other
+      flyby:function(dir){ if(!ok()) return; var o=ac.createOscillator(),l=ac.createOscillator(),lg=ac.createGain(),t=ac.currentTime,out;
+        o.type='sawtooth'; o.frequency.setValueAtTime(520,t); o.frequency.linearRampToValueAtTime(980,t+1.1); o.frequency.linearRampToValueAtTime(600,t+2.2);
+        l.frequency.value=38; lg.gain.value=55; l.connect(lg); lg.connect(o.frequency);
+        out=filt('bandpass',1000,1.1); o.connect(out);
+        try{ var pan=ac.createStereoPanner(); pan.pan.setValueAtTime(-dir,t); pan.pan.linearRampToValueAtTime(dir,t+2.2); out.connect(pan); out=pan; }catch(e){}
+        var end=shape(out,.22,.3,1.2,.7); o.start(t); l.start(t); o.stop(end+.05); l.stop(end+.05); },
+      beep:function(){ if(!ok()) return; [0,.12].forEach(function(d,i){ var o=ac.createOscillator(),t=ac.currentTime+d; o.type='square'; o.frequency.value=i?1320:990;
+        var end=shape(o,.08,.005,.05,.04,t); o.start(t); o.stop(end+.02); }); },
+      zap:function(){ if(!ok()) return; sweep(1400,300,.18,.1,'square'); },
+      marchStart:function(){
+        if(mch) return true; if(!make()) return false;
+        if(ac.state==='suspended'){ try{ ac.resume(); }catch(e){} }
+        var bus=ac.createGain(); bus.gain.value=.4; bus.connect(ac.destination);
+        mch={bus:bus,nodes:[],nextAt:0}; scheduleLoop(mch,ac.currentTime+.12);
+        return true; },
+      marchTick:function(){ if(mch&&ac.currentTime>mch.nextAt-2) scheduleLoop(mch,mch.nextAt); },
+      marchStop:function(){ if(!mch) return; var m=mch; mch=null;
+        m.bus.gain.setTargetAtTime(.0001,ac.currentTime,.25);
+        setTimeout(function(){ m.nodes.slice().forEach(function(n){ try{n.stop()}catch(e){} }); try{m.bus.disconnect()}catch(e){} },1400); },
+      marching:function(){ return !!mch; },
+      notes:function(){ return marchNotes; },
+      state:function(){ return ac?ac.state:'none'; },
+      humLevel:function(level,kill){ if(!ac) return;
+        if(!hum&&on&&!kill&&level>.05){ humGain=ac.createGain(); humGain.gain.value=.0001; var f=filt('lowpass',360); f.connect(humGain); humGain.connect(master);
+          var a=ac.createOscillator(),b=ac.createOscillator(); a.type='sawtooth'; b.type='sawtooth'; a.frequency.value=58; b.frequency.value=61.3;
+          a.connect(f); b.connect(f); a.start(); b.start(); hum=[a,b]; }
+        if(!hum) return;
+        var target=(on&&!kill)?Math.min(1,level)*.3:0;
+        humGain.gain.setTargetAtTime(Math.max(.0001,target),ac.currentTime,.08);
+        if(target===0){ var h=hum,g=humGain; hum=null; humGain=null; setTimeout(function(){ try{h.forEach(function(o){o.stop()}); g.disconnect();}catch(e){} },400); }
+      }
+    };
+  })();
+  // the engine's own clashes and landings make noise too (same functions, wrapped)
+  var _burst=burst; burst=function(x,y,n,cols,speed){ if(n>=10) snd.clash(); return _burst(x,y,n,cols,speed); };
+  var _dust=dust; dust=function(xd){ snd.thud(); return _dust(xd); };
+
+  /* ---------- extra sprites ---------- */
+  function buildCpuCrate(){
+    var px={},rect=painter(px);
+    rect(0,21,0,17,'C'); rect(1,20,1,1,'n');
+    rect(0,21,0,0,'c'); rect(0,21,17,17,'c'); rect(0,0,0,17,'c'); rect(21,21,0,17,'c'); rect(1,20,3,3,'c'); rect(1,20,14,14,'c');
+    var L={C:['111','100','100','100','111'],P:['111','101','111','100','100'],U:['101','101','101','101','111']};
+    ['C','P','U'].forEach(function(ch,i){ L[ch].forEach(function(row,y){ for(var x=0;x<3;x++) if(row[x]==='1') px[K(5+i*4+x,6+y)]='k'; }); });
+    return grouped(px);
+  }
+  function buildTie(){
+    var px={},rect=painter(px);
+    rect(0,2,0,17,'E'); rect(21,23,0,17,'E'); rect(1,1,2,15,'K'); rect(22,22,2,15,'K');
+    rect(3,20,8,9,'e');
+    rect(8,15,4,13,'H'); rect(7,16,6,11,'H'); rect(9,14,5,12,'S');
+    rect(9,14,6,11,'e'); rect(10,13,7,10,'K'); rect(11,12,7,10,'s');
+    return grouped(px);
+  }
+  // a cargo drone: repulsor pods either side, a claw underneath for the crate
+  function buildCargo(){
+    var px={},rect=painter(px);
+    rect(5,14,0,0,'E'); rect(2,17,1,3,'G'); rect(3,16,1,1,'H');
+    rect(0,3,2,4,'B'); rect(16,19,2,4,'B'); rect(0,3,2,2,'b'); rect(16,19,2,2,'b');
+    rect(6,13,4,4,'e'); px['9,2']='lr'; px['10,2']='lr';
+    rect(9,10,5,6,'m'); rect(7,8,6,6,'m'); rect(11,12,6,6,'m'); px['7,7']='m'; px['12,7']='m';
+    return grouped(px);
+  }
+  // an Imperial probe droid: black head full of red eyes, spindly arms hanging under it
+  function buildProbe(){
+    var px={},rect=painter(px);
+    rect(3,9,0,0,'E'); rect(2,10,1,1,'K'); rect(1,11,2,6,'K'); rect(2,10,7,7,'E'); rect(1,1,2,6,'E'); rect(11,11,2,6,'E');
+    px['4,1']='H'; px['5,1']='H';
+    ['3,3','6,3','9,3','4,5','8,5'].forEach(function(k){ px[k]='lr'; });
+    rect(12,12,1,4,'b'); px['12,0']='lr';
+    rect(4,8,8,9,'G');
+    rect(3,3,10,16,'e'); px['2,17']='m'; px['4,17']='m';
+    rect(6,6,10,19,'e'); px['5,20']='m'; px['7,20']='m';
+    rect(9,9,10,15,'e'); px['8,16']='m'; px['10,16']='m';
+    rect(11,11,9,12,'e');
+    return grouped(px);
+  }
+  // a little buzzing drone for the swarm (its rotors are drawn live)
+  function buildMini(){
+    var px={},rect=painter(px);
+    rect(2,8,1,3,'G'); rect(3,7,1,1,'H'); px['5,2']='lr'; rect(0,1,1,1,'e'); rect(9,10,1,1,'e'); rect(3,7,4,4,'e');
+    return grouped(px);
+  }
+
+  /* ---------- drawing cheaply ---------- */
+  // The engine paints a sprite with one fillRect per pixel: about 600 calls for him, 30 times
+  // a second, all day. Here each sprite (at each pixel size and facing) is painted once into
+  // a small bitmap and stamped with a single drawImage - the same pixels for a fraction of the work.
+  var stamps=new WeakMap(),stampCount=0;
+  function stampOf(spr,P,fx,fy){
+    var byP=stamps.get(spr); if(!byP){ byP={}; stamps.set(spr,byP); }
+    var key=P+(fx?'x':'')+(fy?'y':''); if(byP[key]) return byP[key];
+    var x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    Object.keys(spr).forEach(function(c){ var a=spr[c];
+      for(var i=0;i<a.length;i+=2){ x0=Math.min(x0,a[i]); x1=Math.max(x1,a[i]); y0=Math.min(y0,a[i+1]); y1=Math.max(y1,a[i+1]); } });
+    if(x0>x1) return null;
+    if(++stampCount>160){ stamps=new WeakMap(); stampCount=1; byP={}; stamps.set(spr,byP); }   // his helmet lights make many variants: keep memory bounded
+    var c=document.createElement('canvas'),g; c.width=(x1-x0+1)*P; c.height=(y1-y0+1)*P; g=c.getContext('2d');
+    Object.keys(spr).forEach(function(col){ g.fillStyle=col; var a=spr[col];
+      for(var i=0;i<a.length;i+=2) g.fillRect((fx?x1-a[i]:a[i]-x0)*P,(fy?y1-a[i+1]:a[i+1]-y0)*P,P,P); });
+    return byP[key]={c:c,x0:x0,x1:x1,y0:y0,y1:y1};
+  }
+  var _blit=blit;
+  blit=function(spr,X,Y){
+    var P=S*dpr,ax=X(0),bx=X(1),ay=Y(0),by=Y(1);
+    if(Math.abs(Math.abs(bx-ax)-P)>.01||Math.abs(Math.abs(by-ay)-P)>.01) return _blit(spr,X,Y);   // not a plain pixel grid: paint it the old way
+    var fx=bx<ax,fy=by<ay,st=stampOf(spr,P,fx,fy); if(!st) return;
+    ctx.drawImage(st.c,fx?X(st.x1):X(st.x0),fy?Y(st.y1):Y(st.y0));
+  };
+
+  /* ---------- the saber glow, in pixels ---------- */
+  // Up to v0.6 every halo pixel was filled through a canvas shadow blur, twice: expensive, and it
+  // draws a lumpy blob (Hector: "it glows more, but the shape also looks weird"). Now two faint pixel
+  // rings hug the blade, painted once per blade angle into a stamp; the flicker and the clash flash
+  // only change how strongly the rings show.
+  var sabLooks=new WeakMap();
+  function saberLook(sab,halo,core,rgb){
+    var byCol=sabLooks.get(sab); if(!byCol){ byCol={}; sabLooks.set(sab,byCol); }
+    if(byCol[halo]) return byCol[halo];
+    var taken={},i,ring1=[],ring2=[];
+    function mark(arr,step){ for(var j=0;j<arr.length;j+=step) taken[arr[j]+','+arr[j+1]]=1; }
+    mark(sab.halo,2); mark(sab.core,2); mark(sab.hilt,3);
+    function grow(src,out){
+      var next={};
+      Object.keys(src).forEach(function(k){ var p=k.split(','),x=+p[0],y=+p[1];
+        N4.forEach(function(d){ var n=(x+d[0])+','+(y+d[1]); if(!taken[n]&&!next[n]){ next[n]=1; out.push(x+d[0],y+d[1]); } }); });
+      Object.keys(next).forEach(function(k){ taken[k]=1; });
+      return next;
+    }
+    var haloSet={}; for(i=0;i<sab.halo.length;i+=2) haloSet[sab.halo[i]+','+sab.halo[i+1]]=1;
+    grow(grow(haloSet,ring1),ring2);
+    var glow={},blade={};
+    glow['rgba('+rgb+',.2)']=ring2; glow['rgba('+rgb+',.5)']=ring1;
+    blade[halo]=sab.halo; blade[core]=sab.core;
+    return byCol[halo]={glow:glow,blade:blade};
+  }
+  var _drawSaber=drawSaber;
+  drawSaber=function(a,glow){
+    if(opts.glow==='shadow') return _drawSaber(a,glow);
+    var g=geom(a),P=g.P,sab=saberOf(a),i;
+    function Y(y){ return g.oy+y*P; }
+    if(sab.core.length){
+      var lk=saberLook(sab,a.halo,a.core,a.glow);
+      ctx.globalAlpha=Math.min(1,.55+.45*glow+flash*4); blit(lk.glow,g.X,Y); ctx.globalAlpha=1;
+      blit(lk.blade,g.X,Y);
+    }
+    for(i=0;i<sab.hilt.length;i+=3){ ctx.fillStyle=sab.hilt[i+2]?COL.m:COL.M; ctx.fillRect(g.X(sab.hilt[i]),g.oy+sab.hilt[i+1]*P,P,P); }
+  };
+  // the blaster bolt Vader holds in the Ambush: same idea, a pale pixel band instead of a blur
+  var _drawBolt=drawBolt;
+  drawBolt=function(b){
+    if(opts.glow==='shadow') return _drawBolt(b);
+    var P=S*dpr,x=Math.round(b.x/P)*P,y=Math.round(b.y/P)*P,held=b.state==='held'||b.state==='grip',
+        j=held&&Math.random()<.5?-P:0,len=held?6:8;
+    ctx.fillStyle='rgba(61,140,255,.28)'; ctx.fillRect(x-(len+1)*P,y-2*P+j,(len+3)*P,5*P);
+    ctx.fillStyle='#3d8cff'; ctx.fillRect(x-len*P,y-P+j,(len+1)*P,3*P);
+    ctx.fillStyle='#eaf4ff'; ctx.fillRect(x-(len-1)*P,y+j,len*P,P);
+  };
+
+  /* ---------- low battery: sitting on the floor, legs out ---------- */
+  function buildSit(lights){
+    var src=buildVader(0,lights,false),out={},D=COL.D,E=COL.e;
+    Object.keys(src).forEach(function(c){ var a=src[c];
+      for(var i=0;i<a.length;i+=2) if(a[i+1]<16) (out[c]=out[c]||[]).push(a[i],a[i+1]+2); });   // the body, two rows lower, no legs
+    function rect(col,x0,x1,y0,y1){ var arr=out[col]=out[col]||[]; for(var x=x0;x<=x1;x++) for(var y=y0;y<=y1;y++) arr.push(x,y); }
+    // legs in the grey his standing legs are drawn in (the suit black vanishes on a dark desktop)
+    rect(E,21,30,18,19); rect(E,31,33,15,19);                     // one leg stretched out, boot up (the other is tucked under him)
+    return out;
+  }
+  function drawSitting(a,now){
+    var g=geom(a),P=g.P,cx=g.ox+18*P,body=memo('sit'+a.lights.join(''),function(){return buildSit(a.lights)});
+    ctx.fillStyle='rgba(0,0,0,.38)'; ctx.fillRect(Math.round(cx-15*P),FLOOR,30*P,P);
+    ctx.fillStyle='rgba(0,0,0,.2)'; ctx.fillRect(Math.round(cx-12*P),FLOOR+P,24*P,P);
+    blit(body,g.X,function(y){return g.oy+y*P});
+    if(extras.bubble||Math.floor(now/600)%2) return;               // a battery blinking red over his helmet
+    var bx=g.ox+13*P,by=g.oy-9*P;
+    ctx.fillStyle=COL.K; ctx.fillRect(bx-P,by-P,11*P,7*P); ctx.fillRect(bx+10*P,by,P,5*P);   // a black backing, like the bubbles: readable on any desktop
+    ctx.fillStyle=COL.W; ctx.fillRect(bx,by,9*P,P); ctx.fillRect(bx,by+4*P,9*P,P); ctx.fillRect(bx,by,P,5*P); ctx.fillRect(bx+8*P,by,P,5*P); ctx.fillRect(bx+9*P,by+P,P,3*P);
+    ctx.fillStyle=COL.lr; ctx.fillRect(bx+P,by+P,2*P,3*P);
+  }
+
+  /* ---------- the CPU sign he holds up while standing still (Hector's idea) ---------- */
+  // a 3x5 pixel font, so the sign is as crisp as he is
+  var FONT={'0':'111101101101111','1':'010110010010111','2':'111001111100111','3':'111001111001111','4':'101101111001001',
+    '5':'111100111001111','6':'111100111101111','7':'111001001001001','8':'111101111101111','9':'111101111001111',
+    'C':'111100100100111','P':'111101111100100','U':'101101101101111','%':'101001010100101',' ':'000000000000000'};
+  function signText(){ return 'CPU '+Math.max(0,Math.min(100,Math.round(sys.cpu)))+'%'; }
+  // the number turns amber from 50%, red from 80% or when the Mac throttles (where the CPU crate starts too)
+  function signColor(){ return sys.cpu>=80||sys.thermal>=2?'#c0392b':sys.cpu>=50?'#b7791f':'#1f8a4c'; }
+  function buildSign(text,numCol){
+    var out={},w=text.length*4+3,h=9;
+    function px(c,x,y){ (out[c]=out[c]||[]).push(x,y); }
+    for(var x=0;x<w;x++) for(var y=0;y<h;y++) px(x===0||y===0||x===w-1||y===h-1?'#0a0a0d':'#f2eae8',x,y);
+    text.split('').forEach(function(ch,i){ var gl=FONT[ch]||FONT[' '],col=i<3?'#15161a':numCol;
+      for(var r=0;r<5;r++) for(var c=0;c<3;c++) if(gl[r*3+c]==='1') px(col,2+i*4+c,2+r); });
+    return {spr:out,w:w,h:h};
+  }
+  function drawSign(a){
+    if(!a||a.hidden||!(a.signK>0)) return;
+    var g=geom(a),P=g.P,k=ease(a.signK),text=signText(),col=signColor(),s=memo('sign'+text+col,function(){return buildSign(text,col)});
+    var hx=g.X(32),handY=g.oy+11*P,bottom=g.oy+Math.round(-8+(1-k)*16)*P,top=bottom-s.h*P;
+    var left=Math.max(P,Math.min(cv.width-(s.w+1)*P,Math.round((hx+P/2-s.w*P/2)/P)*P));
+    ctx.fillStyle='#9a6a3f'; ctx.fillRect(hx,bottom,P,Math.max(P,handY-bottom+P));        // the stick, from his hand up to the board
+    blit(s.spr,function(x){return left+x*P},function(y){return top+y*P});
+  }
+
+  /* ---------- the workout weights, drawn in his own sprite space so they follow and mirror with him ---------- */
+  function drawGym(){
+    var gy=extras.gym; if(!gy||sceneKey!=='roam'||!roam) return;
+    var V=roam.V; if(V.hidden) return;
+    var g=geom(V),P=g.P,jit=gy.shake*P;
+    function rect(c,x0,x1,y0,y1){ var a=Math.round(y0),b=Math.round(y1); ctx.fillStyle=c;
+      ctx.fillRect(Math.min(g.X(x0),g.X(x1))+jit,g.oy+a*P,(x1-x0+1)*P,(b-a+1)*P); }
+    ctx.globalAlpha=gy.alpha;
+    if(gy.kind==='curl'){
+      [[3,gy.yl],[32,gy.yr]].forEach(function(d){
+        var cx=d[0],y=Math.round(d[1]);
+        // 9x5 and light-edged: the first cut (7x3, dark plates) vanished on a dark desk at his Small size
+        if(y<10) rect('#4a4e57',cx-1,cx,y+5,11);                              // the forearm (2 px), up to a curled dumbbell
+        rect('#8a919c',cx-4,cx-4,y,y+4); rect('#4d525b',cx-3,cx-3,y,y+4);       // plates, with a light outer edge
+        rect('#4d525b',cx+3,cx+3,y,y+4); rect('#8a919c',cx+4,cx+4,y,y+4);
+        rect('#c0c6ce',cx-2,cx+2,y+2,y+2);                                     // the handle
+      });
+    } else {
+      var b=Math.round(gy.bar);
+      if(b<10){ rect('#4a4e57',2,3,b+1,10); rect('#4a4e57',32,33,b+1,10); }  // arms up to the bar
+      rect('#c0c6ce',-8,43,b,b);                                               // the bar
+      rect('#8a919c',-7,-7,b-3,b+3); rect('#4d525b',-6,-5,b-3,b+3);             // big plates, light outer edge
+      rect('#4d525b',40,41,b-3,b+3); rect('#8a919c',42,42,b-3,b+3);
+      rect('#6a717d',-4,-4,b-2,b+2); rect('#6a717d',39,39,b-2,b+2);             // small inner plates
+    }
+    ctx.globalAlpha=1;
+  }
+
+  /* ---------- drones: x in points, lift and speeds in sprite rows (like the crates) ---------- */
+  var DIM={cargo:[20,9],probe:[13,21],mini:[11,5]},BUILD={cargo:buildCargo,probe:buildProbe,mini:buildMini};
+  function Drone(kind,x,lift,dir,speed){
+    var d={kind:kind,x:x,lift:lift,dir:dir,tx:x,tl:lift,spd:speed||40,state:'fly',t:0,vx:0,vy:0,wob:Math.random()*6,
+      alpha:1,dead:false,carry:null,blink:0,landed:false,flip:false,spinT:0,sparkT:0,orbit:null};
+    extras.drones.push(d); return d;
+  }
+  function droneCenter(d){ var w=DIM[d.kind][0],h=DIM[d.kind][1]; return [(d.x+w*S/2)*dpr,FLOOR-(d.lift+h/2)*S*dpr]; }
+  function stepDrones(dt){
+    extras.drones.forEach(function(d){
+      var w=DIM[d.kind][0]; d.t+=dt; d.wob+=dt; if(d.blink>0) d.blink-=dt;
+      if(d.state==='fly'){
+        var dx=d.tx-d.x,st=d.spd*S*dt;
+        if(Math.abs(dx)<=st) d.x=d.tx; else { d.x+=Math.sign(dx)*st; if(d.kind!=='cargo') d.dir=dx>0?1:-1; }
+        d.lift+=(d.tl-d.lift)*Math.min(1,dt*2.5);
+        if(d.x===d.tx&&(d.x>W+40*S||d.x<-60*S)) d.dead=true;                 // flew off the screen
+      } else if(d.state==='orbit'&&d.orbit){
+        var o=d.orbit,cx=o.cx(); o.a+=o.w*dt;
+        d.x+=(cx+Math.cos(o.a)*o.r*S-w*S/2-d.x)*Math.min(1,dt*3);
+        d.lift+=(o.l+Math.sin(o.a*1.7)*o.dl-d.lift)*Math.min(1,dt*3);
+        d.dir=cx>d.x+w*S/2?1:-1;
+      } else if(d.state==='flee'){
+        d.vx+=d.dir*70*dt; d.x+=d.vx*S*dt; d.lift+=(Math.min(52,d.lift+8)-d.lift)*dt;
+        if(d.x>W+40*S||d.x<-60*S) d.dead=true;
+      } else if(d.state==='crush'){
+        d.sparkT-=dt; if(d.sparkT<=0){ d.sparkT=.09; var c=droneCenter(d); burst(c[0],c[1],2,['#ff3b30','#ffd35a','#c0c6ce'],70); }
+      } else if(d.state==='fall'){
+        if(!d.landed){
+          d.vy+=190*dt; d.lift-=d.vy*dt; d.x+=d.vx*S*dt;
+          d.spinT-=dt; if(d.spinT<=0){ d.spinT=.09; d.flip=!d.flip; }
+          d.sparkT-=dt; if(d.sparkT<=0){ d.sparkT=.06; var sc=droneCenter(d);
+            sparks.push({x:sc[0],y:sc[1],vx:(Math.random()-.5)*30*dpr,vy:-(20+Math.random()*30)*dpr,life:.5,c:'rgba(120,120,130,.7)',g:-10}); }
+          if(d.lift<=0){ d.lift=0; d.vy=0; d.landed=true; d.flip=false; dust((d.x+w*S/2)*dpr); shake=Math.max(shake,.1); }
+        } else { d.alpha-=dt/1.4; if(d.alpha<=0) d.dead=true; }
+      }
+      if(d.t>60) d.dead=true;
+      if(d.carry){ var cr=d.carry; if(cr.dead) d.carry=null; else { cr.x=d.x+(w-14)/2*S; cr.lift=Math.max(0,d.lift-13); cr.vy=0; cr.onFloor=false; } }
+    });
+    extras.drones=extras.drones.filter(function(d){ return !d.dead; });
+  }
+  function drawDrone(d){
+    var P=S*dpr,w=DIM[d.kind][0],h=DIM[d.kind][1],air=d.state!=='fall'&&d.state!=='crush';
+    var bob=air&&Math.sin(d.wob*(d.kind==='mini'?11:4))>0?1:0,jit=d.state==='crush'?(Math.random()<.5?-P:P):0;
+    var ox=Math.round((d.x+shakeOff)*dpr/P)*P+jit,oy=FLOOR-(h+Math.round(d.lift)+bob)*P;
+    ctx.globalAlpha=Math.max(0,Math.min(1,d.alpha));
+    blit(memo('drone-'+d.kind,BUILD[d.kind]),function(x){return ox+(d.dir>0?x:w-1-x)*P},function(y){return oy+(d.flip?h-1-y:y)*P});
+    if(air){
+      if(d.kind==='cargo'){
+        ctx.fillStyle=Math.random()<.5?'#8fd3ff':'#e6f6ff'; ctx.fillRect(ox+P,oy+5*P,2*P,P); ctx.fillRect(ox+17*P,oy+5*P,2*P,P);
+        if(d.blink>0&&Math.floor(d.blink*8)%2){ ctx.fillStyle='#ffd35a'; ctx.fillRect(ox+9*P,oy+2*P,2*P,P); }
+      } else if(d.kind==='mini'){
+        var f=Math.floor(d.wob*20)%2; ctx.fillStyle='rgba(200,208,220,.75)';
+        ctx.fillRect(ox+(f?0:1)*P,oy-P,(f?4:2)*P,P); ctx.fillRect(ox+(f?7:8)*P,oy-P,(f?4:2)*P,P);
+      }
+    }
+    ctx.globalAlpha=1;
+  }
+  // the probe droid's red scan line sweeping up and down him
+  function drawScan(){
+    var s=extras.scan; if(!s||s.d.dead||!s.who||s.who.hidden) return;
+    var P=S*dpr,g=geom(s.who),d=s.d,e=droneCenter(d),ex=Math.round(e[0]/P)*P,ey=FLOOR-(d.lift+DIM.probe[1]-4)*P;
+    var top=g.oy-6*P,bot=FLOOR-P,k=(s.t*1.4)%1,ly=Math.round((top+(bot-top)*(k<.5?k*2:2-k*2))/P)*P,x0=g.ox+4*P,x1=g.ox+32*P;
+    ctx.fillStyle='rgba(255,59,48,.22)';
+    [x0,x1].forEach(function(xe){ var n=Math.max(1,Math.round(Math.hypot(xe-ex,ly-ey)/P));
+      for(var i=0;i<=n;i+=2) ctx.fillRect(Math.round((ex+(xe-ex)*i/n)/P)*P,Math.round((ey+(ly-ey)*i/n)/P)*P,P,P); });
+    ctx.fillStyle='rgba(255,59,48,.6)'; ctx.fillRect(x0,ly,x1-x0,P);
+  }
+
+  /* ---------- TIE fighters in the sky above him: x in points, lift in rows (bottom of the ship) ---------- */
+  function launchFlight(dir,n){
+    var base=spd()*S;
+    for(var i=0;i<n;i++){ var far=i===1;   // the wingman flies higher, smaller and slower: further away
+      extras.flights.push({x:dir>0?-(40+i*70)*S:W+(20+i*70)*S,lift:far?47:38,dir:dir,far:far,vx:dir*base*(far?2.4:3.2),
+        phase:'fly',follow:null,off:0,px:0,t:Math.random()*6,fireT:.4+Math.random()*.8}); }
+    snd.flyby(dir);
+  }
+  // the parade's escort: two TIEs keep station over the boss, then peel off ahead of him
+  function escortFor(boss){
+    extras.flights.push({x:-80*S,lift:37,dir:1,far:false,vx:0,phase:'escort',follow:boss,off:2*S,px:boss.x,t:0,fireT:99});
+    extras.flights.push({x:-190*S,lift:48,dir:1,far:true,vx:0,phase:'escort',follow:boss,off:-64*S,px:boss.x,t:2,fireT:99});
+    snd.flyby(1);
+  }
+  function tieTop(f,P){ var Pf=f.far?Math.max(1,Math.round(P*.6)):P; return FLOOR-Math.round(f.lift)*P-18*Pf+(Math.sin(f.t*3)>0?0:Pf); }
+  function fireLasers(f){
+    var P=S*dpr,y=tieTop(f,P)+12*P,x=(f.x+(f.dir>0?20:4)*S)*dpr,v=f.dir*(Math.abs(f.vx)*dpr+260*S*dpr);
+    extras.lasers.push({x:x,y:y,vx:v,life:.9},{x:x-f.dir*9*P,y:y,vx:v,life:.9});
+    snd.zap();
+  }
+  function stepFlights(dt){
+    extras.flights.forEach(function(f){
+      f.t+=dt;
+      if(f.phase==='escort'){
+        var b=f.follow,bv=(b.x-f.px)/Math.max(dt,1e-3); f.px=b.x;
+        f.x+=(bv+(b.x+f.off-f.x)*1.4)*dt;
+        if(b.x>W*.72){ f.phase='leave'; f.vx=Math.max(bv,30*S); f.fireT=f.far?99:.15; snd.flyby(1); }
+      } else if(f.phase==='leave'){ f.vx+=f.dir*240*S*dt; f.x+=f.vx*dt; f.lift+=5*dt; }
+      else f.x+=f.vx*dt;
+      if(!f.far&&f.phase!=='escort'){ f.fireT-=dt;
+        if(f.fireT<=0&&f.x>0&&f.x<W-24*S){ f.fireT=f.phase==='leave'?.3:.9+Math.random()*1.2; fireLasers(f); } }
+      if(f.phase!=='escort'&&((f.dir>0&&f.x>W+40*S)||(f.dir<0&&f.x<-60*S))) f.dead=true;
+      if(f.t>60) f.dead=true;
+    });
+    extras.flights=extras.flights.filter(function(f){ return !f.dead; });
+  }
+  function drawFlights(dt){
+    var P=S*dpr,spr=memo('tie',buildTie);
+    extras.flights.filter(function(f){return f.far}).concat(extras.flights.filter(function(f){return !f.far})).forEach(function(f){
+      var Pf=f.far?Math.max(1,Math.round(P*.6)):P,st=stampOf(spr,Pf,false,false); if(!st) return;
+      var ox=Math.round(f.x*dpr/Pf)*Pf,oy=tieTop(f,P);
+      ctx.globalAlpha=f.far?.8:1; ctx.drawImage(st.c,ox,oy);
+      ctx.fillStyle='rgba(255,120,70,.9)'; ctx.fillRect(f.dir>0?ox-Pf:ox+24*Pf,oy+8*Pf,Pf,2*Pf);
+      ctx.globalAlpha=1;
+    });
+    extras.lasers=extras.lasers.filter(function(l){
+      l.life-=dt; l.x+=l.vx*dt; if(l.life<=0||l.x<-60*P||l.x>cv.width+60*P) return false;
+      var x=Math.round(l.x/P)*P,y=Math.round(l.y/P)*P;
+      if(opts.glow==='shadow'){ ctx.save(); ctx.shadowColor='rgba(80,255,110,.9)'; ctx.shadowBlur=P*4; ctx.fillStyle='#3fd07a'; ctx.fillRect(x,y,7*P,P); ctx.restore(); }
+      else { ctx.fillStyle='rgba(63,208,122,.3)'; ctx.fillRect(x-P,y-P,9*P,3*P); ctx.fillStyle='#3fd07a'; ctx.fillRect(x,y,7*P,P); }
+      ctx.fillStyle='#d9ffe0'; ctx.fillRect(x+P,y,5*P,P);
+      return true;
+    });
+  }
+  // every show gets a flyover (one or two TIEs), a long one gets a second; the parade gets its escort instead
+  var showFx={t:0,next:0,count:0,escort:false};
+  function vaderOf(){ for(var i=0;i<actors.length;i++) if(actors[i].kind==='vader') return actors[i]; return null; }
+  function directShow(dt){
+    showFx.t+=dt;
+    if(showFx.escort){ if(showFx.escort===true){ var b=vaderOf(); if(b&&b.x>W*.06){ escortFor(b); showFx.escort='on'; } } return; }
+    if(showFx.count<2&&showFx.t>=showFx.next){
+      launchFlight(Math.random()<.5?1:-1,Math.random()<.5?2:1); showFx.count++; showFx.next=showFx.t+9+Math.random()*6; }
+  }
+  // Hector 2026-09-14: the parade walks a little slower in the pet, to the march.
+  // Only here: the rig's hub cameo keeps the pace he approved there.
+  var PARADE_PACE=.75,paceMul=1,_spd=spd;
+  spd=function(){ return _spd()*paceMul; };
+  function sceneSlowParade(){ paceMul=PARADE_PACE; try{ return sceneParade(); } finally{ paceMul=1; } }
+
+  /* ---------- roaming: his normal life ---------- */
+  function sceneRoam(){
+    var sp=spd(),V=new Actor('vader',-44*S,1),t=0,mode='walk',timer=0,act=null,actName='',goneT=0;
+    // Hector 2026-09-14 (after v0.6): mostly just hanging out, one random animation every 30-60 s
+    var nextAnim=9+Math.random()*8,benchKind='',benchT=0,standT=0;
+    V.signK=0; V.signTo=0;
+    var lostT=0,noticeCool=0,parryT=0,choked=false,hotCool=0,tieStep=null;
+    V.saber=true; actors=[V];
+    walk(V,W*(.15+Math.random()*.3),sp*(isNight()?.6:1));
+    function pickX(){
+      var x=V.x+(Math.random()<.5?-1:1)*(60+Math.random()*(W/S)*.35)*S;
+      return Math.max(8*S,Math.min(W-48*S,x));
+    }
+    function flourish(){return seq([
+      run(function(){V.bladeTo=1}), wait(.45),
+      during(.7,function(k){V.deg=90+720*ease(k)}),
+      run(function(){V.deg=90; flash=.12; V.vy=-35}), wait(1.1),
+      run(function(){V.bladeTo=0}), wait(.5)]);}
+    function look(){var d=V.dir; return seq([run(function(){V.dir=-d}),wait(.9),run(function(){V.dir=d}),wait(.7)]);}
+    // he waves: the raised hand up and down a few times (without the Force ripples a raised hand makes)
+    function wave(){return seq([
+      run(function(){ V.bladeTo=0; V.emote=.5; if(Math.random()<.5) say('hello',null,2.4); }),
+      during(1.8,function(k){ V.waving=true; V.reach=Math.floor(k*1.8/.22)%2===0; }),
+      run(function(){ V.reach=false; V.waving=false; }), wait(.4)]);}
+    // workout (Hector's idea): dumbbell curls, or a barbell with plates pressed over his helmet.
+    // The weights come up off the floor with the Force and are dropped with a thud at the end.
+    // (A bench press doesn't suit him: lying down, a body 36 wide and 22 tall becomes a tall block.)
+    function workout(kind){
+      kind=kind||(Math.random()<.5?'curl':'press');
+      var gy={kind:kind,yl:15,yr:15,bar:16,alpha:1,auraT:0,shake:0,landed:false},tt=0,phase='start',sweatT=.4,lastBottom=0;
+      var REP=kind==='curl'?1.5:1.2,REPS=kind==='curl'?4:5;               // a curl cycle is one left and one right rep
+      V.bladeTo=0; V.reach=false; V.target=V.x; extras.gym=gy; say('workout',null,1.4);
+      function motes(dt){ var g=geom(V),P=g.P;
+        if(kind==='curl') aura(dt,gy,g.ox,g.oy+(gy.yl+1)*P,36,3); else aura(dt,gy,g.ox-6*P,g.oy+(gy.bar-3)*P,48,6); }
+      function sweat(dt){ sweatT-=dt; if(sweatT>0) return; sweatT=.35; var g=geom(V),P=g.P;
+        sparks.push({x:g.X(Math.random()<.5?8:27)+P/2,y:g.oy-4*P,vx:(Math.random()-.5)*30*dpr,vy:-25*dpr,life:.6,c:'#8fd3ff',g:260}); }
+      return function(dt){
+        tt+=dt;
+        if(phase==='start'){ if(tt>.5){ phase='rise'; tt=0; } return false; }
+        if(phase==='rise'){
+          var k=Math.min(1,tt/.7),e=ease(k); motes(dt);
+          if(kind==='curl') gy.yl=gy.yr=15-3*e; else gy.bar=16-25*e;
+          if(k>=1){ phase='reps'; tt=0; }
+          return false;
+        }
+        if(phase==='reps'){
+          var total=kind==='curl'?REPS*REP:(REPS-1)*REP+REP*1.8;
+          if(kind==='curl'){ var s=Math.sin(2*Math.PI*tt/REP); gy.yl=12-10*Math.max(0,s); gy.yr=12-10*Math.max(0,-s); }
+          else {
+            var last=tt>(REPS-1)*REP,c=last?(tt-(REPS-1)*REP)/(REP*1.8):(tt%REP)/REP;   // the last rep is a slow grind
+            gy.bar=-9-10*(.5-.5*Math.cos(2*Math.PI*Math.min(1,c)));
+            gy.shake=last&&c>.25&&c<.75?(Math.random()<.5?-1:1):0;
+            var cyc=Math.floor(tt/REP); if(!last&&cyc!==lastBottom){ lastBottom=cyc; V.squash=.14; V.leg=3; }   // legs dip on every rep
+          }
+          if(tt>1.2) sweat(dt);
+          if(tt>=total){ phase='done'; tt=0; gy.shake=0; if(kind==='curl') gy.yl=gy.yr=12; else gy.bar=-9; V.emote=.7; say('gains',null,2.2); }
+          return false;
+        }
+        if(phase==='done'){ if(tt>.9){ phase='drop'; tt=0; } return false; }
+        if(phase==='drop'){
+          var d=Math.min(1,tt/.35),f=d*d;
+          if(kind==='curl') gy.yl=gy.yr=12+3*f; else gy.bar=-9+25*f;
+          if(d>=1&&!gy.landed){ gy.landed=true; dust((V.x+18*S)*dpr); shake=kind==='press'?.22:.1; if(kind==='press'){ V.squash=.25; V.leg=3; } }
+          if(gy.landed){ gy.alpha=Math.max(0,1-(tt-.35)/.9); if(gy.alpha<=0){ extras.gym=null; return true; } }
+          return false;
+        }
+        return true;
+      };
+    }
+    // a line in a bubble while he stands there; sometimes about the Mac's CPU
+    function chat(){
+      var c=Math.round(sys.cpu);
+      if(sys.cpuKnown&&Math.random()<.3) say(c>=80?'cpuHigh':c>=40?'cpuMid':'cpuLow',c,3.6);
+      else say('idle',null,3.6);
+    }
+    function crate(){
+      var d=V.dir,cx=d>0?V.x+72*S:V.x-50*S;
+      if(cx<4*S||cx>W-18*S){d=-d; V.dir=d; cx=d>0?V.x+72*S:V.x-50*S;}
+      cx=Math.max(4*S,Math.min(W-18*S,cx));
+      var c=Prop(memo('crate',function(){return buildCrate(0)}),14,12,cx,1),cut=Math.random()<.5;
+      c.heavy=true; c.lift=skyLift(); props.push(c);   // it falls out of the sky
+      return seq([until(function(){return landed(c)})].concat(dealWith(c,cut)));
+    }
+    function skyLift(){ return Math.max(10,Math.min(52,Math.floor(FLOOR/(S*dpr))-14)); }
+    function landed(c){ return c.dead||(c.onFloor&&c.lift===0&&c.vy===0); }
+    function mid(o,w){ return o.x+w*S/2; }
+    function lazy(fn){ var inner=null; return function(dt){ if(!inner) inner=fn(); return inner(dt); }; }
+    function newCrate(x){ var c=Prop(memo('crate',function(){return buildCrate(0)}),14,12,x,1); c.heavy=true; props.push(c); return c; }
+    function splitCrate(c,d){
+      c.dead=true;
+      var L=Prop(memo('crateL',function(){return buildCrate(1)}),14,12,c.x,1),
+          R=Prop(memo('crateR',function(){return buildCrate(2)}),14,12,c.x,1);
+      L.lift=R.lift=Math.max(1,c.lift); L.vx=d>0?-12:-26; L.vy=-60; L.spin=.08; L.fade=1.8;
+      R.vx=d>0?26:12; R.vy=-80; R.spin=.07; R.fade=1.8;
+      props.push(L,R);
+      burst((c.x+7*S)*dpr,FLOOR-(c.lift+6)*S*dpr,22,['#fff4c2','#ffd35a','#ff6a3d','#9a6a3f','#c79660'],190);
+      flash=.12; shake=.14;
+    }
+    // a crate on the floor: lift it with the Force, then pull it in and cut it, or throw it away
+    function dealWith(c,cut){
+      var d=1,fromX=0,fromL=0;
+      var steps=[
+        run(function(){ d=mid(c,14)>=V.x+18*S?1:-1; V.dir=d; V.target=V.x; }),
+        wait(.35), run(function(){V.emote=.6}), wait(.6),
+        run(function(){V.bladeTo=1}), wait(.4),
+        run(function(){V.reach=true; V.deg=-70; c.held=true}),
+        during(.5,function(k){c.lift=12*(1-Math.pow(1-k,3))}),
+        wait(.2)];
+      if(cut) steps=steps.concat([
+        run(function(){fromX=c.x; fromL=c.lift}),
+        during(.3,function(k){var e=k*k,to=d>0?V.x+34*S:V.x-12*S;
+          c.x=fromX+(to-fromX)*e; c.lift=fromL+(8-fromL)*e;
+          if(k>.45){V.reach=false; V.deg=Math.round(120-(k-.45)/.55*160);}}),
+        run(function(){ splitCrate(c,d); V.deg=-40; }),
+        wait(.9)]);
+      else steps=steps.concat([
+        run(function(){c.held=false; c.vx=d*spd()*4; c.vy=-90; c.spin=.07; c.fade=3; V.reach=false}),
+        wait(1)]);
+      return steps.concat([run(function(){V.deg=90; V.bladeTo=0}), wait(.6)]);
+    }
+    // dash to a crate on the floor and cut it with one swing
+    function slash(c){
+      var d=1;
+      return [
+        run(function(){ if(c.dead) return; d=mid(c,14)>=V.x+18*S?1:-1; V.dir=d; V.deg=100;
+          walk(V,Math.max(-8*S,Math.min(W-30*S,d>0?c.x-30*S:c.x+12*S)),spd()*2.4); }),
+        until(function(){ return c.dead||here(V); }),
+        run(function(){ if(!c.dead) V.deg=135; }), wait(.08),
+        during(.14,function(k){ if(!c.dead) V.deg=Math.round(135-175*k); }),
+        run(function(){ if(!c.dead) splitCrate(c,d); }),
+        wait(.3), run(function(){ V.deg=90; })
+      ];
+    }
+    // a crate storm: three crates out of the sky one after another, and he cuts through the lot
+    function storm(){
+      var cs=[],sgn=V.dir||1;
+      function spot(o){
+        var x=V.x+18*S+o*sgn*S-7*S; if(x<6*S||x>W-20*S) x=V.x+18*S-o*sgn*S-7*S;
+        x=Math.max(6*S,Math.min(W-20*S,x));
+        cs.forEach(function(c){ if(Math.abs(c.x-x)<20*S) x=Math.max(6*S,Math.min(W-20*S,x+(x>W/2?-24:24)*S)); });
+        return x;
+      }
+      var steps=[run(function(){ say('storm',null,2.4); V.emote=.7; V.bladeTo=1; })];
+      [70,-64,140].forEach(function(o,i){
+        steps.push(run(function(){ var c=newCrate(spot(o)); c.lift=skyLift(); cs.push(c); }), wait(i<2?.55:.1));
+      });
+      steps.push(until(function(){ return cs.every(landed); }));
+      steps.push(lazy(function(){   // sweep along the line from the nearer end
+        var order=cs.slice().sort(function(a,b){return a.x-b.x});
+        if(Math.abs(order[order.length-1].x-V.x)<Math.abs(order[0].x-V.x)) order.reverse();
+        var sub=[]; order.forEach(function(c){ sub=sub.concat(slash(c)); }); return seq(sub);
+      }));
+      steps.push(wait(.3), during(.6,function(k){V.deg=90+720*ease(k)}), run(function(){V.deg=90; flash=.12; V.vy=-35}),
+        wait(.9), run(function(){V.bladeTo=0}), wait(.5));
+      return seq(steps);
+    }
+    // a cargo drone brings a crate, hovers over him and lets go
+    function droneDrop(){
+      var side=V.x>W/2?-1:1,cx=Math.max(6*S,Math.min(W-20*S,V.x+18*S+side*85*S-7*S)),hurl=Math.random()<.4,dr=null,c=null;
+      return seq([
+        run(function(){
+          dr=Drone('cargo',side<0?-30*S:W+10*S,40,1,spd()*2.2); dr.tx=cx-3*S; dr.tl=36;
+          c=newCrate(dr.x+3*S); c.lift=23; dr.carry=c; snd.flyby(side>0?-1:1);
+        }),
+        until(function(){ return dr.x===dr.tx; }),
+        run(function(){ dr.state='hover'; dr.blink=1; V.dir=mid(c,14)>=V.x+18*S?1:-1; V.emote=.6; say('drone',null,2.2); snd.beep(); }),
+        wait(.9),
+        run(function(){ dr.carry=null; }),
+        wait(.45),
+        run(function(){ dr.state='fly'; dr.tx=side<0?W+60*S:-80*S; dr.spd=spd()*(hurl?.7:2); dr.tl=48; }),
+        until(function(){ return landed(c); }),
+        lazy(function(){ return seq(hurl&&!dr.dead&&dr.x>0&&dr.x<W-20*S?hurlAt(c,dr):dealWith(c,Math.random()<.5)); })
+      ]);
+    }
+    // ...or he hurls the crate back at the drone and knocks it out of the sky
+    function hurlAt(c,dr){
+      var fromX=0,fromL=0;
+      return [
+        run(function(){ V.dir=mid(c,14)>=V.x+18*S?1:-1; V.target=V.x; V.emote=.7; }),
+        wait(.35), run(function(){ V.bladeTo=0; V.reach=true; V.deg=-70; c.held=true; }),
+        during(.45,function(k){ c.lift=14*(1-Math.pow(1-k,3)); }),
+        run(function(){ V.dir=mid(dr,20)>=V.x+18*S?1:-1; }),
+        wait(.25),
+        run(function(){ fromX=c.x; fromL=c.lift; c.spin=.06; }),
+        during(.45,function(k){ var e=k*k; c.x=fromX+(dr.x+3*S-fromX)*e; c.lift=fromL+((dr.lift-10)-fromL)*e; }),
+        run(function(){
+          c.held=false; c.vx=V.dir*6; c.vy=-20; c.fade=2.2; V.reach=false;
+          if(!dr.dead){ var h=droneCenter(dr); burst(h[0],h[1],26,['#ffffff','#ffd35a','#ff6a3d','#9aa3b0'],200);
+            flash=.14; shake=.12; dr.state='fall'; dr.vx=V.dir*10; dr.vy=-30; say('dronehit',null,2.6); } }),
+        until(function(){ return dr.dead||dr.landed; }),
+        wait(.8), run(function(){ V.deg=90; })
+      ];
+    }
+    // an Imperial probe droid comes to scan him. Bad idea: crushed with the Force, or cut down mid-leap
+    function probe(){
+      var side=V.x>W/2?-1:1,dr=null,crush=Math.random()<.5,hx=Math.max(4*S,Math.min(W-17*S,V.x+18*S+side*70*S-6.5*S));
+      var steps=[
+        run(function(){ dr=Drone('probe',side<0?-20*S:W+8*S,34,side,spd()*1.1); dr.tx=hx; dr.tl=16; }),
+        until(function(){ return dr.x===dr.tx; }),
+        run(function(){ dr.state='hover'; V.dir=mid(dr,13)>=V.x+18*S?1:-1; dr.dir=-V.dir; V.emote=.7; extras.scan={d:dr,who:V,t:0}; snd.beep(); }),
+        wait(1.8),
+        run(function(){ extras.scan=null; say('probe',null,2.4); }),
+        wait(.4)];
+      if(crush) steps=steps.concat([
+        run(function(){ V.reach=true; V.deg=-70; dr.state='crush'; }),
+        wait(1.1),
+        run(function(){ var h=droneCenter(dr); burst(h[0],h[1],28,['#ff3b30','#ffd35a','#c0c6ce','#ffffff'],210); flash=.12; shake=.14;
+          dr.state='fall'; dr.vy=-10; dr.vx=V.dir*6; V.reach=false; }),
+        until(function(){ return dr.dead||dr.landed; }), wait(.5)]);
+      else steps=steps.concat([
+        run(function(){ V.bladeTo=1; }), wait(.4),
+        run(function(){ walk(V,Math.max(-6*S,Math.min(W-30*S,V.dir>0?dr.x-26*S:dr.x+5*S)),spd()*2.4); }),
+        until(function(){ return here(V); }),
+        run(function(){ V.vy=-95; V.deg=150; }),
+        wait(.24),
+        during(.14,function(k){ V.deg=Math.round(150-190*k); }),
+        run(function(){ var h=droneCenter(dr); burst(h[0],h[1],28,['#ffffff','#fff4c2','#ff3b30','#9aa3b0'],210); flash=.14; shake=.1;
+          dr.state='fall'; dr.vx=V.dir*14; dr.vy=-40; }),
+        until(function(){ return V.lift===0&&V.vy===0; }),
+        wait(.4), run(function(){ V.deg=90; V.bladeTo=0; }),
+        until(function(){ return dr.dead||dr.landed; }), wait(.4)]);
+      return seq(steps);
+    }
+    // a swarm of little drones buzzing round his helmet: he swats them one by one
+    function swarm(){
+      var ms=[];
+      return seq([
+        run(function(){
+          for(var i=0;i<3;i++){ var fl=i%2===0,m=Drone('mini',fl?-(20+i*30)*S:W+(10+i*30)*S,30,fl?1:-1,0);
+            m.state='orbit'; m.orbit={a:i*2.094,w:(i%2?-1:1)*(2.2+Math.random()*.8),r:34+i*6,l:28+i*2,dl:6,cx:function(){return V.x+18*S}};
+            ms.push(m); }
+          say('swarm',null,2.4); V.emote=.7; }),
+        wait(.5), run(function(){ V.bladeTo=1; }), wait(1.4),
+        lazy(function(){ var sub=[]; ms.forEach(function(m){ sub=sub.concat(swat(m)); }); return seq(sub); }),
+        wait(.4), during(.6,function(k){V.deg=90-720*ease(k)}), run(function(){V.deg=90; flash=.1;}),
+        wait(.7), run(function(){V.bladeTo=0}), wait(.5)
+      ]);
+    }
+    function swat(m){
+      var fx=0,fl=0,d=1;
+      return [
+        run(function(){ d=mid(m,11)>=V.x+18*S?1:-1; V.dir=d; V.deg=125; m.state='dive'; fx=m.x; fl=m.lift; snd.beep(); }),
+        during(.4,function(k){ var e=ease(k),tx=V.x+(d>0?40:-15)*S; m.x=fx+(tx-fx)*e; m.lift=fl+(20-fl)*e; m.dir=-d; }),
+        during(.1,function(k){ V.deg=Math.round(125-135*k); }),        // ends level: a swat, not a stab into the floor
+        run(function(){ var h=droneCenter(m); burst(h[0],h[1],14,['#ffffff','#ffd35a','#ff3b30'],160); flash=.07; m.state='fall'; m.vx=d*22; m.vy=-45; }),
+        wait(.28), run(function(){ V.deg=90; })
+      ];
+    }
+    // TIE fighters scream over: he turns to watch and salutes with his saber
+    function flyover(){
+      var dir=Math.random()<.5?1:-1;
+      return seq([
+        run(function(){ launchFlight(dir,Math.random()<.6?2:1); V.dir=dir; }),
+        wait(.7), run(function(){ V.bladeTo=1; V.deg=80; V.emote=.5; say('salute',null,2); }),
+        during(2.6,function(k){ V.deg=80+Math.round(Math.sin(k*Math.PI)*6); }),
+        run(function(){ V.bladeTo=0; V.deg=90; }), wait(.6)
+      ]);
+    }
+    // the saber leaves his hand spinning, flies out like a boomerang and comes back
+    function saberThrow(){
+      var d=V.dir,x0=V.x+(d>0?33:2)*S,room=d>0?W-40-x0:x0-40,R=Math.min(W*.35,room),fly=null;
+      if(R<90) return look();
+      return seq([
+        run(function(){V.bladeTo=1}), wait(.45),
+        run(function(){V.deg=150}), wait(.14),
+        run(function(){V.saber=false; fly={x0:x0,y0:FLOOR/dpr-(8+V.lift)*S,d:d,R:R,k:0,n:0}; extras.flyer=fly; snd.whine();}),
+        during(1.5,function(k){fly.k=k}),
+        run(function(){extras.flyer=null; V.saber=true; V.blade=1; V.bladeTo=1; V.deg=90; flash=.12;
+          var h=pt(V,33,12); burst(h[0],h[1],10,['#ffffff','#ff5a4f'],120);}),
+        wait(.8), run(function(){V.bladeTo=0}), wait(.4)
+      ]);
+    }
+    // night: he floats cross-legged in the Force while rocks orbit him
+    function meditate(){
+      var dur=18+Math.random()*20,orb={t:0};
+      return seq([
+        run(function(){V.bladeTo=0; V.reach=false}), wait(.6),
+        run(function(){V.meditating=true; V.held=true; extras.orbit=orb; snd.breathe();}),
+        during(1.2,function(k){V.lift=6*ease(k); orb.t=k*1.2;}),
+        during(dur,function(k){V.lift=6+Math.sin(k*dur*1.6)*.8; orb.t=1.2+k*dur; if(Math.random()<.004) snd.breathe();}),
+        during(1,function(k){V.lift=6*(1-ease(k)); orb.t+=1/30;}),
+        run(function(){V.held=false; V.lift=0; V.meditating=false; extras.orbit=null;}),
+        wait(.6)
+      ]);
+    }
+    // victory: saber up, a jump with a double twirl, sparks like fireworks
+    function celebrate(){return seq([
+      run(function(){V.reach=false; V.bladeTo=1; V.emote=.8; say('celebrate',null,3);}), wait(.35),
+      run(function(){V.vy=-75}),
+      during(.7,function(k){V.deg=90+720*ease(k)}),
+      run(function(){V.deg=90; flash=.16; var h=pt(V,33,-4);
+        burst(h[0],h[1],26,['#ff2a2a','#ffd35a','#ffffff','#3d8cff'],220);}),
+      wait(.25),
+      run(function(){var h=pt(V,18,-8); burst(h[0],h[1],20,['#ffd35a','#ff5a4f','#ffffff'],200);}),
+      wait(1.2), run(function(){V.bladeTo=0}), wait(.4)]);}
+    // the Mac is working hard: he pushes a heavy CPU crate, sweating (and steaming if it throttles)
+    function strain(){
+      var tt=0,d=V.dir,box=Prop(memo('cpucrate',buildCpuCrate),22,18,0,1),sweatT=0,steamT=0;
+      extras.cpuCrate=box; V.bladeTo=0; V.reach=false; say('cpu',null,3.5);
+      return function(dt){
+        tt+=dt;
+        if((d>0&&V.x>W-66*S)||(d<0&&V.x<30*S)){ d=-d; }
+        V.dir=d; walk(V,V.x+d*3*S,5);                                   // one slow, heavy step at a time
+        box.x=d>0?V.x+34*S:V.x-20*S;
+        var g=geom(V),P=g.P;
+        sweatT-=dt; if(sweatT<=0){ sweatT=.3; sparks.push({x:g.X(Math.random()<.5?6:28)+P/2,y:g.oy-2*P,vx:(Math.random()-.5)*30*dpr,vy:-20*dpr,life:.6,c:'#8fd3ff',g:260}); }
+        if(sys.thermal>=2){ steamT-=dt; if(steamT<=0){ steamT=.12; sparks.push({x:g.X(18),y:g.oy-6*P,vx:(Math.random()-.5)*20*dpr,vy:-(30+Math.random()*30)*dpr,life:.9,c:'rgba(200,200,210,.6)',g:-20}); } }
+        if(Math.random()<dt*.3) V.emote=.5;
+        if((!sys.hot&&tt>4)||tt>30){ extras.cpuCrate=null; hotCool=60; if(!sys.hot) say('cool',null,2.5); V.target=V.x; return true; }
+        return false;
+      };
+    }
+    // the battery is low and he is not plugged in: he sits down, exhausted
+    function tired(){
+      var tt=0,dur=18+Math.random()*10; V.bladeTo=0; V.reach=false; V.target=V.x; say('lowBattery',null,3);
+      return function(dt){ tt+=dt; V.sit=true; V.target=V.x; if(Math.random()<dt*.15) snd.breathe();
+        if(!sys.low||tt>dur){ V.sit=false; if(!sys.low) say('charged',null,2.5); return true; }
+        return false; };
+    }
+    function note(){ var g=geom(V); extras.notes.push({x:g.X(Math.random()<.5?4:30),y:g.oy-8*g.P,t:0,dx:(Math.random()-.5)*20}); }
+    // a song is playing in Music: saber sway, a hop on every beat, notes floating up
+    function dance(){
+      var tt=0,dur=12+Math.random()*10,beat=-1; V.bladeTo=1;
+      return function(dt){ tt+=dt; V.target=V.x;
+        var ph=tt*2.1,b=Math.floor(ph);
+        V.deg=Math.round(90+Math.sin(ph*Math.PI)*35);
+        if(b!==beat){ beat=b; if(V.lift===0&&V.vy===0) V.vy=-24; if(b%4===3) V.dir=-V.dir; note(); }
+        if(!sys.music.playing||tt>dur){ V.bladeTo=0; V.deg=90; return true; }
+        return false; };
+    }
+    // the Imperial March: saber raised, stomping left-right in time
+    function march(){
+      var tt=0,beat=-1; V.bladeTo=1; V.deg=90;
+      return function(dt){ tt+=dt; var b=Math.floor(tt*1.8);
+        if(b!==beat){ beat=b; walk(V,V.x+(b%4<2?1:-1)*3*S,12); if(b%2===0) dust((V.x+18*S)*dpr); note(); }
+        if(!sys.music.playing||!/imperial march/i.test(sys.music.title)||tt>40){ V.bladeTo=0; V.target=V.x; return true; }
+        return false; };
+    }
+    // climb a window: ask the app for the whole screen and where the windows are,
+    // Force-leap onto a top edge, stroll along it, ride it if it moves, fall if it goes
+    function climb(){
+      var phase='ask',tt=0,plat=null,airT=1;
+      climbWanted=true; post({type:'climb',want:true});
+      function note(m){ post({type:'debug',key:'climb',msg:m}); }   // readable later: defaults read com.hectorfsv.vaderclawd debug_climb
+      function finish(){ V.perched=false; if(climbWanted){ climbWanted=false; post({type:'climb',want:false}); } }
+      function liveOf(){ for(var i=0;i<platforms.length;i++) if(platforms[i].id===plat.id) return platforms[i]; return null; }
+      function pick(){
+        var best=null,bd=1e9,floorY=FLOOR/dpr;
+        platforms.forEach(function(p){
+          var h=(floorY-p.y)/S; if(h<30||h>(H/S)-30||p.x2-p.x1<50*S) return;   // room for his helmet above the edge
+          var mid=Math.max(p.x1+4*S,Math.min(p.x2-40*S,V.x)),dist=Math.abs(mid-V.x)+h*S*.3;
+          if(dist<bd){bd=dist; best=p;}
+        });
+        return best;
+      }
+      return function(dt){
+        tt+=dt;
+        if(phase==='ask'){
+          if(H>=64*S*1.4&&platforms.length){
+            plat=pick();
+            if(!plat){ note('no edge he can reach among '+platforms.length+' (page '+Math.round(W)+'x'+Math.round(H)+')'); say('noclimb',null,2.5); finish(); return true; }
+            note('picked window '+plat.id+': edge '+Math.round(plat.y)+'pt from the top, '+Math.round(plat.x1)+'-'+Math.round(plat.x2));
+            var landX=Math.max(plat.x1+2*S,Math.min(plat.x2-38*S,V.x));
+            V.dir=landX>=V.x?1:-1; walk(V,landX,spd()); phase='walk'; tt=0;
+          } else if(tt>2.5){ note('gave up waiting: page height '+Math.round(H)+', edges '+platforms.length); say('noclimb',null,2.5); finish(); return true; }
+          return false;
+        }
+        var live=liveOf();
+        if(phase==='walk'){ if(here(V)||tt>6){ phase='crouch'; tt=0; V.squash=.18; V.leg=3; } return false; }
+        if(phase==='crouch'){
+          if(tt>.2){
+            var hr=(FLOOR/dpr-(live||plat).y)/S;
+            airT=.5+Math.sqrt(Math.max(1,hr))/25; V.perched=true; V.vy=0; phase='air'; tt=0;
+            say('climb',null,2.5); snd.whine();
+          }
+          return false;
+        }
+        // a scripted Force leap that always arrives: physics at 30 fps falls short on a tall jump
+        // (measured on his vertical monitor: 588 rows needed, the arc peaked a few rows under it)
+        if(phase==='air'){
+          if(!live){ V.perched=false; phase='fall'; note('window gone mid-leap'); return false; }
+          var pl=(FLOOR/dpr-live.y)/S,k=Math.min(1,tt/airT);
+          V.lift=pl*(1-Math.pow(1-k,2))+8*Math.sin(Math.PI*k);
+          aura(dt,V,(V.x+4*S)*dpr,geom(V).oy,28,20);
+          if(k>=1){ V.lift=pl; phase='perched'; tt=0; V.squash=.2; note('landed on window '+live.id+' ('+Math.round(pl)+' rows up)'); }
+          return false;
+        }
+        if(phase==='perched'||phase==='leaving'){
+          if(!live){ V.perched=false; phase='fall'; note('window '+plat.id+' is gone: falling'); return false; }
+          V.lift=(FLOOR/dpr-live.y)/S;                                             // the window moved: he rides it
+          var c2=V.x+18*S;
+          if(c2<live.x1-4*S||c2>live.x2+4*S){ V.perched=false; phase='fall'; return false; }
+          if(phase==='perched'&&here(V)){
+            if(tt>10+Math.random()*6){
+              var off=(c2-live.x1<live.x2-c2)?live.x1-40*S:live.x2+4*S; V.dir=off>V.x?1:-1; walk(V,off,spd()*.8); phase='leaving';
+            } else if(Math.random()<dt*.5){
+              var nx=live.x1+Math.random()*Math.max(0,live.x2-live.x1-36*S); V.dir=nx>V.x?1:-1; walk(V,nx,spd()*.6);
+            }
+          }
+          return false;
+        }
+        if(phase==='fall'){ if(V.lift<=0&&V.vy===0){ finish(); return true; } return false; }
+        return false;
+      };
+    }
+    function makeAct(name){
+      switch(name){
+        case 'throw': return saberThrow();   case 'meditate': return meditate();
+        case 'celebrate': return celebrate(); case 'crate': return crate();
+        case 'strain': return strain();       case 'tired': return tired();
+        case 'dance': return dance();         case 'march': return march();
+        case 'climb': return climb();         case 'look': return look();
+        case 'storm': return storm();         case 'drone': return droneDrop();
+        case 'probe': return probe();         case 'swarm': return swarm();
+        case 'flyover': return flyover();     case 'wave': return wave();
+        case 'workout': return workout();     case 'curl': return workout('curl');
+        case 'press': return workout('press');
+        default: return flourish();
+      }
+    }
+    function clearExtras(){
+      if(extras.flyer){extras.flyer=null; V.saber=true;}
+      extras.orbit=null; extras.ring=null; extras.cpuCrate=null; choked=false; extras.scan=null; extras.gym=null;
+      extras.drones.forEach(function(d){ d.carry=null; if(d.state!=='fall'){ d.state='flee'; d.vx=0; if(!d.dir) d.dir=1; } });   // an interrupted drone flies off
+      if(V.meditating){V.meditating=false; V.held=false;}
+      V.sit=false; V.perched=false; V.waving=false;
+      if(climbWanted){ climbWanted=false; post({type:'climb',want:false}); }
+    }
+    function startAct(name){ actName=name; act=makeAct(name); mode='act'; }
+    /* ---- TIE fighter: picked up here, dropped off on the next monitor ---- */
+    function tieLeave(d){
+      act=null; clearExtras(); V.dir=d; V.bladeTo=0; V.reach=false; V.target=V.x; mode='tie'; viaTie=true; say('tie',null,2);
+      var tie={x:V.x+6*S,lift:64,vx:0,phase:'descend',t:0,dir:d}; extras.tie=tie; snd.whine();
+      tieStep=function(dt){
+        tie.t+=dt;
+        if(tie.phase==='descend'){ tie.lift=Math.max(22,tie.lift-70*dt); tie.x+=((V.x+6*S)-tie.x)*Math.min(1,dt*4);
+          if(tie.lift<=22){tie.phase='board'; tie.t=0;} }
+        else if(tie.phase==='board'){
+          if(!V.hidden&&tie.t>.25&&V.lift===0&&V.vy===0) V.vy=-60;
+          if(!V.hidden&&V.lift>=6){ V.hidden=true; V.held=true; V.lift=0; V.vy=0; }
+          if(V.hidden&&tie.t>.9){tie.phase='go'; tie.t=0;} }
+        else if(tie.phase==='go'){
+          tie.vx+=d*260*dt; tie.x+=tie.vx*S*dt; tie.lift+=20*dt;
+          if(Math.random()<.5){ var P=S*dpr; sparks.push({x:(tie.x+(d>0?0:24)*S)*dpr,y:FLOOR-(9+tie.lift)*P,vx:-d*60*dpr,vy:0,life:.3,c:'rgba(255,110,70,.8)',g:0}); }
+          if(tie.x>W+40*S||tie.x<-60*S){ extras.tie=null; mode='gone'; goneT=0; V.x=V.target=d>0?W+60*S:-60*S; post({type:'travel',side:d>0?'right':'left'}); }
+        }
+      };
+    }
+    function tieArrive(fromLeft){
+      V.hidden=true; V.held=true; V.lift=0; V.vy=0; V.x=V.target=W*(fromLeft?.25+Math.random()*.2:.55+Math.random()*.2);
+      var tie={x:fromLeft?-40*S:W+20*S,lift:30,vx:0,phase:'in',t:0,dir:fromLeft?1:-1}; extras.tie=tie; mode='tie'; snd.whine();
+      tieStep=function(dt){
+        tie.t+=dt;
+        if(tie.phase==='in'){ var tx=V.x+6*S; tie.x+=(tx-tie.x)*Math.min(1,dt*2.4); tie.lift+=(22-tie.lift)*Math.min(1,dt*2);
+          if(Math.abs(tx-tie.x)<3*S){tie.phase='drop'; tie.t=0;} }
+        else if(tie.phase==='drop'){ if(V.hidden){ V.hidden=false; V.held=false; V.lift=18; V.vy=0; V.dir=tie.dir; }
+          if(tie.t>.6){tie.phase='away'; tie.t=0;} }
+        else if(tie.phase==='away'){ tie.vx+=tie.dir*260*dt; tie.x+=tie.vx*S*dt; tie.lift+=40*dt;
+          if(tie.x>W+40*S||tie.x<-60*S||tie.lift>70){ extras.tie=null; mode='idle'; timer=1.5; } }
+      };
+    }
+    function leave(d){
+      act=null; clearExtras(); V.dir=d; V.bladeTo=0; V.reach=false;
+      if(!isNight()&&Math.random()<.35){ tieLeave(d); return; }
+      walk(V,d>0?W+60*S:-60*S,sp); mode='travel';
+    }
+    function choose(){
+      if(pendingAct){
+        var pa=pendingAct; pendingAct=null;
+        if(pa==='tie'){ var sd=[]; if(neighbors.left) sd.push(-1); if(neighbors.right) sd.push(1); tieLeave(sd.length?pickOne(sd):(V.x>W/2?1:-1)); return; }
+        startAct(pa); return;
+      }
+      var night=isNight();
+      if(away||queue){
+        var right=V.x>W/2; V.dir=right?1:-1; V.bladeTo=0; walk(V,right?W+60*S:-60*S,sp*1.2); mode='exit'; return;
+      }
+      if(sys.low){ startAct('tired'); return; }
+      if(sys.hot&&hotCool<=0){ startAct('strain'); return; }
+      if(sys.music.playing&&!night&&Math.random()<.5){ startAct(/imperial march/i.test(sys.music.title)?'march':'dance'); return; }
+      var r=Math.random();
+      if(night){   // quiet hours: meditate, stroll slowly, look around
+        if(r<.55) startAct('meditate');
+        else if(r<.85){var nx=pickX(); V.dir=nx>V.x?1:-1; walk(V,nx,sp*.55); mode='walk';}
+        else startAct('look');
+        return;
+      }
+      // other monitors: rarely from his home screen, readily back toward it, evenly with no home set
+      var sides=[]; if(neighbors.left) sides.push(-1); if(neighbors.right) sides.push(1);
+      if(sides.length&&t>20){
+        var goHome=neighbors.hasHome&&!neighbors.atHome;
+        if(Math.random()<(neighbors.hasHome?(goHome?.3:.03):.08)){
+          leave(goHome&&sides.indexOf(neighbors.home)>-1?neighbors.home:pickOne(sides)); return; }
+      }
+      // one animation every 30-60 s, picked at random; in between he just hangs out
+      if(t>=nextAnim){ nextAnim=t+24+Math.random()*20; animate(); return; }
+      // Hector 2026-09-14: "he walks too much" - short strolls only now and then; mostly he stands
+      // (CPU sign up), talks, waves, twirls or throws the saber
+      if(r<.12){ var nx=V.x,tries=0; while(Math.abs(nx-V.x)<W*.22&&tries++<8) nx=8*S+Math.random()*Math.max(1,W-56*S);
+        V.dir=nx>V.x?1:-1; walk(V,nx,sp*(.7+Math.random()*.3)); mode='walk'; }   // WEB: off to another part of the page
+      else if(r<.46){ mode='idle'; timer=6+Math.random()*6; }             // WEB: once there, he stays
+      else if(r<.70){ if(opts.bubbles) chat(); mode='idle'; timer=5+Math.random()*3; }
+      else if(r<.80) startAct('wave');
+      else if(r<.89) startAct('flourish');
+      else if(r<.97) startAct('throw');
+      else startAct('look');
+    }
+    // the big ones, one every 30-60 s (the saber throw and twirl are everyday moves now, not in here)
+    var ANIMS=['drone','drone','probe','swarm','flyover','workout','workout','crate'];
+    function animate(){
+      startAct(pickOne(opts.climb?ANIMS.concat(['climb']):ANIMS));
+    }
+
+    /* ---- noticing the mouse ---- */
+    function near(){
+      if(!cursor) return false;
+      var dx=cursor.x-(V.x+18*S),dy=FLOOR/dpr-(V.lift*S)-cursor.y;
+      return Math.abs(dx)<240&&dy>-20&&dy<380;
+    }
+    function endGuard(){ mode='idle'; timer=1; V.bladeTo=0; V.reach=false; choked=false; extras.ring=null; noticeCool=4; }
+    function guard(dt){
+      if(!near()){ lostT+=dt; if(lostT>1.2) endGuard(); return; }
+      lostT=0;
+      var now=performance.now(),dx=cursor.x-(V.x+18*S);
+      V.dir=dx>=0?1:-1;
+      var handY=FLOOR/dpr-(8+V.lift)*S;
+      var ang=Math.atan2(handY-cursor.y,Math.max(8,Math.abs(dx)))*180/Math.PI;
+      var stillFor=(now-cursor.moved)/1000;
+      if(stillFor>2.5&&cursor.y>=0&&Math.abs(dx)<260){
+        if(!choked){choked=true; V.emote=.7;}
+        V.reach=true; V.bladeTo=0; V.deg=-70;
+        extras.ring={x:cursor.x,y:cursor.y,t:extras.ring?extras.ring.t:0};
+      } else {
+        if(choked){choked=false; V.reach=false; extras.ring=null;}
+        V.bladeTo=1; V.deg=Math.round(Math.max(-30,Math.min(85,ang)));
+        var speed=(now-cursor.t)<120?Math.hypot(cursor.vx,cursor.vy):0;
+        if(speed>900&&Math.abs(dx)<140&&parryT<=0&&V.blade>.9){
+          parryT=.3; V.deg=V.deg>30?-10:75; flash=.1;
+          var tip=bladeWorld(V)[1]; burst(tip[0],tip[1],12,['#ffffff','#fff4c2','#ff5a4f'],160);
+        }
+      }
+    }
+
+    roam={
+      V:V,
+      mode:function(){return mode},
+      act0:function(){return actName},
+      info:function(){return {t:Math.round(t*10)/10,nextAnim:Math.round(nextAnim*10)/10,bench:benchKind}},
+      chat:function(){ chat(); },
+      bench:function(kind){
+        if(mode==='held'||mode==='falling'||mode==='travel'||mode==='gone'||mode==='exit'||mode==='tie') return false;
+        clearExtras(); act=null; actName=''; V.reach=false; V.sit=false; V.deg=90; V.target=V.x;
+        if(kind==='off'){ benchKind=''; mode='idle'; timer=1; V.bladeTo=0; return true; }
+        benchKind=kind; benchT=0; mode='bench'; V.bladeTo=kind==='saber'?1:0; return true;
+      },
+      arrive:function(enter){
+        props=[]; sparks=[]; waves=[]; act=null; clearExtras(); extras.drones=[]; extras.flights=[]; extras.lasers=[];
+        var fromLeft=enter!=='right';
+        V.hidden=false; V.held=false; V.lift=0; V.vy=0; V.reach=false; V.bladeTo=0;
+        if(viaTie){ viaTie=false; tieArrive(fromLeft); return; }
+        V.x=V.target=fromLeft?-44*S:W+10*S; V.dir=fromLeft?1:-1;
+        walk(V,W*(fromLeft?.15+Math.random()*.25:.6+Math.random()*.25),sp); mode='walk';
+      },
+      travel:function(side){ if(mode==='held'||mode==='falling'||mode==='gone'||mode==='tie') return; leave(side==='left'?-1:1); },
+      grab:function(){ if(mode==='tie'||mode==='gone') return; clearExtras(); act=null; mode='held'; V.held=true; V.reach=false; V.bladeTo=0; V.target=V.x; V.emote=.7; },
+      hold:function(x,y){ if(mode!=='held') return; V.x=V.target=x-18*S; V.lift=Math.max(0,(FLOOR/dpr-y)/S-12); },
+      drop:function(){ if(mode!=='held') return; V.held=false; V.vy=0; V.landed=false; mode='falling'; noticeCool=3; },
+      act:function(name){
+        // walking off for a show that hasn't started: a move picked from the menu wins, right away
+        if(mode==='exit'&&V.x>-30*S&&V.x<W-6*S){ mode='idle'; V.target=V.x; }
+        if(mode==='held'||mode==='falling'||mode==='travel'||mode==='gone'||mode==='exit'||mode==='tie') return false;
+        if(mode==='guard') endGuard();
+        clearExtras(); V.reach=false;
+        if(name==='tie'){ pendingAct='tie'; choose(); return true; }
+        startAct(name); return true;
+      }
+    };
+    return function(dt){
+      t+=dt; if(noticeCool>0) noticeCool-=dt; if(parryT>0) parryT-=dt; if(hotCool>0) hotCool-=dt;
+      var cuttable=mode==='idle'||mode==='walk'||(mode==='act'&&(actName==='look'||actName==='flourish'||actName==='dance'));
+      if(cuttable&&noticeCool<=0&&near()){ if(mode==='act') clearExtras(); mode='guard'; act=null; actName=''; V.target=V.x; lostT=0; }
+      // he hangs out: a pause after each walk or move (standing still is the cheapest thing he does)
+      if(mode==='walk'){ if(here(V)){mode='idle'; timer=2.5+Math.random()*4;} }
+      else if(mode==='idle'){ timer-=dt; if(timer<=0||away||queue||pendingAct||(sys.hot&&hotCool<=0)||sys.low) choose(); }
+      else if(mode==='guard'){ guard(dt); }
+      else if(mode==='act'){ if(act(dt)){ mode='idle'; timer=2+Math.random()*3; actName=''; } }
+      else if(mode==='bench'){                                          // held in one pose so its CPU cost can be measured
+        benchT+=dt;
+        if((benchKind==='walk'||benchKind==='stroll')&&here(V)){ var to=V.x<W*.4?W*.6:W*.25; V.dir=to>V.x?1:-1; walk(V,to,sp*(benchKind==='walk'?.8:.5)); }
+        if(benchKind==='saber') V.deg=Math.round(90+Math.sin(benchT*1.5)*40);
+      }
+      else if(mode==='tie'){ if(tieStep) tieStep(dt); }
+      else if(mode==='exit'){ if(V.x>W+2*S||V.x<-40*S) return true; }
+      else if(mode==='travel'){
+        if(V.x>W+2*S||V.x<-40*S){ mode='gone'; goneT=0; post({type:'travel',side:V.dir>0?'right':'left'}); } }
+      else if(mode==='gone'){ goneT+=dt; if(goneT>3) roam.arrive(V.dir>0?'right':'left'); }   // nobody moved the strip: back in
+      else if(mode==='falling'){
+        if(V.lift===0&&V.vy===0){ mode='idle'; timer=1.2; V.emote=.6; post({type:'landed'}); } }
+      if(extras.ring) extras.ring.t+=dt;
+      // standing still for a moment: up goes the CPU sign; any walk, move, saber or bubble lowers it
+      var standing=mode==='idle'||(mode==='bench'&&benchKind==='stand');
+      standT=standing?standT+dt:0;
+      V.signTo=(opts.sign&&sys.cpuKnown&&standT>1.2&&!V.sit&&!V.perched&&!V.reach&&!V.hidden&&V.blade<.05&&!extras.bubble)?1:0;
+      // rises over 0.3 s, lowers over 0.2 s, and holds still once there (a sign that keeps nudging itself
+      // is never "standing still", so he would repaint at full rate: caught by look11.js, 126 repaints in 6 s)
+      if(V.signTo>V.signK) V.signK=Math.min(V.signTo,V.signK+dt/.3);
+      else if(V.signTo<V.signK) V.signK=Math.max(V.signTo,V.signK-dt/.2);
+      calm=standing&&!V.sit&&V.signK===V.signTo;                          // full frame rate while the sign goes up or down
+      return false;
+    };
+  }
+
+  /* ---------- a new show: the Force choke ---------- */
+  function sceneChoke(){
+    var sp=spd(),V=new Actor('vader',-44*S,1),Tr=new Actor('trooper',W+10*S,-1);
+    V.saber=true; actors=[V,Tr]; walk(V,W*.3,sp); walk(Tr,W*.62,sp*1.1);
+    return seq([
+      until(function(){return here(V)&&here(Tr)}),
+      wait(.4),
+      run(function(){ Tr.squash=.4; Tr.leg=3; Tr.emote=.8; dust((Tr.x+18*S)*dpr); }),   // he trips
+      wait(.9),
+      run(function(){ V.reach=true; V.deg=-70; Tr.held=true; say('choke',null,3,V); }),
+      during(.6,function(k){ Tr.lift=12*(1-Math.pow(1-k,3)); }),
+      wait(2),
+      run(function(){ Tr.held=false; V.reach=false; }),
+      until(function(){ return Tr.lift===0&&Tr.vy===0; }),
+      wait(.5),
+      run(function(){ Tr.dir=1; Tr.emote=.6; walk(Tr,W+60*S,sp*2.5); }),
+      wait(1.2),
+      run(function(){ V.deg=90; walk(V,W+60*S,sp); }),
+      until(function(){ return V.x>W+4*S&&Tr.x>W+4*S; }),
+      wait(.3)
+    ]);
+  }
+
+  /* ---------- drawing the pet's own things ---------- */
+  function drawOrbit(front){
+    var o=extras.orbit; if(!o||!roam||sceneKey!=='roam') return;
+    var V=roam.V,P=S*dpr,cx=(V.x+18*S)*dpr,cy=FLOOR-(10+V.lift)*P;
+    for(var i=0;i<3;i++){
+      var a=o.t*1.3+i*2.094,sx=Math.cos(a),sy=Math.sin(a);
+      if((sy>0)!==front) continue;
+      var x=Math.round((cx+sx*26*P)/P)*P,y=Math.round((cy+sy*7*P-4*P)/P)*P;
+      ctx.fillStyle=COL.H; ctx.fillRect(x,y,2*P,2*P);
+      ctx.fillStyle=COL.e; ctx.fillRect(x+P,y+P,2*P,P);
+    }
+  }
+  function drawFlyer(glow){
+    var f=extras.flyer; if(!f) return;
+    var P=S*dpr,x=f.x0+f.d*f.R*Math.sin(Math.PI*f.k),y=f.y0-22*Math.sin(Math.PI*f.k);
+    var deg=(Math.round(f.k*1440/15)*15)%360;
+    var sab=memo('fly'+deg,function(){return buildSaber(0,0,deg,20)});
+    var mx=(sab.base[0]+sab.tip[0])/2,my=(sab.base[1]+sab.tip[1])/2;
+    var ox=Math.round(x*dpr/P)*P,oy=Math.round(y*dpr/P)*P,i;
+    function X(px){return ox+Math.round(px-mx)*P}
+    function Y(py){return oy+Math.round(py-my)*P}
+    if(opts.glow==='shadow'){
+      ctx.save(); ctx.shadowColor='rgba(255,34,34,'+(.9*glow).toFixed(3)+')'; ctx.shadowBlur=P*6; ctx.fillStyle='#ff2a2a';
+      for(i=0;i<sab.halo.length;i+=2) ctx.fillRect(X(sab.halo[i]),Y(sab.halo[i+1]),P,P);
+      ctx.restore();
+      ctx.fillStyle='#ff2a2a'; for(i=0;i<sab.halo.length;i+=2) ctx.fillRect(X(sab.halo[i]),Y(sab.halo[i+1]),P,P);
+      ctx.fillStyle='#ffeded'; for(i=0;i<sab.core.length;i+=2) ctx.fillRect(X(sab.core[i]),Y(sab.core[i+1]),P,P);
+    } else {
+      var lk=saberLook(sab,'#ff2a2a','#ffeded','255,34,34');
+      ctx.globalAlpha=Math.min(1,.55+.45*glow); blit(lk.glow,X,Y); ctx.globalAlpha=1; blit(lk.blade,X,Y);
+    }
+    for(i=0;i<sab.hilt.length;i+=3){ctx.fillStyle=sab.hilt[i+2]?COL.m:COL.M; ctx.fillRect(X(sab.hilt[i]),Y(sab.hilt[i+1]),P,P);}
+    if((f.n=(f.n||0)+1)%3===0) sparks.push({x:ox,y:oy,vx:0,vy:0,life:.25,c:'rgba(255,60,50,.8)',g:0});
+  }
+  function drawRing(){
+    var r=extras.ring; if(!r) return;
+    var P=S*dpr,cx=r.x*dpr,cy=r.y*dpr;
+    for(var j=0;j<2;j++){
+      var ph=(r.t*28+j*9)%18,rad=(10+ph)*dpr,alpha=.55*(1-ph/18),step=P/rad;
+      ctx.fillStyle='rgba(190,212,255,'+alpha.toFixed(3)+')';
+      for(var a=0;a<Math.PI*2;a+=step) ctx.fillRect(Math.round((cx+Math.cos(a)*rad)/P)*P,Math.round((cy+Math.sin(a)*rad)/P)*P,P,P);
+    }
+  }
+  function drawTie(){
+    var t=extras.tie; if(!t) return;
+    var P=S*dpr,ox=Math.round((t.x+shakeOff)*dpr/P)*P,oy=FLOOR-(18+Math.round(t.lift))*P;
+    blit(memo('tie',buildTie),function(x){return ox+x*P},function(y){return oy+y*P});
+    if(t.phase!=='descend'&&t.phase!=='board'){ ctx.fillStyle='rgba(255,120,70,.9)'; ctx.fillRect(t.dir>0?ox-P:ox+24*P,oy+8*P,P,2*P); }
+  }
+  function drawNotes(dt){
+    var P=S*dpr;
+    extras.notes=extras.notes.filter(function(n){
+      n.t+=dt; if(n.t>1.6) return false;
+      var x=Math.round((n.x+n.dx*n.t*dpr)/P)*P,y=Math.round((n.y-n.t*18*P)/P)*P;
+      ctx.globalAlpha=Math.max(0,1-n.t/1.6); ctx.fillStyle='#ffd35a';
+      ctx.fillRect(x,y+3*P,2*P,2*P); ctx.fillRect(x+P,y,P,4*P); ctx.fillRect(x+2*P,y,P,P);
+      ctx.globalAlpha=1; return true;
+    });
+  }
+  // a bubble fading in or out needs every frame; fully shown, it is as still as he is
+  function bubbleStill(){ var b=extras.bubble; return !b||(b.t>.25&&b.t<b.dur-.45); }
+  function drawBubble(dt){
+    var b=extras.bubble; if(!b||b.t>b.dur) return;
+    var a=b.who||((sceneKey==='roam'&&roam)?roam.V:null); if(!a||a.hidden) return;
+    var P=S*dpr,fs=Math.max(11,Math.round(S*3.2))*dpr;
+    ctx.font='600 '+fs+'px Menlo, Monaco, monospace';
+    var tw=ctx.measureText(b.text).width,pad=2*P,w=Math.ceil((tw+pad*2)/P)*P,h=Math.ceil((fs+pad*1.6)/P)*P;
+    var g=geom(a),cx=g.ox+18*P,top=g.oy-11*P-h;
+    var x=Math.max(P,Math.min(cv.width-w-P,Math.round((cx-w/2)/P)*P)),y=Math.max(P,Math.round(top/P)*P);
+    var tx=Math.max(x+P,Math.min(x+w-2*P,Math.round(cx/P)*P));
+    ctx.globalAlpha=Math.max(0,Math.min(1,b.t*6,(b.dur-b.t)*3));
+    ctx.fillStyle='#0a0a0d'; ctx.fillRect(x-P,y,w+2*P,h); ctx.fillRect(x,y-P,w,h+2*P);
+    ctx.fillRect(tx-P,y+h,3*P,P); ctx.fillRect(tx,y+h+P,P,P);
+    ctx.fillStyle='#f2eae8'; ctx.fillRect(x,y,w,h); ctx.fillRect(tx,y+h,P,P);
+    ctx.fillStyle='#15161a'; ctx.textBaseline='middle'; ctx.fillText(b.text,x+pad,y+h/2+dpr);
+    ctx.globalAlpha=1;
+  }
+
+  /* ---------- the loop ---------- */
+  var SCENES={roam:sceneRoam,duel:sceneDuel,ambush:sceneAmbush,parade:sceneSlowParade,rampage:sceneRampage,choke:sceneChoke};
+  var SHOWS=['duel','ambush','parade','rampage','choke'];
+  var scene=null,sceneKey='',queue=null,paused=false,away=false,calm=false,lastPick='';
+  var running=false,last=0,lastDraw=0,lastHit='',lastHitT=0,lastSig='',sceneT=0;
+
+  function play(key){
+    if(climbWanted){ climbWanted=false; post({type:'climb',want:false}); }
+    // TIEs already in the air finish their pass instead of vanishing; an escort with no boss peels off
+    var flying=extras.flights.map(function(f){ if(f.phase==='escort'){ f.phase='leave'; f.vx=30*S; } return f; });
+    reset(); calm=false; sceneKey=key; extras=freshExtras(); extras.flights=flying; sceneT=0;
+    showFx={t:0,next:1.2+Math.random()*2.3,count:0,escort:key==='parade'};
+    // the Imperial March plays every parade - only with Sound effects on (Hector heard it with sound off,
+    // and that was wrong), not at night, and never over a song playing in Music
+    if(key==='parade'&&opts.sound&&opts.march&&!isNight()&&!sys.music.playing){
+      if(snd.marchStart()) setTimeout(function(){ post({type:'debug',key:'audio',msg:'parade march: audio '+snd.state()}); },900);
+    } else snd.marchStop();
+    scene=SCENES[key](key==='duel'?{rounds:2}:undefined);
+  }
+  function pick(){var p=SHOWS.filter(function(k){return k!==lastPick}); return lastPick=pickOne(p);}
+  function next(){
+    var was=sceneKey;
+    if(queue){var q=queue; queue=null; return play(q);}
+    play('roam');   // WEB: never a show
+  }
+  function postHit(now){
+    var s='0';
+    if(sceneKey==='roam'&&roam){
+      var m=roam.mode(),V=roam.V;
+      if(m!=='travel'&&m!=='gone'&&m!=='exit'&&m!=='tie'&&!V.hidden)
+        s=[Math.round(V.x),Math.round(FLOOR/dpr-(26+V.lift)*S),Math.round(36*S),Math.round(26*S)].join(',');
+    }
+    if(s===lastHit||(s!=='0'&&now-lastHitT<100)) return;
+    lastHit=s; lastHitT=now;
+    var p=s.split(',');
+    post(s==='0'?{type:'hit',w:0}:{type:'hit',x:+p[0],y:+p[1],w:+p[2],h:+p[3]});
+  }
+  function tick(){ frame(performance.now()); }
+  function frame(now){
+    if(paused){running=false; ctx.clearRect(0,0,cv.width,cv.height); snd.humLevel(0,true); return;}
+    var still=calm&&!props.length&&!sparks.length&&!waves.length&&!bolts.length&&!extras.flyer&&!extras.orbit
+      &&!extras.ring&&bubbleStill()&&!extras.tie&&!extras.notes.length
+      &&!extras.flights.length&&!extras.lasers.length&&!extras.drones.length&&!extras.scan&&!extras.gym;
+    var gap=still?125:Math.round(1000/opts.fps)-2;
+    if(opts.sched==='timer') setTimeout(tick,gap);                      // woken only when it is time to draw
+    else { requestAnimationFrame(frame); if(now-lastDraw<gap) return; }
+    var dt=Math.min(still?.2:Math.max(.05,1.5/opts.fps),(now-last)/1000); last=now; lastDraw=now;
+    size(); if(!W||!H) return;
+    if(!scene) next();
+    sceneT+=dt;
+    if(scene(dt)){scene=null; next();}
+    else if(sceneKey!=='roam'&&sceneT>90){                               // safety net: the longest real show is ~40 s
+      post({type:'debug',key:'watchdog',msg:sceneKey+' ran '+Math.round(sceneT)+' s without ending: stopped it'});
+      scene=null; queue='roam'; next(); }
+    var RV=(sceneKey==='roam'&&roam)?roam.V:null,perch=(RV&&RV.perched)?RV.lift:null;
+    actors.forEach(function(a){
+      var bt=a._bt; stepActor(a,dt);
+      if(a.saber&&bt!==undefined&&bt!==a.bladeTo){ if(a.bladeTo>bt) snd.ignite(); else snd.retract(); }
+      a._bt=a.bladeTo;
+    });
+    if(RV){
+      if(perch!==null){ RV.lift=perch; RV.vy=0; }                      // standing on a window: no gravity
+      if(RV.meditating) RV.leg=3;
+      if(RV.waving) waves=waves.filter(function(w){ return w.a!==RV; });   // a wave is a greeting, not the Force
+    }
+    props.forEach(function(p){stepProp(p,dt)});
+    // A prop that came to rest beyond an edge can never be seen again. Without this, the Rampage waited
+    // forever on the 1920-wide MacBook screen for a crate lying just past the edge: he vanished for 20 min
+    // (2026-09-14; reproduced 3/3 at 1920 wide, never at 2560).
+    props.forEach(function(p){ if(!p.held&&p.onFloor&&p.lift===0&&p.vy===0&&(p.x>W+2*S||p.x<-p.w*S)) p.dead=true; });
+    props=props.filter(function(p){return !p.dead});
+    stepDrones(dt);                                                     // after the crates: a carried crate hangs from its drone
+    stepFlights(dt); if(extras.scan) extras.scan.t+=dt;
+    if(extras.bubble){ extras.bubble.t+=dt; if(extras.bubble.t>extras.bubble.dur) extras.bubble=null; }   // timed here, not in the drawing: a skipped repaint must not stall it
+    if(SHOWS.indexOf(sceneKey)>-1) directShow(dt);
+    snd.marchTick();
+    bolts=bolts.filter(function(b){b.update(dt); return !b.dead});
+    flash=Math.max(0,flash-dt); shake=Math.max(0,shake-dt); shakeOff=shake>0?(Math.random()<.5?-1:1)*S:0;
+    // Standing still, the only visible change is a chest light blinking now and then: don't repaint an
+    // identical picture 8 times a second (measured live: standing alone cost 10.4% of a core on retina)
+    if(still&&opts.skip){
+      var sig=W+'x'+H+'x'+S+sceneKey+shakeOff+(sceneKey==='roam'&&roam&&roam.V.signK>0?'|'+signText()+signColor():'')
+        +(extras.bubble?'|b'+extras.bubble.text:'');
+      for(var ai=0;ai<actors.length;ai++){ var q=actors[ai];
+        if(q.blade>0){ sig=''; break; }                                  // a lit blade flickers: always paint
+        sig+='|'+Math.round(q.x*dpr)+','+Math.round(q.lift)+','+q.dir+','+q.leg+','+q.lights.join('')+','+(q.emote>0?1:0)+','+(q.hidden?1:0)+','+(q.reach?1:0)+','+(q.squash>0?1:0); }
+      if(sig&&sig===lastSig){ postHit(now); return; }
+      lastSig=sig;
+    } else lastSig='';
+    ctx.clearRect(0,0,cv.width,cv.height);
+    var glow=.84+.16*Math.sin(now/38)*Math.sin(now/91);
+    drawFlights(dt);                                                    // the sky first: behind everything
+    props.forEach(function(p){if(p.lift===0&&!p.held) drawProp(p)});
+    if(extras.cpuCrate) drawProp(extras.cpuCrate);
+    drawOrbit(false);
+    actors.forEach(function(a){ if(a.hidden) return; if(a.sit) drawSitting(a,now); else drawActor(a); });
+    drawOrbit(true);
+    actors.forEach(function(a){ if(a.saber&&!a.hidden&&!a.sit) drawSaber(a,glow); });   // sitting, the saber stays on his belt
+    if(sceneKey==='roam'&&roam) drawSign(roam.V);
+    drawGym();
+    props.forEach(function(p){if(p.lift>0||p.held) drawProp(p)});
+    extras.drones.forEach(drawDrone);
+    drawScan();
+    drawFlyer(glow);
+    drawTie();
+    bolts.forEach(drawBolt);
+    drawWaves(dt);
+    drawRing();
+    var P=S*dpr;
+    sparks=sparks.filter(function(s){
+      s.life-=dt; if(s.life<=0) return false;
+      s.vy+=s.g*dpr*dt; s.x+=s.vx*dt; s.y+=s.vy*dt;
+      var z=Math.max(dpr,Math.round(P*(s.life>.15?.8:.5)));
+      ctx.fillStyle=s.c; ctx.fillRect(Math.round(s.x/P)*P,Math.round(s.y/P)*P,z,z); return true;
+    });
+    drawNotes(dt);
+    drawBubble(dt);
+    var hum=0; actors.forEach(function(a){ if(a.saber&&!a.hidden) hum=Math.max(hum,a.blade); }); if(extras.flyer) hum=1;
+    snd.humLevel(hum);
+    postHit(now);
+  }
+  function wake(){ if(!running&&!paused){running=true; last=lastDraw=performance.now(); if(opts.sched==='timer') setTimeout(tick,16); else requestAnimationFrame(frame);} }
+
+  // what the menu bar app calls
+  window.pet={
+    // WEB: the page makes him react. A reply gets the victory twirl (at most every 20 s), the rest a line.
+    react:function(kind){
+      if(paused||sceneKey!=='roam'||!roam) return;
+      var now=performance.now();
+      if(kind==='reply'&&now-lastCelebrate>20000&&roam.act('celebrate')) lastCelebrate=now;
+      else say(kind,null,kind==='thinking'?5:3.4);
+      wake();
+    },
+    play:function(k){ if(!SCENES[k]) return; queue=k; scene=null; wake(); },
+    pause:function(b){ paused=!!b; if(paused){lastHit='0'; post({type:'hit',w:0}); snd.marchStop();} else wake(); },
+    away:function(b){ away=!!b; },
+    restart:function(){ if(sceneKey){ W=H=0; size(); play(sceneKey); } },
+    scale:function(s){ window.PET_SCALE=+s||0; W=H=0; },
+    // l/r: a monitor he may visit on that side; home: -1/1 the side his home screen is on (0 here or none)
+    neighbors:function(l,r,home,atHome,hasHome){ neighbors.left=!!l; neighbors.right=!!r;
+      neighbors.home=+home||0; neighbors.atHome=atHome!==false; neighbors.hasHome=!!hasHome; },
+    // measuring from the shell: bench:stand|walk|stroll|saber|off, glow-pixel|glow-shadow, sched-raf|sched-timer, fps-N
+    bench:function(k){
+      k=String(k||'');
+      if(/^glow-(pixel|shadow)$/.test(k)) opts.glow=k.slice(5);
+      else if(/^sched-(raf|timer)$/.test(k)){ opts.sched=k.slice(6); wake(); }
+      else if(/^fps-\d+$/.test(k)) opts.fps=Math.max(8,Math.min(30,+k.slice(4)));
+      else if(/^skip-(on|off)$/.test(k)){ opts.skip=k==='skip-on'; lastSig=''; }
+      else if(k==='say'&&sceneKey==='roam'&&roam) roam.chat();
+      else if(sceneKey!=='roam'||!roam||!roam.bench(k)){ post({type:'debug',key:'bench',msg:k+': not now ('+sceneKey+')'}); return; }
+      post({type:'debug',key:'bench',msg:k+' ok: glow '+opts.glow+', sched '+opts.sched+', fps '+opts.fps});
+    },
+    arrive:function(enter){ if(sceneKey==='roam'&&roam) roam.arrive(enter); },
+    travel:function(side){ if(sceneKey==='roam'&&roam) roam.travel(side); },
+    grab:function(){ if(sceneKey==='roam'&&roam) roam.grab(); },
+    hold:function(x,y){ if(sceneKey==='roam'&&roam) roam.hold(x,y); },
+    drop:function(){ if(sceneKey==='roam'&&roam) roam.drop(); },
+    cursor:function(x,y){
+      var now=performance.now();
+      if(x===null||x===undefined){cursor=null; return;}
+      if(!cursor){cursor={x:x,y:y,vx:0,vy:0,t:now,moved:now}; return;}
+      var dt=Math.max(16,now-cursor.t)/1000,dist=Math.hypot(x-cursor.x,y-cursor.y);
+      cursor.vx=(x-cursor.x)/dt; cursor.vy=(y-cursor.y)/dt; if(dist>=3) cursor.moved=now;
+      cursor.x=x; cursor.y=y; cursor.t=now;
+    },
+    options:function(o){ o=o||{}; opts.night=o.night!==false; opts.bubbles=o.bubbles!==false; opts.climb=o.climb!==false;
+      opts.sound=!!o.sound; snd.set(opts.sound); if(!opts.bubbles) extras.bubble=null;
+      opts.march=o.march!==false; if(!opts.march||!opts.sound) snd.marchStop();
+      opts.sign=o.sign!==false; },
+    night:function(b){ opts.night=!!b; },
+    // CPU load (0-100) and macOS thermal state (0 nominal .. 3 critical), every few seconds
+    cpu:function(pct,thermal){
+      sys.cpu=+pct||0; sys.thermal=+thermal||0; sys.cpuKnown=true;
+      if(sys.cpu>=80||sys.thermal>=2) sys.hotCount++; else if(sys.cpu<60&&sys.thermal<2) sys.hotCount=0;
+      sys.hot=sys.hotCount>=2;
+    },
+    battery:function(pct,onAC){
+      sys.battery=+pct; sys.onAC=!!onAC;
+      var low=!sys.onAC&&sys.battery<=20;
+      if(low!==sys.low){ sys.low=low; if(!low&&sceneKey==='roam') say('charged',null,2.5); }
+    },
+    // the song playing in Music (or Spotify)
+    music:function(o){
+      o=o||{}; var was=sys.music;
+      sys.music={playing:!!o.playing,title:String(o.title||''),artist:String(o.artist||'')};
+      if(sys.music.playing) snd.marchStop();                             // his real song wins over the parade's march
+      if(sys.music.playing&&(!was.playing||was.title!==sys.music.title)&&sceneKey==='roam'&&roam){
+        var isMarch=/imperial march/i.test(sys.music.title);
+        var label=sys.music.title+(sys.music.artist?' — '+sys.music.artist:'');
+        if(label.length>46) label=label.slice(0,45)+'…';
+        if(isMarch) say('march',null,3.5); else say('music',label,4.5);
+        var m=roam.mode(); if(m!=='held'&&m!=='falling'&&m!=='travel'&&m!=='gone'&&m!=='tie') pendingAct=isMarch?'march':'dance';   // dances as soon as his current move ends
+      }
+    },
+    // window top edges on his screen, in page points: [{id,x1,x2,y}]
+    platforms:function(list){ platforms=Array.isArray(list)?list:[]; },
+    act:function(name){
+      if(name==='choke'){ return this.play('choke'); }
+      if(sceneKey==='roam'&&roam&&roam.act(name)) return wake();
+      pendingAct=name; queue='roam'; scene=null; wake();
+    },
+    celebrate:function(){
+      var now=performance.now();
+      if(paused||sceneKey!=='roam'||!roam||now-lastCelebrate<20000) return;
+      if(roam.act('celebrate')) lastCelebrate=now;
+    },
+    state:function(){
+      var V=(sceneKey==='roam'&&roam)?roam.V:null;
+      return {scene:sceneKey,mode:V?roam.mode():'',x:V?Math.round(V.x):null,lift:V?Math.round(V.lift):null,
+        dir:V?V.dir:null,blade:V?Math.round(V.blade*100)/100:null,deg:V?V.deg:null,reach:V?V.reach:null,saber:V?V.saber:null,
+        meditating:V?!!V.meditating:false,sit:V?!!V.sit:false,perched:V?!!V.perched:false,hidden:V?!!V.hidden:false,
+        flyer:!!extras.flyer,orbit:!!extras.orbit,ring:!!extras.ring,tie:!!extras.tie,cpuCrate:!!extras.cpuCrate,
+        bubble:extras.bubble?extras.bubble.text:'',notes:extras.notes.length,sparks:sparks.length,
+        hot:sys.hot,low:sys.low,music:sys.music.playing,platforms:platforms.length,actors:actors.length,
+        W:W,H:H,S:S,paused:paused,away:away,props:props.length,
+        act:V?roam.act0():'',march:snd.marching(),marchNotes:snd.notes(),audio:snd.state(),scan:!!extras.scan,lasers:extras.lasers.length,
+        flights:extras.flights.map(function(f){return {x:Math.round(f.x),lift:Math.round(f.lift),far:f.far,phase:f.phase}}),
+        drones:extras.drones.map(function(d){return {kind:d.kind,state:d.state,x:Math.round(d.x),lift:Math.round(d.lift),carry:!!d.carry}}),
+        cast:actors.map(function(a){return {k:a.kind,x:Math.round(a.x)}}),
+        roamInfo:V?roam.info():null,glow:opts.glow,sched:opts.sched,fps:opts.fps,
+        sign:V&&V.signK>0?signText():'',signK:V?Math.round((V.signK||0)*100)/100:0,night:isNight(),
+        gym:extras.gym?{kind:extras.gym.kind,yl:Math.round(extras.gym.yl),yr:Math.round(extras.gym.yr),bar:Math.round(extras.gym.bar),alpha:Math.round(extras.gym.alpha*100)/100}:null,
+        home:neighbors.home,atHome:neighbors.atHome,hasHome:neighbors.hasHome};
+    }
+  };
+  wake();
+})();
+/*VADERCLAWD-END*/
 </script>
 </body>
 </html>
