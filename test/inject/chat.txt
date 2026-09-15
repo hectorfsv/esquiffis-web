@@ -11,6 +11,8 @@
      hub      the hub: Refresh is one login call, Ask sends a headline and a message to Esquiffis, Gmail down keeps the last inbox,
               the TV loads nothing until Play, the map draws the feeds safely
      hubfail  every hub source is down: the hub says so and the chat still works (runs the ok turn)
+     arrange  a saved layout is restored and cleaned; Arrange moves, resizes, hides, drags and resets widgets;
+              folding works and the TV keeps playing while it moves
    Layout is asserted in every mode: no horizontal overflow, the page itself never
    scrolls, every text field is 16px or more (iOS zooms otherwise), and the
    composer is on screen. */
@@ -23,10 +25,13 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv') }catch(e){}
+  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub') }catch(e){}
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
+  // a layout saved on the device, with junk in it: a duplicate, unknown names, a bad size
+  if(mode==='arrange') localStorage.setItem('esq_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'},
+    hidden:['dodgers','nope'], shut:{inbox:false, bogus:true}}));
   var REPLY='Here is <b>bold</b> and <i>italic</i>, a link https://docs.x.ai/x and <a href="https://example.com/a">a tagged one</a>.\n• one\n• two<script>window.__pwned=1<\/script><img src=x onerror="window.__pwned=2"> <a href="javascript:alert(1)">bad link</a>';
   function ago(min){ return new Date(Date.now()-min*60000).toISOString() }
   // what n8n returns with the login: 4 BBC (one too many), 1 Times of Israel, 1 with a bad link
@@ -110,6 +115,8 @@
   }
   function R(el){ if(!el) return {l:0,r:0,t:0,b:0}; var r=el.getBoundingClientRect(); return {l:r.left,r:r.right,t:r.top,b:r.bottom} }
   function attr(id,name){ var e=$(id); return e ? e.getAttribute(name) : null }
+  function tile(w){ return document.querySelector('#hub .hb[data-w="'+w+'"]') }
+  function ord(w){ var t=tile(w); return t ? +getComputedStyle(t).order : NaN }
   // Hector 2026-09-15: "the tape strip ... not seamless, i can see a big gap before it restarts"
   function tapeOK(tag, tries){
     var rail=document.querySelector('.rail'); if(!vis(rail)) return;
@@ -201,18 +208,19 @@
       var g=document.querySelector('.garg'), gr=R(g), gi=g.querySelector('img');
       T(vis(g) && Math.abs(gr.l-sd.l)<=1 && Math.abs(gr.r-sd.r)<=1 && Math.abs(gr.t-sd.t)<=1 && Math.abs(gr.b-sd.b)<=1, 'Gargantua fills the hub side');
       T(!g.querySelector('video') && !!gi && /gargantua\.jpg$/.test(gi.getAttribute('src')), 'Gargantua is a still picture, no video');
-      var hubEl=$('hub'), parts=['.band','.hb-inbox','.hb-tv','.hb-map','.hb-news'].map(function(x){ return document.querySelector(x) }).filter(vis), clash='';
-      parts.forEach(function(a,i){ parts.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) clash=a.className+' / '+b.className }) });
-      T(parts.length===5 && !clash, 'every widget has its own space, none overlap ('+parts.length+(clash?', '+clash:'')+')');
-      if(innerWidth>=1900 && innerHeight>=1000){
-        T(hubEl.scrollHeight<=hubEl.clientHeight+1, 'the whole hub fits his desktop window, nothing to scroll ('+hubEl.scrollHeight+' in '+hubEl.clientHeight+')');
-        var tvr=R(document.querySelector('.hb-tv')), mpr=R(document.querySelector('.hb-map')), ibr=R(document.querySelector('.hb-inbox')), nwr=R(document.querySelector('.hb-news'));
-        T(Math.abs(tvr.t-mpr.t)<=1 && tvr.r<=mpr.l && ibr.l>=mpr.r && Math.abs(ibr.r-R(hubEl).r)<=20 && nwr.t>=tvr.b, 'TV beside the map, inbox down the right, headlines along the bottom');
+      var hubEl=$('hub'), parts=[].filter.call(hubEl.querySelectorAll('.hb[data-w]'), vis), clash='';
+      parts.forEach(function(a,i){ parts.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) clash=a.getAttribute('data-w')+' / '+b.getAttribute('data-w') }) });
+      T(parts.length>=6 && !clash, 'every widget has its own space, none overlap ('+parts.length+(clash?', '+clash:'')+')');
+      T(getComputedStyle(hubEl).overflowY==='auto', 'the hub side scrolls on its own; the chat does not move');
+      if(innerWidth>=1900 && innerHeight>=1000 && mode!=='arrange'){
+        // Hector 2026-09-15: "the inbox and headlines occupy too much space" - folded by default, the hub fits his window
+        var tmr=R(tile('time')), ibr=R(tile('inbox')), tvr=R(tile('tv')), mpr=R(tile('map')), nwr=R(tile('news')), hr=R(hubEl);
+        // Hector then asked for the hub side to scroll: folded, the first screen holds everything but the headlines
+        T(ibr.b<=hr.b && tvr.b<=hr.b && mpr.b<=hr.b, 'folded, clock, weather, Dodgers, inbox, TV and map are all on the first screen ('+Math.round(Math.max(tvr.b,mpr.b)-hr.t)+' of '+Math.round(hr.b-hr.t)+')');
+        T(Math.abs(tmr.t-ibr.t)<=1 && Math.abs(tvr.t-mpr.t)<=1 && tvr.r<=mpr.l && tvr.t>=ibr.b-1 && nwr.t>=tvr.b && (nwr.r-nwr.l)>=(hr.r-hr.l)-60,
+          'clock, weather, Dodgers and the inbox in a row; the TV beside the map; headlines across the bottom');
         var tvs=R($('tv-screen')); T(tvs.r-tvs.l>=420, 'the TV is big enough to watch ('+Math.round(tvs.r-tvs.l)+'x'+Math.round(tvs.b-tvs.t)+')');
       }
-      var tiles=document.querySelectorAll('#hub .hb:not([hidden])'), cols={};
-      [].forEach.call(tiles, function(el){ cols[Math.round(R(el).l)]=1 });
-      T(innerWidth<1400 || Object.keys(cols).length>=2, 'a wide hub lays its widgets out side by side ('+Object.keys(cols).length+' columns of tiles)');
     } else {
       T(!vis(document.querySelector('.garg')), 'no Gargantua on a narrow screen');
       T(!vis($('hub')), 'on a narrow screen the hub is folded away');
@@ -246,9 +254,78 @@
       T(/Updated/.test($('ib-note').textContent), 'inbox: says when it was read ('+$('ib-note').textContent+')');
       var ibr=$('ib-list').querySelectorAll('.ib-from'), spill=[].filter.call(ibr, function(e){ return vis(e) && getComputedStyle(e).textOverflow!=='ellipsis' && e.scrollWidth>e.clientWidth+1 });
       T(spill.length===0, 'inbox: long sender names end in an ellipsis, never spill');
+      if(mode!=='arrange'){
+        T(tile('inbox').classList.contains('shut') && $('ib-h').getAttribute('aria-expanded')==='false' && vis(ibs[0]) && !vis(ibs[0].querySelector('.ib-snip')) && $('ib-more').hidden,
+          'inbox starts folded: a line per message, previews hidden (3 messages, so no "more")');
+        var hls=$('h-list').querySelectorAll('li');
+        T(tile('news').classList.contains('shut') && vis(hls[2]) && !vis(hls[3]) && !$('h-more').hidden && /^3 more$/.test($('h-more').textContent),
+          'headlines start folded: the top 3 and "3 more" ('+$('h-more').textContent+')');
+      }
     }
     T(hubCalls.indexOf('wx')>-1 && hubCalls.indexOf('fox')>-1 && hubCalls.indexOf('mlb')>-1, 'weather, Fox and the Dodgers came from the browser, not n8n');
     if(!WIDE){ $('now').click(); T(!vis($('hub')) && vis($('log')), 'tapping the time again returns to the conversation'); }
+  }
+  // Hector 2026-09-15, after WorldMonitor: "you can move and rearrange the hub"
+  function arrangeOK(){
+    if(!WIDE) $('now').click();
+    T(ord('map')<ord('tv') && ord('tv')<ord('time') && ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('inbox')<ord('news'),
+      'a saved layout comes back: map, TV, then the rest in their usual order');
+    T(tile('map').getAttribute('data-size')==='L' && tile('tv').getAttribute('data-size')==='M', 'saved sizes kept, a bad size ignored');
+    T(!vis(tile('dodgers')) && !tile('inbox').classList.contains('shut') && tile('news').classList.contains('shut'), 'hidden and unfolded as saved; unknown names ignored');
+    var tools=tile('tv').querySelector('.hb-tools');
+    T(!vis(tools) && !vis($('hub-reset')), 'the move / size / hide tools stay out of sight until Arrange');
+    $('hub-arrange').click();
+    T($('hub-arrange').getAttribute('aria-pressed')==='true' && /Done/.test($('hub-arrange').textContent) && vis(tools) && vis($('hub-reset')), 'Arrange shows the tools on every widget');
+    var add=$('hub-add').querySelectorAll('button');
+    T(add.length===1 && /Dodgers/.test(add[0].textContent), 'a hidden widget waits under Arrange ('+(add[0]&&add[0].textContent)+')');
+    // the TV keeps playing while it moves: the very same player, never re-created or moved in the page
+    $('tv-play').click();
+    var f=$('tv-screen').querySelector('iframe'), src=f && f.src;
+    tile('tv').querySelector('[data-act="prev"]').click();
+    T(ord('tv')<ord('map'), 'the arrow moves the TV ahead of the map');
+    T(!!f && $('tv-screen').querySelector('iframe')===f && f.isConnected && f.src===src, 'the TV kept playing through the move (same player)');
+    tile('tv').querySelector('[data-act="next"]').click();
+    T(ord('map')<ord('tv'), 'and the other arrow moves it back');
+    // an arrow skips a widget that is not on screen
+    var before=ord('weather'); tile('inbox').querySelector('[data-act="prev"]').click();
+    T(ord('inbox')<ord('weather') && ord('inbox')>ord('time'), 'moving the inbox earlier passes the hidden Dodgers and lands before Weather');
+    var sz=tile('map').querySelector('[data-act="size"]');
+    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='S', 'the size button cycles: full width -> small');
+    if(WIDE && innerWidth>=1900){ var hw=R($('hub')), mr=R(tile('map')); T(mr.r-mr.l<(hw.r-hw.l)/3, 'a small map takes one column ('+Math.round(mr.r-mr.l)+' of '+Math.round(hw.r-hw.l)+')'); }
+    sz.click(); T(tile('map').getAttribute('data-size')==='M', 'small -> medium');
+    if(WIDE && innerWidth>=1900){ var hw2=R($('hub')), mr2=R(tile('map')); T(mr2.r-mr2.l>(hw2.r-hw2.l)/3 && mr2.r-mr2.l<(hw2.r-hw2.l)*.7, 'a medium map takes two columns'); }
+    sz.click(); T(tile('map').getAttribute('data-size')==='L', 'medium -> full width');
+    tile('weather').querySelector('[data-act="hide"]').click();
+    var wb=[].filter.call($('hub-add').querySelectorAll('button'), function(b){ return /Weather/.test(b.textContent) })[0];
+    T(!vis(tile('weather')) && !!wb, 'hide takes Weather off and keeps it under Arrange');
+    if(wb) wb.click();
+    T(vis(tile('weather')) && !$('hub-add').querySelector('[data-show="weather"]'), 'and + Weather brings it back');
+    // folding
+    $('news-h').click();
+    T(!tile('news').classList.contains('shut') && $('news-h').getAttribute('aria-expanded')==='true' && vis($('h-list').querySelectorAll('li')[5]), 'Headlines unfold to all six');
+    $('tv-h').click();
+    T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
+    $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
+    var saved=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+    T(Array.isArray(saved.order) && saved.order.length===7 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.size && saved.size.map==='L' && saved.hidden.join()==='dodgers',
+      'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
+    T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
+    if(WIDE){
+      // drag Headlines by its grip onto the left half of the clock
+      tile('time').scrollIntoView({block:'center'});   // a drop target has to be on screen, as it is for a hand
+      var g=tile('news').querySelector('.ht-grip'), tr=R(tile('time'));
+      g.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:1, clientY:1, pointerId:1}));
+      T(tile('news').classList.contains('dragging'), 'grabbing the grip picks the widget up');
+      document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr.l+6), clientY:Math.round((tr.t+tr.b)/2), pointerId:1}));
+      document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:1}));
+      T(ord('news')<ord('time') && !tile('news').classList.contains('dragging'), 'dropping Headlines on the clock puts it before the clock');
+    }
+    $('hub-reset').click();
+    T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('news')
+      && tile('news').classList.contains('shut') && tile('inbox').classList.contains('shut') && tile('map').getAttribute('data-size')==='M' && vis(tile('dodgers')), 'Reset layout puts everything back');
+    $('hub-arrange').click();
+    T($('hub-arrange').getAttribute('aria-pressed')==='false' && !vis(tools), 'Done hides the tools again');
+    if(!WIDE) $('now').click();
   }
   // the map, once its feeds have answered (call after a pause)
   function mapOK(allowAsk){
@@ -319,6 +396,7 @@
     hubOK();
     layout('chat-empty');
     tapeOK('chat');
+    if(mode==='arrange'){ arrangeOK(); floorOK('arrange'); layout('arrange'); return done(); }
     if(mode==='hub'){
       if(!WIDE) $('now').click();
       var n0=calls.length; $('h-refresh').click();

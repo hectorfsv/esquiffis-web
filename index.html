@@ -23,7 +23,8 @@
    2026-09-15 (Hector): on a desktop the conversation is the right quarter of the
    window with Vader centered behind it; the rest is the hub - widgets over a still
    of Gargantua - with VaderClawd on his own floor under the widgets. Hub: time,
-   weather, Dodgers, a live news TV, a world events map, the inbox, headlines.
+   weather, Dodgers, a live news TV, a world events map, the inbox, headlines - and
+   he arranges it: move, resize, hide and fold widgets; the hub side scrolls.
    The pet lives in the last script block, between the VADERCLAWD markers, and is
    written by tools/build-pet.py - edit the pet or the rig, not that block.
    Nothing is position:fixed, so iOS Safari's moving address bar and keyboard
@@ -36,7 +37,7 @@
   --disp:'Chakra Petch','Trebuchet MS',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --word:'Bebas Neue','Arial Narrow',Impact,sans-serif;
-  --notch:14px; --pet:84px; --petc:76px;
+  --notch:14px; --pet:112px; --petc:100px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--void);color:var(--ink);font-family:var(--disp);font-size:16px;line-height:1.5;
@@ -279,8 +280,36 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .ev-r{display:flex;align-items:center;gap:10px;margin-top:9px}
 .ev-r a{font-family:var(--mono);font-size:11px;color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
 .ev-r .hl-ask{margin-left:auto}
+/* the hub you arrange: a bar with Arrange, fold toggles on the titles, and move / size / hide tools that only
+   show while arranging. Folded widgets keep a short summary. */
+.hub-bar{order:0;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;padding:10px max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left))}
+.hub-add{display:flex;flex-wrap:wrap;gap:6px}
+.hb{position:relative}
+.hb.off{display:none!important}
+.hb-fold{display:inline-flex;align-items:center;gap:8px;padding:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;text-align:left}
+.hb-fold::before{content:'';flex:none;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid currentColor;transition:transform .15s}
+.hb-fold[aria-expanded="false"]::before{transform:rotate(-90deg)}
+.hb-fold:hover{color:var(--ink)}
+.hb-more{display:block;margin-top:8px;padding:2px 0;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim)}
+.hb-more:hover{color:var(--ink)}
+.hb:not(.shut) .hb-more{display:none}
+.hb-inbox.shut .ib:nth-child(n+4),.hb-inbox.shut .ib-snip,.hb-inbox.shut .ib-top .hl-ask,.hb-inbox.shut .ib-age{display:none}
+.hb-inbox.shut .ib-list,.hb-news.shut .h-list{gap:7px}
+.hb-inbox.shut .ib-subj,.hb-news.shut .hl-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.hb-inbox.shut .ib-subj{margin-top:1px}
+.hb-news.shut .h-list li:nth-child(n+4),.hb-news.shut .hl-m{display:none}
+.hb-tv.shut .tv-ch,.hb-tv.shut .tv-screen,.hb-tv.shut .tv-foot,.hb-map.shut .map-box,.hb-map.shut .map-key,.hb-map.shut .h-note{display:none}
+.hb-tv.shut .hb-h,.hb-map.shut .hb-h{margin-bottom:0}
+.hb-tools{display:none}
+.hub.arranging .hb{outline:1px dashed var(--rule-hot);outline-offset:-1px}
+.hub.arranging .hb-tools{position:absolute;z-index:3;top:6px;right:6px;display:flex;gap:4px;padding:3px;background:rgba(10,7,8,.94);border:1px solid var(--rule-hot)}
+.ht{min-width:30px;height:28px;padding:0 7px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink);background:#15100F;border:1px solid var(--rule)}
+.ht:hover{border-color:var(--rule-hot)}
+.ht-grip{cursor:grab;touch-action:none}
+.ht-size{display:none}   /* one column on a phone: nothing to resize */
+.hb.dragging{opacity:.5}
 /* below 1100px these wrappers do not exist as boxes: the hub is one column, exactly as before */
-.side,.band{display:contents}
+.side{display:contents}
 .garg,.hub-floor{display:none}
 
 /* ---------- VaderClawd ----------
@@ -299,7 +328,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 
 /* ---------- wide: the card ---------- */
 @media (min-width:760px){
-  :root{--pet:112px}
+  :root{--pet:168px}
   .frame{padding:22px 26px 0;justify-content:center}
   .rail{display:block;width:24px;flex:0 0 24px;position:relative;overflow:hidden;border-left:1px solid var(--rule);
     -webkit-mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent)}
@@ -334,7 +363,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .composer .in{max-width:724px}
   .chat-art{opacity:.12}
 }
-@media (min-width:760px) and (min-height:501px){ :root{--petc:100px} }
+@media (min-width:760px) and (min-height:501px){ :root{--petc:150px} }
 /* a short window (a phone on its side): the card and the strip give up height */
 @media (min-width:760px) and (max-height:500px){
   .art img{height:150%;top:-30%;left:22%}
@@ -362,9 +391,9 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .garg{display:block;position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#050304}
   .garg img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;opacity:.8}
   .garg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,4,.62) 0%,rgba(5,3,4,.2) 38%,rgba(5,3,4,.8) 100%)}
-  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:14px;flex:1 1 auto;min-height:0;padding:16px 16px 10px}
-  .band{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row dense;align-content:start;align-items:start;gap:14px;flex:1 1 auto;min-height:0;padding:16px 16px 10px}
   .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:14px 16px}
+  .hub .hub-bar{padding:0}
   .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--pet)}
   .chat .talk,.chat.hubview .talk{flex:0 0 clamp(400px,25%,640px);min-width:0}
   .chat.hubview .log{display:block}
@@ -377,25 +406,21 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .composer .in{background:#0B0809}
   .now{cursor:default}
 }
-/* a hub at least 640px wide: time, weather and the Dodgers across the top, then the TV beside the map */
+/* The hub side scrolls (Hector: "make the non chat section of the page scrollable"); widgets keep their natural
+   height. Sizes: S one column, M two, L the whole row. Order is CSS order, never a DOM move, so a playing TV and a
+   drawn map survive being moved. */
 @container (min-width:640px){
-  .hub,.chat.hubview .hub{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"band band" "tv map" "inbox news"}
-  .band{grid-area:band}
-  .hb-inbox{grid-area:inbox}
-  .hb-tv{grid-area:tv}
-  .hb-map{grid-area:map}
-  .hb-news{grid-area:news}
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hub .hb[data-size="M"],.hub .hb[data-size="L"],.hub .hub-bar{grid-column:1/-1}
+  .hub.arranging .ht-size{display:inline-block}
 }
-/* a hub at least 1100px wide (his desktop): one screen, no scrolling - the inbox runs down the right beside the chat,
-   the headlines fill the bottom, and a long list scrolls inside its own tile */
 @container (min-width:1100px){
-  .hub,.chat.hubview .hub{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(300px,.8fr);
-    grid-template-areas:"band band inbox" "tv map inbox" "news news inbox";grid-template-rows:auto auto minmax(170px,1fr);align-content:stretch}
-  .hb-inbox,.hb-news{display:flex;flex-direction:column;min-height:0}
-  .hb-inbox .ib-list,.hb-news .h-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
-  .hb-news .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;align-content:start}
-  .band .h-time{font-size:52px}
-  .band .h-temp{font-size:50px}
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .hub .hb[data-size="M"]{grid-column:span 2}
+  .hub .hb[data-size="L"]{grid-column:1/-1}
+  .hb-news[data-size="M"] .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px}
+  .hb-news[data-size="L"] .h-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px}
+  .hb-inbox[data-size="L"]:not(.shut) .ib-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 24px}
 }
 @media (prefers-reduced-motion:reduce){
   .sweep,.tape,.chip.busy::before,.app.thinking .bloom{animation:none}
@@ -444,45 +469,46 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
         <div class="side">
           <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
           <aside id="hub" class="hub" aria-label="Hub">
-            <div class="band">
-              <section class="hb">
-                <div id="h-time" class="h-time">--:--</div>
-                <div id="h-date" class="h-date"></div>
-              </section>
-              <section class="hb">
-                <div class="hb-h">Santa Clarita</div>
-                <div class="wx-row">
-                  <div class="h-temp"><span id="h-temp">--</span><sup>°F</sup></div>
-                  <div><div id="h-cond" class="h-cond">Checking the sky</div><div id="h-range" class="h-range"></div></div>
-                </div>
-              </section>
-              <section id="h-mlb" class="hb" hidden>
-                <div class="hb-h">Dodgers</div>
-                <div id="h-last" class="h-game"></div>
-                <div id="h-next" class="h-next"></div>
-              </section>
-            </div>
-            <section class="hb hb-inbox" aria-labelledby="ib-h">
-              <div class="hb-h"><span id="ib-h">Inbox<span id="ib-count" class="ib-count"></span></span><button id="ib-refresh" class="hb-btn" type="button">Refresh</button></div>
+            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
+            <section class="hb" data-w="time" aria-label="Clock">
+              <div id="h-time" class="h-time">--:--</div>
+              <div id="h-date" class="h-date"></div>
+            </section>
+            <section class="hb" data-w="weather" aria-label="Weather">
+              <div class="hb-h">Santa Clarita</div>
+              <div class="wx-row">
+                <div class="h-temp"><span id="h-temp">--</span><sup>°F</sup></div>
+                <div><div id="h-cond" class="h-cond">Checking the sky</div><div id="h-range" class="h-range"></div></div>
+              </div>
+            </section>
+            <section id="h-mlb" class="hb" data-w="dodgers" aria-label="Dodgers" hidden>
+              <div class="hb-h">Dodgers</div>
+              <div id="h-last" class="h-game"></div>
+              <div id="h-next" class="h-next"></div>
+            </section>
+            <section class="hb hb-inbox" data-w="inbox" aria-labelledby="ib-h">
+              <div class="hb-h"><button id="ib-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="ib-list">Inbox<span id="ib-count" class="ib-count"></span></button><button id="ib-refresh" class="hb-btn" type="button">Refresh</button></div>
               <ol id="ib-list" class="ib-list"></ol>
+              <button id="ib-more" class="hb-more" type="button" hidden></button>
               <p id="ib-note" class="h-note"></p>
             </section>
-            <section class="hb hb-tv" aria-labelledby="tv-h">
-              <div class="hb-h"><span id="tv-h">Live news</span><a id="tv-yt" class="hb-link" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener">YouTube</a></div>
+            <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
+              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><a id="tv-yt" class="hb-link" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener">YouTube</a></div>
               <div id="tv-ch" class="tv-ch" role="group" aria-label="Channel"></div>
               <div id="tv-screen" class="tv-screen">
                 <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span></button>
               </div>
               <div class="tv-foot"><span id="tv-note" class="h-note">Nothing loads until you press Play.</span><button id="tv-stop" class="hb-btn" type="button" hidden>Stop</button></div>
             </section>
-            <section class="hb hb-map" aria-labelledby="map-h">
-              <div class="hb-h"><span id="map-h">World events</span><span class="map-key" aria-hidden="true"><span><i class="k-q"></i>Quake</span><span><i class="k-a"></i>Disaster alert</span></span></div>
+            <section class="hb hb-map" data-w="map" aria-labelledby="map-h">
+              <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span><i class="k-q"></i>Quake</span><span><i class="k-a"></i>Disaster alert</span></span></div>
               <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes and disaster alerts"></div>
               <p id="map-note" class="h-note">The map loads when the hub is on screen.</p>
             </section>
-            <section class="hb hb-news">
-              <div class="hb-h">Headlines <button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
+            <section class="hb hb-news" data-w="news" aria-labelledby="news-h">
+              <div class="hb-h"><button id="news-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="h-list">Headlines</button><button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
               <ol id="h-list" class="h-list"></ol>
+              <button id="h-more" class="hb-more" type="button" hidden></button>
               <p id="h-note" class="h-note"></p>
             </section>
           </aside>
@@ -543,7 +569,16 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 
   /* ---------- VaderClawd (the page never depends on him) ---------- */
   function vc(kind){ try{ if(window.pet && window.pet.react) window.pet.react(kind) }catch(e){} }
-  function petScale(){ return (window.matchMedia && matchMedia('(min-width:760px) and (min-height:501px)').matches) ? 1.5 : 1 }
+  /* his size (Hector 2026-09-15: "medium size ... a lil bit bigger"). The engine rounds scale x devicePixelRatio to whole
+     screen pixels so the pixel art stays crisp: desktop 2.5 = 3 screen pixels per sprite pixel on a 1x monitor (was 2)
+     and 2.5 on retina (was 1.5); phone 1.25 = 4 on a 3x iPhone (was 3). His floor grew with him (112->168, 84->112,
+     76->100, 100->150) so the helmet, the saber and his speech bubbles still fit. A phone on its side keeps 1. */
+  function petScale(){
+    if(!window.matchMedia) return 1;
+    if(matchMedia('(min-width:760px) and (min-height:501px)').matches) return 2.5;
+    if(matchMedia('(max-height:500px)').matches) return 1;
+    return 1.25;
+  }
   window.PET_SCALE=petScale();
   // his home right now: phone lock screen = under the card; narrow chat = above the chat box;
   // wide lock screen = the bottom of the card; wide chat = his own floor under the hub widgets
@@ -862,6 +897,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       b.setAttribute('data-title', h.title); b.setAttribute('data-src', h.src); meta.appendChild(b);
       li.appendChild(meta); ol.appendChild(li);
     });
+    $('h-more').hidden=pick.length<=HL_SHUT; $('h-more').textContent=(pick.length-HL_SHUT)+' more';
     $('h-note').textContent = !pick.length ? 'No headlines yet. Tap Refresh.'
       : serverNews ? 'Updated '+clockText(new Date(serverNews.t)) : '';
     if(pick.length && !newsSaid){ newsSaid=true; setTimeout(function(){ vc('news') }, 5000) }
@@ -894,7 +930,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       }).catch(function(){ $('h-mlb').hidden=true });
   }
   function startHub(){
-    loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
+    hubInit(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
     if(hubOn) return;
     hubOn=true;
     loadWeather(); loadFox(); loadMlb(); startMap();
@@ -941,7 +977,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   // Gmail's web app opens a conversation by the API's thread id; anything else is not a link
   function gmailLink(m){ return /^[0-9a-f]{8,40}$/i.test(String(m.thread||'')) ? 'https://mail.google.com/mail/u/0/#all/'+m.thread : '' }
   function paintInbox(){
-    var ol=$('ib-list'), note=$('ib-note'); ol.textContent=''; $('ib-count').textContent='';
+    var ol=$('ib-list'), note=$('ib-note'); ol.textContent=''; $('ib-count').textContent=''; $('ib-more').hidden=true;
     if(!inbox){ note.textContent='Tap Refresh to check your inbox.'; return }
     if(!inbox.ok){ note.textContent='Gmail did not answer. Tap Refresh to try again.'; return }
     if(inbox.unread!==null) $('ib-count').textContent=(inbox.more ? '100+' : inbox.unread)+' unread';
@@ -959,6 +995,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       if(m.snippet){ var p=document.createElement('p'); p.className='ib-snip'; p.textContent=m.snippet; li.appendChild(p) }
       ol.appendChild(li);
     });
+    $('ib-more').hidden=inbox.items.length<=IB_SHUT; $('ib-more').textContent=(inbox.items.length-IB_SHUT)+' more';
     note.textContent = !inbox.items.length ? 'Nothing in Primary.'
       : inbox.failed ? 'Gmail did not answer at '+clockText(new Date(inbox.failed))+'. Showing '+clockText(new Date(inbox.t))+'.'
       : 'Updated '+clockText(new Date(inbox.t));
@@ -977,6 +1014,95 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox) });
     }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.' })
       .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }) });
+  }
+
+  /* ---------- the hub you arrange ----------
+     After WorldMonitor (Hector 2026-09-15). Arrange shows move / size / hide on every widget: arrows work everywhere
+     (the phone included), the grip drags on a desktop. Inbox, headlines, the TV and the map fold to a short summary
+     from their title. The layout is remembered on this device (localStorage: widget names only, never mail).
+     Order is CSS order and never a DOM move, so the TV keeps playing and the map keeps its view while widgets move. */
+  var WIDGETS=[{w:'time', name:'Clock', size:'S'}, {w:'weather', name:'Weather', size:'S'}, {w:'dodgers', name:'Dodgers', size:'S'},
+    {w:'inbox', name:'Inbox', size:'S', shut:true}, {w:'tv', name:'Live news', size:'M'}, {w:'map', name:'World events', size:'M'},
+    {w:'news', name:'Headlines', size:'L', shut:true}];
+  var K_HUB='esq_hub', SIZES=['S','M','L'], SIZE_WORD={S:'small', M:'medium', L:'full width'}, IB_SHUT=3, HL_SHUT=3;
+  var hub=null, arranging=false, hubReady=false, drag=null;
+  function hubDefault(){
+    var d={order:[], size:{}, hidden:[], shut:{}};
+    WIDGETS.forEach(function(x){ d.order.push(x.w); d.size[x.w]=x.size; d.shut[x.w]=!!x.shut });
+    return d;
+  }
+  function hubLoad(){
+    var d=hubDefault(), known={};
+    WIDGETS.forEach(function(x){ known[x.w]=1 });
+    try{
+      var sv=JSON.parse(localStorage.getItem(K_HUB)||'null');
+      if(sv && typeof sv==='object'){
+        var order=(Array.isArray(sv.order) ? sv.order : []).filter(function(w,i,a){ return known[w]===1 && a.indexOf(w)===i });
+        d.order.forEach(function(w){ if(order.indexOf(w)<0) order.push(w) });   // a widget added later still shows up
+        d.order=order;
+        if(sv.size && typeof sv.size==='object') Object.keys(sv.size).forEach(function(w){ if(known[w]===1 && SIZES.indexOf(sv.size[w])>-1) d.size[w]=sv.size[w] });
+        if(Array.isArray(sv.hidden)) d.hidden=sv.hidden.filter(function(w,i,a){ return known[w]===1 && a.indexOf(w)===i });
+        if(sv.shut && typeof sv.shut==='object') Object.keys(sv.shut).forEach(function(w){ if(known[w]===1) d.shut[w]=sv.shut[w]===true });
+      }
+    }catch(e){}
+    return d;
+  }
+  function hubSave(){ try{ localStorage.setItem(K_HUB, JSON.stringify(hub)) }catch(e){} }
+  function tile(w){ return $('hub').querySelector('.hb[data-w="'+w+'"]') }
+  function wname(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i].name; return w }
+  function shown(w){ var t=tile(w); return !!t && !t.hidden && hub.hidden.indexOf(w)<0 }
+  function hubInit(){
+    if(hubReady) return;
+    hubReady=true; hub=hubLoad();
+    WIDGETS.forEach(function(x){
+      var t=tile(x.w); if(!t) return;
+      var tools=document.createElement('div'); tools.className='hb-tools';
+      [['grip','\u2807','Drag to move '], ['prev','\u2190','Move earlier: '], ['next','\u2192','Move later: '], ['size','','Size of '], ['hide','\u2715','Hide ']].forEach(function(b){
+        var el=document.createElement('button'); el.type='button'; el.className='ht ht-'+b[0]; el.setAttribute('data-act', b[0]);
+        el.textContent=b[1]; el.setAttribute('aria-label', b[2]+x.name); tools.appendChild(el);
+      });
+      t.appendChild(tools);
+    });
+    applyHub();
+  }
+  function applyHub(){
+    if(!hub) return;
+    hub.order.forEach(function(w, i){
+      var t=tile(w); if(!t) return;
+      t.style.order=String(i+1);
+      t.setAttribute('data-size', hub.size[w]);
+      t.classList.toggle('off', hub.hidden.indexOf(w)>-1);
+      t.classList.toggle('shut', !!hub.shut[w]);
+      var f=t.querySelector('.hb-fold'); if(f) f.setAttribute('aria-expanded', hub.shut[w] ? 'false' : 'true');
+      var sz=t.querySelector('.ht-size');
+      if(sz){ sz.textContent=hub.size[w]; sz.setAttribute('aria-label', 'Size of '+wname(w)+': '+SIZE_WORD[hub.size[w]]+'. Tap to change') }
+    });
+    $('hub').classList.toggle('arranging', arranging);
+    $('hub-arrange').setAttribute('aria-pressed', arranging ? 'true' : 'false');
+    $('hub-arrange').textContent=arranging ? 'Done' : 'Arrange';
+    var add=$('hub-add'); add.textContent='';
+    hub.hidden.forEach(function(w){
+      var b=document.createElement('button'); b.type='button'; b.className='hb-btn'; b.setAttribute('data-show', w); b.textContent='+ '+wname(w); add.appendChild(b);
+    });
+    add.hidden=!arranging || !hub.hidden.length;
+    $('hub-reset').hidden=!arranging;
+    if(hub.shut.tv || hub.hidden.indexOf('tv')>-1) tvStop();   // a folded or hidden TV does not keep playing out of sight
+    startMap();   // a map that was unfolded, shown or resized redraws to its new box
+  }
+  // arrows: take the place of the nearest widget that is actually on screen
+  function hubStep(w, dir){
+    var o=hub.order, i=o.indexOf(w), j=i+dir;
+    while(j>=0 && j<o.length && !shown(o[j])) j+=dir;
+    if(i<0 || j<0 || j>=o.length) return;
+    o.splice(i,1); o.splice(j,0,w);
+    applyHub(); hubSave();
+  }
+  function hubDragTo(w, target, after){
+    if(w===target) return;
+    var o=hub.order; o.splice(o.indexOf(w),1);
+    var k=o.indexOf(target); if(k<0) return;
+    o.splice(after ? k+1 : k, 0, w);
+    applyHub();
   }
 
   /* ---------- live news TV ----------
@@ -1162,6 +1288,41 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     box.value='Summarize this email in my Primary inbox from '+b.getAttribute('data-from')+': "'+b.getAttribute('data-subject')+'"';
     send();
   });
+  $('hub').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button') : null; if(!b || !hub) return;
+    var t=b.closest('.hb[data-w]'), w=t && t.getAttribute('data-w');
+    if(b.id==='hub-arrange'){ arranging=!arranging; applyHub(); return }
+    if(b.id==='hub-reset'){ hub=hubDefault(); applyHub(); hubSave(); return }
+    if(b.hasAttribute('data-show')){ var sw=b.getAttribute('data-show'); hub.hidden=hub.hidden.filter(function(x){ return x!==sw }); applyHub(); hubSave(); return }
+    if(w && (b.classList.contains('hb-fold') || b.classList.contains('hb-more'))){
+      hub.shut[w]=b.classList.contains('hb-more') ? false : !hub.shut[w]; applyHub(); hubSave(); return;
+    }
+    var act=b.getAttribute('data-act'); if(!act || !w || !arranging) return;
+    if(act==='prev') hubStep(w, -1);
+    else if(act==='next') hubStep(w, 1);
+    else if(act==='size'){ hub.size[w]=SIZES[(SIZES.indexOf(hub.size[w])+1)%SIZES.length]; applyHub(); hubSave() }
+    else if(act==='hide'){ if(hub.hidden.indexOf(w)<0) hub.hidden.push(w); applyHub(); hubSave() }
+  });
+  // drag by the grip: pointer events, so a mouse, a pen and a finger all work
+  $('hub').addEventListener('pointerdown', function(e){
+    var g=e.target.closest ? e.target.closest('.ht-grip') : null; if(!g || !arranging) return;
+    var t=g.closest('.hb[data-w]'); if(!t) return;
+    e.preventDefault(); drag={w:t.getAttribute('data-w'), el:t, last:''}; t.classList.add('dragging');
+  });
+  document.addEventListener('pointermove', function(e){
+    if(!drag) return;
+    // near the top or bottom edge of the hub, scroll it, so a widget can be carried to a spot that is out of view
+    var hr=$('hub').getBoundingClientRect();
+    if(e.clientY<hr.top+48) $('hub').scrollTop-=24; else if(e.clientY>hr.bottom-48) $('hub').scrollTop+=24;
+    var over=document.elementFromPoint(e.clientX, e.clientY), t=(over && over.closest) ? over.closest('.hb[data-w]') : null;
+    if(!t || t===drag.el) return;
+    var r=t.getBoundingClientRect(), after=(e.clientX-r.left)>r.width/2, key=t.getAttribute('data-w')+(after ? '>' : '<');
+    if(key===drag.last) return;
+    drag.last=key; hubDragTo(drag.w, t.getAttribute('data-w'), after);
+  });
+  function dragEnd(){ if(!drag) return; drag.el.classList.remove('dragging'); drag=null; hubSave() }
+  document.addEventListener('pointerup', dragEnd);
+  document.addEventListener('pointercancel', dragEnd);
   $('tv-play').addEventListener('click', tvPlay);
   $('tv-stop').addEventListener('click', tvStop);
   $('tv-ch').addEventListener('click', function(e){
