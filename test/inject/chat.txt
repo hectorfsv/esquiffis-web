@@ -8,7 +8,7 @@
      expired  a 401 mid-conversation sends you back to the lock screen with the reason
      persist  a remembered transcript is on screen after a reload
      guard    a reply the guard replaced is marked as such
-     hub      the hub: Refresh is one login call, Ask sends a headline to Esquiffis
+     hub      the hub: Refresh is one login call, Ask sends a headline and a message to Esquiffis, Gmail down keeps the last inbox
      hubfail  every hub source is down: the hub says so and the chat still works (runs the ok turn)
    Layout is asserted in every mode: no horizontal overflow, the page itself never
    scrolls, every text field is 16px or more (iOS zooms otherwise), and the
@@ -22,7 +22,7 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news') }catch(e){}
+  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news') }catch(e){}
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
@@ -32,6 +32,13 @@
   var HEADS=[{src:'BBC',title:'BBC one',link:'https://www.bbc.com/news/1',t:ago(60)},{src:'BBC',title:'BBC two',link:'https://www.bbc.com/news/2',t:ago(120)},
     {src:'BBC',title:'BBC three',link:'https://www.bbc.com/news/3',t:ago(180)},{src:'BBC',title:'BBC four',link:'https://www.bbc.com/news/4',t:ago(240)},
     {src:'Times of Israel',title:'ToI one',link:'https://www.timesofisrael.com/one',t:ago(20)},{src:'Evil',title:'bad',link:'javascript:alert(2)',t:null}];
+  // the inbox glance n8n returns: 6 unread; one bad thread id (no link); one malformed (sender is not text)
+  var INBOX={ok:true,unread:6,unreadMore:false,items:[
+    {id:'a1',thread:'199a1b2c3d4e5f60',from:'Masterbuilt',subject:'Your Gravity Series order shipped',snippet:'Tracking inside. Arriving Thursday.',t:ago(12),unread:true},
+    {id:'a2',thread:'199a1b2c3d4e5f61',from:'Mom',subject:'Sunday dinner <b>bold</b>',snippet:'Bring the brisket',t:ago(95),unread:false},
+    {id:'a3',thread:'javascript:alert(1)',from:'Evil',subject:'Not a link',snippet:'',t:null,unread:true},
+    {id:'a4',thread:'199a1b2c3d4e5f63',from:42,subject:'dropped',snippet:'',t:ago(3),unread:true}]};
+  var logins=0;
   var FOX='<?xml version="1.0"?><rss><channel><title>Fox</title>'
     +'<item><title>Fox one &amp; more</title><link>https://www.foxnews.com/world/one</link><pubDate>'+new Date(Date.now()-30*60000).toUTCString()+'</pubDate></item>'
     +'<item><title>Fox two</title><link>https://www.foxnews.com/world/two</link><pubDate>'+new Date(Date.now()-5*3600000).toUTCString()+'</pubDate></item>'
@@ -49,7 +56,13 @@
     if(/statsapi/.test(url)){ hubCalls.push('mlb'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,MLB) }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
     calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, json:!!(o&&o.headers)});
-    if(a==='login') return pwd==='right' ? res(200, FAIL_HUB ? {ok:true} : {ok:true,headlines:HEADS}) : res(401,{error:'unauthorized'});
+    if(a==='login'){
+      if(pwd!=='right') return res(401,{error:'unauthorized'});
+      logins++;
+      if(FAIL_HUB) return res(200,{ok:true});   // an older workflow: no headlines, no inbox
+      // in hub mode the Refresh finds Gmail down
+      return res(200,{ok:true,headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX});
+    }
     if(a==='chat'){
       // never answers - but like a real fetch it REJECTS with AbortError when the page gives up
       if(mode==='timeout') return new Promise(function(_,rej){
@@ -68,7 +81,19 @@
     var small=[].filter.call(document.querySelectorAll('input,textarea'), function(el){ return vis(el) && parseFloat(getComputedStyle(el).fontSize)<16 });
     T(small.length===0, tag+': no visible text field under 16px ('+small.length+')');
   }
-  function R(el){ var r=el.getBoundingClientRect(); return {l:r.left,r:r.right,t:r.top,b:r.bottom} }
+  function R(el){ if(!el) return {l:0,r:0,t:0,b:0}; var r=el.getBoundingClientRect(); return {l:r.left,r:r.right,t:r.top,b:r.bottom} }
+  function attr(id,name){ var e=$(id); return e ? e.getAttribute(name) : null }
+  // Hector 2026-09-15: "the tape strip ... not seamless, i can see a big gap before it restarts"
+  function tapeOK(tag, tries){
+    var rail=document.querySelector('.rail'); if(!vis(rail)) return;
+    var t=document.querySelector('.tape'), sp=t ? t.querySelectorAll('span') : [], sh=t ? parseFloat(t.style.getPropertyValue('--shift')) : NaN;
+    var pitch=sp.length>1 ? Math.abs(sp[1].getBoundingClientRect().top-sp[0].getBoundingClientRect().top) : 0;
+    var ok=pitch>1 && Math.abs(sh-pitch)<=0.5;
+    // a webfont may be swapping in right now: the tape must SETTLE on one copy, so allow it 1.6 s (a page that never sets the shift fails at once)
+    if(!ok && sh===sh && (tries||0)<8){ setTimeout(function(){ tapeOK(tag, (tries||0)+1) }, 200); return }
+    T(ok, tag+': one tape cycle travels exactly one copy ('+sh+' vs '+pitch.toFixed(2)+')');
+    T(pitch>1 && (sp.length-1)*pitch>=rail.clientHeight, tag+': at the end of a cycle the tape still fills the rail ('+sp.length+' copies x '+Math.round(pitch)+'px for '+rail.clientHeight+'px)');
+  }
   function hit(a,b){ return a.l<b.r && a.r>b.l && a.t<b.b && a.b>b.t }
   var WIDE=innerWidth>=1100;
   function art(){
@@ -85,6 +110,7 @@
     T(hit(m,a), 'the letters sit over the art (Vader behind the letters)');
     T(!hit(R($('pw')),face) && !hit(R($('unlock')),face), 'the passphrase and Unlock do not cover his face');
     var st=$('vc-stage'), pb=R(st), pn=R(document.querySelector('.panel'));
+    T(!attr('garg-a','src'), 'Gargantua is not downloaded on the lock screen');
     if(WIDE){
       T(st.parentNode===$('scr-lock') && Math.abs(pb.b-scr.b)<=1, 'VaderClawd walks the bottom of the lock screen, inside the card');
       var p=R($('pw')), mid=document.elementFromPoint(Math.round((p.l+p.r)/2), Math.round((p.t+p.b)/2));
@@ -118,11 +144,17 @@
     T(Math.abs(c.b-innerHeight)<=2, tag+': the chat box is all the way down ('+Math.round(c.b)+' of '+innerHeight+')');
     T(vis(st), tag+': VaderClawd is on screen');
     if(WIDE){
-      var sc=R($('scr-chat')), inb=R(document.querySelector('.composer .in'));
-      T(st.parentNode===$('scr-chat') && Math.abs(p.b-sc.b)<=1 && Math.abs((p.r-p.l)-(sc.r-sc.l))<=1, tag+': his floor is the bottom of the card, full width');
-      var mid=document.elementFromPoint(Math.round((inb.l+inb.r)/2), Math.round((inb.t+inb.b)/2));
-      T(!!mid && mid.id!=='vc-cv' && mid.id!=='vc-stage', tag+': he walks behind the chat box, never over it ('+(mid&&(mid.id||mid.className))+')');
-      spotsOK(tag, [inb, R($('send'))]);
+      // Hector 2026-09-15: VaderClawd inside the hub, never in the chat half, never inside a widget
+      var sd=R(document.querySelector('.side')), tk=R(document.querySelector('.talk')), hb=R($('hub'));
+      T(st.parentNode===$('hub-floor') && Math.abs(p.b-sd.b)<=1 && Math.abs(p.l-sd.l)<=1 && Math.abs(p.r-sd.r)<=2, tag+': his floor is the bottom of the hub half, its full width');
+      T(p.r<=tk.l+1, tag+': he never walks into the chat half ('+Math.round(p.r)+' <= '+Math.round(tk.l)+')');
+      T(hb.b<=p.t+1, tag+': the widgets end where his floor starts ('+Math.round(hb.b)+' <= '+Math.round(p.t)+')');
+      var inTile='';
+      for(var x=p.l+4; x<p.r-4 && !inTile; x+=24){
+        [p.t+4, (p.t+p.b)/2, p.b-4].forEach(function(y){ var e=document.elementFromPoint(Math.round(x), Math.round(y)); if(e && e.closest && e.closest('.hb')) inTile=Math.round(x)+','+Math.round(y) });
+      }
+      T(!inTile, tag+': no widget anywhere on his floor (the Dodgers tile bug)'+(inTile?' at '+inTile:''));
+      spotsOK(tag, []);
     } else {
       T(st.parentNode===$('dock') && Math.abs(p.b-c.t)<=1, tag+': he stands just above the chat box, inside the card');
       spotsOK(tag, []);
@@ -132,7 +164,18 @@
     T(!$('now').hidden && /\d:\d\d/.test($('now-time').textContent), 'the header shows the time ('+$('now-time').textContent+')');
     if(WIDE){
       T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
+      var sc=R($('scr-chat')), tk=R(document.querySelector('.talk')), sd=R(document.querySelector('.side'));
+      T(Math.abs(tk.l-(sc.l+sc.r)/2)<=2 && Math.abs(tk.r-sc.r)<=1, 'the conversation takes the right half ('+Math.round(tk.l-sc.l)+' of '+Math.round(sc.r-sc.l)+')');
+      var ca=document.querySelector('.chat-art'), car=R(ca);
+      T(vis(ca) && car.l>=tk.l-1 && car.r<=tk.r+1, 'the Vader art is the background of the chat half only');
+      var g=document.querySelector('.garg'), gr=R(g);
+      T(vis(g) && Math.abs(gr.l-sd.l)<=1 && Math.abs(gr.r-sd.r)<=1 && Math.abs(gr.t-sd.t)<=1 && Math.abs(gr.b-sd.b)<=1, 'Gargantua fills the hub half');
+      T(attr('garg-a','src')==='../render-rig/gargantua.mp4' && attr('garg-b','src')==='../render-rig/gargantua.mp4', 'Gargantua is the Render Rig clip from the same site');
+      var tiles=document.querySelectorAll('#hub .hb:not([hidden])'), cols={};
+      [].forEach.call(tiles, function(el){ cols[Math.round(R(el).l)]=1 });
+      T(innerWidth<1400 || Object.keys(cols).length>=2, 'a wide hub lays its widgets out side by side ('+Object.keys(cols).length+' columns of tiles)');
     } else {
+      T(!attr('garg-a','src'), 'no Gargantua download on a narrow screen');
       T(!vis($('hub')), 'on a narrow screen the hub is folded away');
       $('now').click();
       T(vis($('hub')) && !vis($('log')) && $('now').getAttribute('aria-expanded')==='true', 'tapping the time opens the hub');
@@ -142,6 +185,7 @@
       T(/unavailable/i.test($('h-cond').textContent) && $('h-temp').textContent==='--', 'weather down: it says so');
       T($('h-list').children.length===0 && /Refresh/.test($('h-note').textContent), 'no headlines: it says to tap Refresh');
       T($('h-mlb').hidden, 'no Dodgers data: the tile stays hidden');
+      T($('ib-list').children.length===0 && /Refresh/.test($('ib-note').textContent) && $('ib-count').textContent==='', 'no inbox from an older workflow: it says to tap Refresh ('+$('ib-note').textContent+')');
     } else {
       T($('h-temp').textContent==='71' && $('now-temp').textContent==='71°', 'the temperature in the hub and the header');
       T($('h-cond').textContent==='Mostly clear' && /H 88/.test($('h-range').textContent) && /L 60/.test($('h-range').textContent), 'sky and high/low ('+$('h-range').textContent+')');
@@ -151,6 +195,18 @@
       T(lis.length && lis[0].querySelector('.hl-t').textContent==='ToI one' && /20m/.test(lis[0].textContent), 'newest first, with its age');
       T([].every.call($('h-list').querySelectorAll('a'), function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'every headline opens safely in a new tab');
       T(!$('h-mlb').hidden && /Dodgers 5, Padres 2/.test($('h-last').textContent) && /at Giants/.test($('h-next').textContent), 'the Dodgers tile ('+$('h-last').textContent+' / '+$('h-next').textContent+')');
+      var ibs=$('ib-list').querySelectorAll('li');
+      T(ibs.length===3, 'inbox: three messages, the malformed one dropped ('+ibs.length+')');
+      T($('ib-count').textContent==='6 unread', 'inbox: the unread count ('+$('ib-count').textContent+')');
+      T(ibs.length===3 && ibs[0].classList.contains('new') && !ibs[1].classList.contains('new') && ibs[2].classList.contains('new'), 'inbox: unread messages are marked');
+      T(ibs.length===3 && /Masterbuilt/.test(ibs[0].textContent) && /order shipped/.test(ibs[0].textContent) && /Tracking inside/.test(ibs[0].textContent) && /12m/.test(ibs[0].textContent), 'inbox: sender, subject, snippet and age ('+(ibs[0]&&ibs[0].textContent)+')');
+      var a0=ibs[0] && ibs[0].querySelector('a.ib-subj');
+      T(!!a0 && a0.href==='https://mail.google.com/mail/u/0/#all/199a1b2c3d4e5f60' && a0.target==='_blank' && /noopener/.test(a0.rel), 'inbox: a message opens in Gmail in a new tab ('+(a0&&a0.href)+')');
+      T(ibs.length===3 && !ibs[2].querySelector('a') && !$('ib-list').querySelector('b') && /<b>bold<\/b>/.test(ibs[1].textContent), 'inbox: a bad thread id is not a link, and markup in a subject stays text');
+      T(JSON.stringify(localStorage).indexOf('Masterbuilt')<0 && (sessionStorage.getItem('esq_inbox')||'').indexOf('Masterbuilt')>-1, 'inbox: kept for this tab only, never in localStorage');
+      T(/Updated/.test($('ib-note').textContent), 'inbox: says when it was read ('+$('ib-note').textContent+')');
+      var ibr=$('ib-list').querySelectorAll('.ib-from'), spill=[].filter.call(ibr, function(e){ return vis(e) && getComputedStyle(e).textOverflow!=='ellipsis' && e.scrollWidth>e.clientWidth+1 });
+      T(spill.length===0, 'inbox: long sender names end in an ellipsis, never spill');
     }
     T(hubCalls.indexOf('wx')>-1 && hubCalls.indexOf('fox')>-1 && hubCalls.indexOf('mlb')>-1, 'weather, Fox and the Dodgers came from the browser, not n8n');
     if(!WIDE){ $('now').click(); T(!vis($('hub')) && vis($('log')), 'tapping the time again returns to the conversation'); }
@@ -163,6 +219,7 @@
     art();
     setTimeout(function(){
       petOK('lock', true);   // his first frame sizes the canvas
+      tapeOK('lock');        // after the webfont has had its chance to land
       spotsOK('lock', WIDE ? [R(document.querySelector('.gate'))] : []);
       T(hubCalls.length===0, 'nothing is fetched for the hub before you unlock ('+hubCalls.join(',')+')');
       $('pw').value = mode==='badpw' ? 'wrong' : 'right';
@@ -185,16 +242,26 @@
     floorOK('chat-empty');
     hubOK();
     layout('chat-empty');
+    tapeOK('chat');
     if(mode==='hub'){
       if(!WIDE) $('now').click();
       var n0=calls.length; $('h-refresh').click();
       T(calls.length===n0+1 && calls[n0].a==='login', 'Refresh asks n8n once, through the login call');
       setTimeout(function(){
-        T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled, 'and the button is ready again');
+        T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
+        T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
         var ask=$('h-list').querySelector('.hl-ask'), n1=calls.length; ask.click();
         T(calls.length===n1+1 && calls[n1].a==='chat' && /ToI one/.test(calls[n1].msg||''), 'Ask sends the headline to Esquiffis ('+(calls[n1]&&calls[n1].msg)+')');
         T(vis($('log')) && $('scr-chat').className.indexOf('hubview')<0, 'and shows the conversation');
-        setTimeout(function(){ floorOK('hub'); layout('hub'); done() }, 300);
+        setTimeout(function(){
+          floorOK('hub'); layout('hub');
+          if(!WIDE) $('now').click();
+          var ia=$('ib-list').querySelector('.hl-ask'), n2=calls.length; ia.click();
+          T(calls.length===n2+1 && calls[n2].a==='chat' && /Masterbuilt/.test(calls[n2].msg||'') && /order shipped/.test(calls[n2].msg||''), 'Ask on a message hands it to Esquiffis ('+(calls[n2]&&calls[n2].msg)+')');
+          var n3=calls.length; $('ib-refresh').click();
+          T(calls.length===n3+1 && calls[n3].a==='login', 'the inbox Refresh is the same single login call');
+          setTimeout(done, 300);
+        }, 300);
       }, 250);
       return;
     }
@@ -239,6 +306,7 @@
       T($('scr-lock').classList.contains('on'), 'a 401 mid-conversation returns to the lock screen');
       T(/expired/i.test($('lock-msg').textContent), 'with the reason ('+$('lock-msg').textContent+')');
       T(sessionStorage.getItem('esq_pw')===null, 'and the passphrase is forgotten');
+      T(sessionStorage.getItem('esq_inbox')===null && $('ib-list').children.length===0, 'and so is the inbox');
       T(vis($('vc-stage')) && $('now').hidden, 'back on the lock screen: VaderClawd on screen, the hub readout gone');
       return done();
     }

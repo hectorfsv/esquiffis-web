@@ -19,7 +19,10 @@
    on the lock screen (never over his face). The chat window is a mini HUB:
    clock, Santa Clarita weather, headlines and the Dodgers beside the
    conversation; the card opens to the full window and VaderClawd, the desktop
-   pet's own engine, lives INSIDE it, walking behind the chat box.
+   pet's own engine, lives INSIDE it.
+   2026-09-15 (Hector): on a desktop the conversation takes the right half, on the
+   Vader art; the left half is the hub - widgets over Gargantua, as in the rig -
+   with VaderClawd on his own floor under the widgets. Inbox widget added.
    The pet lives in the last script block, between the VADERCLAWD markers, and is
    written by tools/build-pet.py - edit the pet or the rig, not that block.
    Nothing is position:fixed, so iOS Safari's moving address bar and keyboard
@@ -218,6 +221,25 @@ button{cursor:pointer}
 .h-game b.w{color:var(--go)}
 .h-game b.l{color:var(--red-hot)}
 .h-next{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:6px}
+/* the inbox: newest first, unread marked by a lit dot and brighter type */
+.ib-count{color:var(--red);margin-left:10px}
+.ib-list{list-style:none;display:flex;flex-direction:column;gap:13px}
+.ib{position:relative;padding-left:15px}
+.ib::before{content:'';position:absolute;left:0;top:5px;width:6px;height:6px;border-radius:50%;border:1px solid var(--ink-faint)}
+.ib.new::before{background:var(--red);border-color:var(--red);box-shadow:0 0 8px rgba(224,27,27,.6)}
+.ib-top{display:flex;align-items:center;gap:10px;min-width:0;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-faint)}
+.ib-from{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink-dim)}
+.ib.new .ib-from{color:var(--ink)}
+.ib-age{flex:none}
+.ib-top .hl-ask{margin-left:auto}
+.ib-subj{display:block;margin-top:3px;font-size:15px;line-height:1.35;color:var(--ink-dim);text-decoration:none;overflow-wrap:anywhere}
+.ib.new .ib-subj{color:var(--ink);font-weight:600}
+a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
+.ib-snip{margin-top:2px;font-size:13px;line-height:1.4;color:var(--ink-faint);overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* below 1100px these wrappers do not exist as boxes: the hub is one column, exactly as before */
+.side,.band{display:contents}
+.garg,.hub-floor{display:none}
 
 /* ---------- VaderClawd ----------
    Phone lock screen: a strip under the card. Everywhere else he lives INSIDE the card: on a narrow screen
@@ -239,10 +261,14 @@ button{cursor:pointer}
   .frame{padding:22px 26px 0;justify-content:center}
   .rail{display:block;width:24px;flex:0 0 24px;position:relative;overflow:hidden;border-left:1px solid var(--rule);
     -webkit-mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent)}
-  .tape{position:absolute;top:0;left:0;right:0;display:flex;flex-direction:column;align-items:center;animation:tape 46s linear infinite}
-  .tape span{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+  /* The tape must still fill the rail at the END of a cycle, and a cycle must travel exactly one copy. Two copies
+     and -50% left a ~200px hole at the bottom of a 1037px-tall window (Hector, 2026-09-15). sizeTape() measures
+     one copy after the webfont lands, adds copies until the rail is covered and sets --shift; the duration comes
+     from the pitch so the speed stays constant. Two boxes, as in the Render Rig: .tape moves, .tape-in turns. */
+  .tape{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;animation:tape 46s linear infinite}
+  .tape-in{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
     white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg)}
-  @keyframes tape{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+  @keyframes tape{from{transform:translateY(0)}to{transform:translateY(calc(-1 * var(--shift,800px)))}}
   .panel{flex:1 1 auto;border:1px solid var(--rule);box-shadow:0 30px 90px rgba(0,0,0,.6);
     background:linear-gradient(180deg,var(--panel-hi) 0%,var(--panel) 26%,var(--panel-lo) 100%);
     clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
@@ -284,17 +310,35 @@ button{cursor:pointer}
 .chat .log{padding-bottom:calc(var(--petc) + 10px)}
 .app.kb .chat .log{padding-bottom:12px}
 @media (max-width:759px){ .app.chatting .chip .cw{display:none} }
-/* desktop: the hub column beside the conversation, his floor along the bottom of the card */
+/* desktop (Hector 2026-09-15): the conversation takes the right half, on the Vader art. The left half is the hub:
+   widgets over Gargantua, as in the Render Rig, and under them VaderClawd's own floor - a box of its own, so no
+   widget can ever stand where he walks (he used to wander into the Dodgers tile). */
 @media (min-width:1100px){
   .chat{flex-direction:row}
-  .hub,.chat.hubview .hub{display:flex;flex:0 0 340px;border-right:1px solid var(--rule);padding-bottom:calc(var(--pet) + 4px)}
+  .side{display:flex;flex-direction:column;position:relative;flex:1 1 50%;min-width:0;border-right:1px solid var(--rule);container-type:inline-size}
+  .garg{display:block;position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(120% 90% at 50% 40%,#160d10,#050304 72%)}
+  .garg img,.garg video{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block}
+  .garg img{opacity:.74;transition:opacity 1.1s linear}
+  .garg.playing img{opacity:0}
+  .garg video{opacity:0;transition:opacity 1.1s linear}
+  .garg video.lead{opacity:.74}
+  .garg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,4,.70) 0%,rgba(5,3,4,.21) 36%,rgba(5,3,4,.84) 100%)}
+  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:14px;flex:1 1 auto;min-height:0;padding:18px 18px 10px}
+  .band{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .hub .hb{background:rgba(9,6,7,.78);border:1px solid var(--rule);padding:16px 18px}
+  .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--pet)}
+  .chat .talk,.chat.hubview .talk{flex:1 1 50%}
   .chat.hubview .log{display:block}
-  .chat.hubview .talk{flex:1}
-  .hb{padding:18px 22px}
+  .chat-art{left:50%;width:auto;opacity:.2}
   .chat .log{padding-bottom:24px}
   .composer{background:none;border-top:0}
   .composer .in{background:#0B0809}
   .now{cursor:default}
+}
+/* a wide hub half: time, weather and the Dodgers across the top, the inbox and the headlines side by side */
+@container (min-width:640px){
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .band{grid-column:1/-1}
 }
 @media (prefers-reduced-motion:reduce){
   .sweep,.tape,.chip.busy::before,.app.thinking .bloom{animation:none}
@@ -307,7 +351,7 @@ button{cursor:pointer}
 <div id="app" class="app">
   <div class="bloom" aria-hidden="true"></div><div class="grain" aria-hidden="true"></div>
   <div class="frame">
-    <div class="rail" aria-hidden="true"><div class="tape"><span>Grok 4.20 — Gmail — Calendar — Perplexity — Reminders — Drive — Contacts — Weather — MLB — Memory — </span><span>Grok 4.20 — Gmail — Calendar — Perplexity — Reminders — Drive — Contacts — Weather — MLB — Memory — </span></div></div>
+    <div class="rail" aria-hidden="true"><div class="tape" id="tape"><div class="tape-in"><span>Grok 4.20&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Gmail&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Calendar&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Perplexity&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Reminders&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Drive&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Contacts&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Weather&nbsp;&nbsp;&mdash;&nbsp;&nbsp;MLB&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Memory&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span><span>Grok 4.20&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Gmail&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Calendar&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Perplexity&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Reminders&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Drive&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Contacts&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Weather&nbsp;&nbsp;&mdash;&nbsp;&nbsp;MLB&nbsp;&nbsp;&mdash;&nbsp;&nbsp;Memory&nbsp;&nbsp;&mdash;&nbsp;&nbsp;</span></div></div></div>
     <div class="panel">
       <span class="brk tr" aria-hidden="true"></span><span class="brk bl" aria-hidden="true"></span>
       <header class="head">
@@ -341,29 +385,40 @@ button{cursor:pointer}
 
       <section id="scr-chat" class="screen chat" aria-label="Conversation">
         <div class="chat-art" aria-hidden="true"><img src="hero.webp" alt="" width="736" height="1408"></div>
-        <aside id="hub" class="hub" aria-label="Hub">
-          <section class="hb">
-            <div id="h-time" class="h-time">--:--</div>
-            <div id="h-date" class="h-date"></div>
-          </section>
-          <section class="hb">
-            <div class="hb-h">Santa Clarita</div>
-            <div class="wx-row">
-              <div class="h-temp"><span id="h-temp">--</span><sup>°F</sup></div>
-              <div><div id="h-cond" class="h-cond">Checking the sky</div><div id="h-range" class="h-range"></div></div>
+        <div class="side">
+          <div class="garg" aria-hidden="true"><img src="gargantua-poster.jpg" alt="" width="1280" height="797" loading="lazy" draggable="false"><video id="garg-a" muted playsinline preload="none" tabindex="-1"></video><video id="garg-b" muted playsinline preload="none" tabindex="-1"></video></div>
+          <aside id="hub" class="hub" aria-label="Hub">
+            <div class="band">
+              <section class="hb">
+                <div id="h-time" class="h-time">--:--</div>
+                <div id="h-date" class="h-date"></div>
+              </section>
+              <section class="hb">
+                <div class="hb-h">Santa Clarita</div>
+                <div class="wx-row">
+                  <div class="h-temp"><span id="h-temp">--</span><sup>°F</sup></div>
+                  <div><div id="h-cond" class="h-cond">Checking the sky</div><div id="h-range" class="h-range"></div></div>
+                </div>
+              </section>
+              <section id="h-mlb" class="hb" hidden>
+                <div class="hb-h">Dodgers</div>
+                <div id="h-last" class="h-game"></div>
+                <div id="h-next" class="h-next"></div>
+              </section>
             </div>
-          </section>
-          <section class="hb">
-            <div class="hb-h">Headlines <button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
-            <ol id="h-list" class="h-list"></ol>
-            <p id="h-note" class="h-note"></p>
-          </section>
-          <section id="h-mlb" class="hb" hidden>
-            <div class="hb-h">Dodgers</div>
-            <div id="h-last" class="h-game"></div>
-            <div id="h-next" class="h-next"></div>
-          </section>
-        </aside>
+            <section class="hb" aria-labelledby="ib-h">
+              <div class="hb-h"><span id="ib-h">Inbox<span id="ib-count" class="ib-count"></span></span><button id="ib-refresh" class="hb-btn" type="button">Refresh</button></div>
+              <ol id="ib-list" class="ib-list"></ol>
+              <p id="ib-note" class="h-note"></p>
+            </section>
+            <section class="hb">
+              <div class="hb-h">Headlines <button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
+              <ol id="h-list" class="h-list"></ol>
+              <p id="h-note" class="h-note"></p>
+            </section>
+          </aside>
+          <div id="hub-floor" class="hub-floor" aria-hidden="true"></div>
+        </div>
         <div class="talk">
           <main id="log" class="log">
             <div class="col" id="col">
@@ -404,7 +459,7 @@ button{cursor:pointer}
      cannot answer. ?dev=1 talks to the DEV copy. */
   var PROD='https://hectorfsv.app.n8n.cloud/webhook/esquiffis-access';
   var BASE=/[?&]dev=1(&|$)/.test(location.search) ? PROD+'-dev' : PROD;
-  var K_PW='esq_pw', K_LOG='esq_log', K_NEWS='esq_news';
+  var K_PW='esq_pw', K_LOG='esq_log', K_NEWS='esq_news', K_INBOX='esq_inbox';
   var PW_TTL_MS=2*60*60*1000;   // sessionStorage never expires on iOS by itself: timestamp it
   var LOG_MAX=80;               // what a reload shows; Esquiffis's own memory lives on the server
   var WAIT_MS=120*1000;         // real turns run 6-78 s; the webhook connection is cut near 100 s
@@ -420,10 +475,11 @@ button{cursor:pointer}
   function vc(kind){ try{ if(window.pet && window.pet.react) window.pet.react(kind) }catch(e){} }
   function petScale(){ return (window.matchMedia && matchMedia('(min-width:760px) and (min-height:501px)').matches) ? 1.5 : 1 }
   window.PET_SCALE=petScale();
-  // his home right now: phone lock screen = under the card; narrow chat = above the chat box; wide = the bottom of the card
+  // his home right now: phone lock screen = under the card; narrow chat = above the chat box;
+  // wide lock screen = the bottom of the card; wide chat = his own floor under the hub widgets
   function petHome(){
     var chatting=$('scr-chat').classList.contains('on');
-    if(isWide()) return chatting ? $('scr-chat') : $('scr-lock');
+    if(isWide()) return chatting ? $('hub-floor') : $('scr-lock');
     return chatting ? $('dock') : app;
   }
   function placePet(){
@@ -499,13 +555,13 @@ button{cursor:pointer}
         if(!r.ok){ lockMsg('Esquiffis did not answer ('+r.status+'). Try again.', true); return }
         pw=v; savePw(v);
         // the login answer also carries the hub's headlines (fetched by n8n in this same call)
-        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); enter(true) });
+        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); enter(true) });
       })
       .catch(function(){ lockMsg("Can't reach Esquiffis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
-    pw=''; clearPw(); setBusy(false);
+    pw=''; clearPw(); clearInbox(); setBusy(false);
     show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
   }
   function show(id){
@@ -514,7 +570,7 @@ button{cursor:pointer}
     $('clear').hidden=locked; $('now').hidden=locked;
     app.classList.toggle('chatting', !locked);
     if(locked){ hubView(false); setStatus('Locked'); fitMark(); }
-    placePet();
+    placePet(); gargSync();
   }
   function enter(fresh){
     show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub();
@@ -658,7 +714,8 @@ button{cursor:pointer}
      What each costs (Ninth Rule). The clock, the weather (Open-Meteo), Fox News and the Dodgers (MLB's own
      API) come straight from the browser: 0 n8n executions. BBC, Jerusalem Post and Times of Israel do not let a
      browser read their feeds, so Esquiffis fetches them inside the login call that already happens: 0 extra.
-     Refresh asks for them again: 1 execution. Nothing is fetched until you unlock. */
+     The inbox rides the same login call: 0 extra. Refresh (either button) asks for both again: 1 execution.
+     Gargantua is a file on this same site: 0. Nothing is fetched until you unlock. */
   var WX_URL='https://api.open-meteo.com/v1/forecast?latitude=34.3917&longitude=-118.5426'
     +'&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min'
     +'&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=1';
@@ -766,7 +823,7 @@ button{cursor:pointer}
       }).catch(function(){ $('h-mlb').hidden=true });
   }
   function startHub(){
-    loadServerNews(); clock(); paintNews();
+    loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
     if(hubOn) return;
     hubOn=true;
     loadWeather(); loadFox(); loadMlb();
@@ -784,6 +841,124 @@ button{cursor:pointer}
     var c=$('scr-chat'); c.classList.toggle('hubview', !!on);
     $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
     if(!on) toBottom();
+  }
+
+  /* ---------- the inbox: a glance at Primary ----------
+     Sender, subject, a short snippet, time and the unread flag for the latest 8 in Primary, plus the unread count.
+     Esquiffis reads them inside the login call (0 extra executions). Kept for this tab only (sessionStorage, the
+     same 2-hour life as the passphrase) and forgotten on lock: mail never goes to localStorage. A subject opens
+     the conversation in Gmail in a new tab; Ask hands the message to Esquiffis (1 execution). */
+  var inbox=null;
+  function setInbox(ib){
+    if(!ib || typeof ib!=='object') return;   // an older workflow sends no inbox
+    if(ib.ok!==true){
+      if(inbox && inbox.ok) inbox.failed=Date.now();   // keep the last good glance and say it is not fresh
+      else inbox={t:Date.now(), ok:false, unread:null, more:false, items:[]};
+    } else {
+      inbox={t:Date.now(), ok:true, unread:(typeof ib.unread==='number' && isFinite(ib.unread)) ? ib.unread : null, more:ib.unreadMore===true,
+        items:(Array.isArray(ib.items) ? ib.items : []).filter(function(m){ return m && typeof m.subject==='string' && typeof m.from==='string' }).slice(0,8)};
+    }
+    try{ sessionStorage.setItem(K_INBOX, JSON.stringify(inbox)) }catch(e){}
+    if(hubOn) paintInbox();
+  }
+  function loadInbox(){
+    if(inbox) return;
+    try{ var s=JSON.parse(sessionStorage.getItem(K_INBOX)||'null'); if(s && Array.isArray(s.items) && s.t && Date.now()-s.t<PW_TTL_MS) inbox=s }catch(e){}
+  }
+  function clearInbox(){ inbox=null; try{ sessionStorage.removeItem(K_INBOX) }catch(e){} paintInbox() }
+  // Gmail's web app opens a conversation by the API's thread id; anything else is not a link
+  function gmailLink(m){ return /^[0-9a-f]{8,40}$/i.test(String(m.thread||'')) ? 'https://mail.google.com/mail/u/0/#all/'+m.thread : '' }
+  function paintInbox(){
+    var ol=$('ib-list'), note=$('ib-note'); ol.textContent=''; $('ib-count').textContent='';
+    if(!inbox){ note.textContent='Tap Refresh to check your inbox.'; return }
+    if(!inbox.ok){ note.textContent='Gmail did not answer. Tap Refresh to try again.'; return }
+    if(inbox.unread!==null) $('ib-count').textContent=(inbox.more ? '100+' : inbox.unread)+' unread';
+    inbox.items.forEach(function(m){
+      var li=document.createElement('li'); li.className='ib'+(m.unread ? ' new' : '');
+      var top=document.createElement('div'); top.className='ib-top';
+      var f=document.createElement('span'); f.className='ib-from'; f.textContent=m.from; top.appendChild(f);
+      var age=ago(m.t); if(age){ var w=document.createElement('span'); w.className='ib-age'; w.textContent=age; top.appendChild(w) }
+      var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask';
+      b.setAttribute('data-from', m.from); b.setAttribute('data-subject', m.subject); top.appendChild(b);
+      li.appendChild(top);
+      var href=gmailLink(m), sj=document.createElement(href ? 'a' : 'span'); sj.className='ib-subj'; sj.textContent=m.subject;
+      if(href){ sj.href=href; sj.target='_blank'; sj.rel='noopener' }
+      li.appendChild(sj);
+      if(m.snippet){ var p=document.createElement('p'); p.className='ib-snip'; p.textContent=m.snippet; li.appendChild(p) }
+      ol.appendChild(li);
+    });
+    note.textContent = !inbox.items.length ? 'Nothing in Primary.'
+      : inbox.failed ? 'Gmail did not answer at '+clockText(new Date(inbox.failed))+'. Showing '+clockText(new Date(inbox.t))+'.'
+      : 'Updated '+clockText(new Date(inbox.t));
+  }
+  // one login call brings the headlines AND the inbox: 1 execution, whichever Refresh you tap
+  var refreshing=false;
+  function refreshHub(){
+    if(refreshing || !pw) return;
+    refreshing=true;
+    var btns=[$('h-refresh'), $('ib-refresh')];
+    btns.forEach(function(b){ b.disabled=true; b.textContent='Refreshing' });
+    loadFox();
+    post({action:'login', password:pw}).then(function(r){
+      if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox) });
+    }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.' })
+      .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }) });
+  }
+
+  /* ---------- Gargantua behind the hub (desktop) ----------
+     The Render Rig's own clip, read from the rig's folder on this same site, so either page caches it for both
+     (6.35 MB). Wide screens only, only while the conversation is open and the tab is visible, never with reduced
+     motion; until it plays a still frame holds its place (gargantua-poster.jpg, 112 KB). The clip's last frame
+     is not its first, so two players cross-dissolve at the seam, slowed to 0.6x: the rig's own method. */
+  var GA=$('garg-a'), GB=$('garg-b'), GBOX=document.querySelector('.garg'), GSRC='../render-rig/gargantua.mp4', gOn=false, G_FADE=1.1, G_RATE=0.6;
+  function gHand(cur, nxt){
+    cur.ontimeupdate=function(){
+      var d=cur.duration;
+      if(!d || !isFinite(d) || cur.currentTime < d-G_FADE*G_RATE) return;
+      cur.ontimeupdate=null;
+      try{ nxt.currentTime=0 }catch(e){}
+      nxt.playbackRate=G_RATE; var p=nxt.play(); if(p && p.catch) p.catch(function(){});
+      nxt.classList.add('lead'); cur.classList.remove('lead'); gHand(nxt, cur);
+      setTimeout(function(){ try{ if(!cur.classList.contains('lead')) cur.pause() }catch(e){} }, G_FADE*1000+150);
+    };
+  }
+  function gargSync(){
+    if(!GA || !GB || !GBOX) return;
+    var calm=!!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if(!isWide() || calm || document.hidden || !$('scr-chat').classList.contains('on')){
+      [GA, GB].forEach(function(v){ try{ v.pause() }catch(e){} });
+      return;
+    }
+    if(!gOn){
+      gOn=true;
+      [GA, GB].forEach(function(v){
+        v.addEventListener('error', function(){ GA.hidden=true; GB.hidden=true; GBOX.classList.remove('playing') });
+        v.preload='auto'; v.src=GSRC;
+      });
+      GA.addEventListener('playing', function(){ GBOX.classList.add('playing') }, {once:true});
+      GA.addEventListener('loadedmetadata', function(){
+        GA.playbackRate=G_RATE; var p=GA.play(); if(p && p.catch) p.catch(function(){});
+        GA.classList.add('lead'); gHand(GA, GB);
+      }, {once:true});
+      return;
+    }
+    var lead=GB.classList.contains('lead') ? GB : GA;
+    if(lead.readyState>0){ lead.playbackRate=G_RATE; var q=lead.play(); if(q && q.catch) q.catch(function(){}) }
+  }
+
+  /* ---------- the rail tape ---------- */
+  var TAPE_PX_PER_SEC=17;   // the speed it always had: 46 s per copy
+  function sizeTape(){
+    var t=$('tape'), inn=t && t.firstElementChild; if(!inn) return;
+    var sp=inn.children; if(sp.length<2) return;
+    var pitch=Math.abs(sp[1].getBoundingClientRect().top-sp[0].getBoundingClientRect().top);
+    if(pitch<=1) return;   // the rail is not shown (phone)
+    var need=Math.ceil(t.parentNode.clientHeight/pitch)+2, guard=0;
+    while(sp.length<need && guard++<40) inn.appendChild(sp[0].cloneNode(true));
+    t.style.setProperty('--shift', pitch.toFixed(2)+'px');
+    t.style.animationDuration=(pitch/TAPE_PX_PER_SEC).toFixed(2)+'s';
   }
 
   /* ---------- wiring ---------- */
@@ -810,16 +985,13 @@ button{cursor:pointer}
     box.value='Tell me more about this headline from '+b.getAttribute('data-src')+': "'+b.getAttribute('data-title')+'"';
     send();
   });
-  $('h-refresh').addEventListener('click', function(){
-    var btn=$('h-refresh'); if(btn.disabled || !pw) return;
-    btn.disabled=true; btn.textContent='Refreshing';
-    loadFox();
-    post({action:'login', password:pw}).then(function(r){
-      if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
-      if(!r.ok) throw new Error('http '+r.status);
-      return r.json().then(function(d){ setServerNews(d && d.headlines) });
-    }).catch(function(){ $('h-note').textContent='Could not refresh the headlines. Try again.' })
-      .finally(function(){ btn.disabled=false; btn.textContent='Refresh' });
+  $('h-refresh').addEventListener('click', refreshHub);
+  $('ib-refresh').addEventListener('click', refreshHub);
+  $('ib-list').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
+    if(!b || busy) return;
+    box.value='Summarize this email in my Primary inbox from '+b.getAttribute('data-from')+': "'+b.getAttribute('data-subject')+'"';
+    send();
   });
   /* iOS Safari shrinks the VISUAL viewport for the keyboard and leaves the layout
      viewport alone, so a 100dvh column would sit under the keys. Size the app to
@@ -848,14 +1020,18 @@ button{cursor:pointer}
     var guard=0;
     while(mk.scrollWidth>mk.clientWidth && size>40 && guard++<40){ size-=3; mk.style.fontSize=size+'px' }
   }
-  fitMark();
+  fitMark(); sizeTape();
+  // one copy's length changes when the webfont swaps in (or on zoom): re-measure whenever the tape changes size
+  if(window.ResizeObserver && $('tape')) try{ new ResizeObserver(function(){ sizeTape() }).observe($('tape').firstElementChild) }catch(e){}
   window.addEventListener('resize', function(){
-    fitMark(); placePet();
+    fitMark(); placePet(); sizeTape(); gargSync();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitMark);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape() });
+  // ready can resolve before a font that is not yet in use has even started loading: re-measure whenever one lands
+  if(document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ fitMark(); sizeTape() });
   // a hidden tab does not need him drawing
-  document.addEventListener('visibilitychange', function(){ try{ window.pet.pause(document.hidden) }catch(e){} });
+  document.addEventListener('visibilitychange', function(){ try{ window.pet.pause(document.hidden) }catch(e){} gargSync(); });
 
   placePet();   // on first load too: the wide lock screen keeps him inside the card
   pw=loadPw();
