@@ -1363,22 +1363,19 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      not talk over each other (unmute inside a player). 0 n8n executions - but every playing camera is a live video
      stream, so four at once is real CPU on a 2017 Mac. Streams measured live and embeddable in WebKit from this page's
      address on 2026-09-15; a camera that ends its stream shows YouTube's "unavailable" - pick another. The count and the
-     picks are remembered on this device. */
-  var CAMS=[
+     picks are remembered on this device; a remembered camera that was removed falls back to the default for its frame.
+     2026-09-15 (Hector): no multi-camera feeds, Middle East only Jerusalem; no single live camera exists on YouTube for
+     Giza or Iran (searched: only multi-camera aggregators, a camera tour that refuses embedding, and news channels). */
+  var CAMS=[   // single sources only (Hector: rotating views are fine, multi-camera feeds are not); Middle East = Jerusalem only
     {k:'wall', name:'Jerusalem · Western Wall', vid:'77akujLn4k8'},
-    {k:'mideast', name:'Middle East · Israel, Iran and more', vid:'AkqGOcpDvZU'},
-    {k:'kyiv', name:'Ukraine · Kyiv and more', vid:'IcZ-7sFi1HM'},
     {k:'dc', name:'Washington · Washington Monument', vid:'oDCAAfOSqvA'},
     {k:'wh', name:'Washington · White House', vid:'5p_KGD4fJZs'},
     {k:'nyc', name:'New York · Times Square', vid:'JQ_jwk_7OVE'},
     {k:'la', name:'Los Angeles · Hollywood', vid:'YHWJd_DNgKY'},
     {k:'smpier', name:'Santa Monica · Pier', vid:'v97JpT3ZA0w'},
-    {k:'mecca', name:'Mecca · Masjid al-Haram', vid:'eC4LfEVxvKg'},
     {k:'london', name:'London · Abbey Road', vid:'zMCea32gpmg'},
-    {k:'taipei', name:'Taipei · Taipei 101', vid:'z_fY1pj1VBw'},
-    {k:'tokyo', name:'Tokyo · Shibuya Crossing', vid:'dfVK7ld38Ys'},
     {k:'iss', name:'Space · International Space Station', vid:'awQzjn72bI0'}];
-  var K_CAMS='esq_cams', cams={n:2, picks:['wall','mideast','kyiv','dc']}, camsOn=false, camsReady=false;
+  var K_CAMS='esq_cams', cams={n:2, picks:['wall','wh','nyc','la']}, camsOn=false, camsReady=false;
   function camBy(k){ for(var i=0;i<CAMS.length;i++) if(CAMS[i].k===k) return CAMS[i]; return null }
   try{
     var cs0=JSON.parse(localStorage.getItem(K_CAMS)||'null');

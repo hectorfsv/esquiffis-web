@@ -388,7 +388,10 @@
     var frames=g.querySelectorAll('.cam'), shown=function(){ return [].filter.call(frames, vis).length };
     T(frames.length===4 && g.getAttribute('data-n')==='2' && shown()===2 && !g.querySelector('iframe') && $('cams-n').querySelector('[aria-pressed="true"]').textContent==='2',
       'cameras: two frames by default, and nothing loads until Play');
-    T(frames[0].querySelector('select').value==='wall' && frames[1].querySelector('select').value==='mideast' && frames[0].querySelectorAll('option').length===13, 'cameras: each frame picks its own camera (13 to choose from)');
+    T(frames[0].querySelector('select').value==='wall' && frames[1].querySelector('select').value==='wh' && frames[0].querySelectorAll('option').length===8, 'cameras: each frame picks its own camera (8 to choose from)');
+    // Hector 2026-09-15: "Anything multi-cam, get rid of it" - and no Taipei, Shibuya, or Middle East beyond Jerusalem
+    T(['mideast','kyiv','taipei','tokyo','mecca'].every(function(k){ return !frames[0].querySelector('option[value="'+k+'"]') })
+      && [].every.call(frames[0].querySelectorAll('option'), function(o){ return !/multi|cameras|and more|Taipei|Shibuya|Mecca/i.test(o.textContent) }), 'cameras: single sources only, the dropped ones are gone');
     $('cams-play').click();
     var ifr=g.querySelectorAll('iframe');
     T(ifr.length===2 && ifr[0].src==='https://www.youtube.com/embed/77akujLn4k8?autoplay=1&mute=1&playsinline=1&rel=0' && ifr[0].referrerPolicy==='strict-origin-when-cross-origin' && tile('cams').classList.contains('playing'),
