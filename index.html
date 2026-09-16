@@ -202,14 +202,26 @@ button{cursor:pointer}
 
 /* ---------- the hub: clock, weather, headlines, Dodgers ---------- */
 .hub{display:none;position:relative;z-index:1;flex-direction:column;min-height:0;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* tile size (Hector 2026-09-16: "i need more space on the HUB ... any chance we can scale down?"): Roomy is the look so far;
+   Compact and Dense tighten every tile's padding, the gaps between tiles and the type inside, then every tile is measured
+   again and packed up (hubTidy). tp/tpx tile padding, tg the gap, hm header and note margins, bp button padding,
+   fh header type, fx small mono, fxs captions, fsm small figures, fs body, fm medium, fl large, fl2 the game/sky lines. */
+.hub{--tp:14px;--tpx:16px;--tg:14px;--hm:10px;--bp:3px 9px;--fh:11px;--fx:11px;--fxs:10.5px;--fsm:12px;--fs:13px;--fm:14px;--fl:15px;--fl2:16px;--ftime:64px;--ftemp:60px;--rg:14px;--rgs:6px}
+.hub[data-density="compact"]{--tp:10px;--tpx:12px;--tg:10px;--hm:7px;--bp:2px 7px;--fh:10.5px;--fx:10.5px;--fxs:10px;--fsm:11.5px;--fs:12.5px;--fm:13px;--fl:14px;--fl2:15px;--ftime:52px;--ftemp:48px;--rg:9px;--rgs:4px}
+.hub[data-density="dense"]{--tp:7px;--tpx:9px;--tg:6px;--hm:5px;--bp:2px 6px;--fh:10px;--fx:10px;--fxs:9.5px;--fsm:11px;--fs:12px;--fm:12.5px;--fl:13px;--fl2:14px;--ftime:44px;--ftemp:40px;--rg:6px;--rgs:3px}
+.hub-dense{display:inline-flex;border:1px solid var(--rule)}
+.hub-dense button{min-width:28px;height:24px;padding:0 8px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);background:rgba(0,0,0,.3)}
+.hub-dense button+button{border-left:1px solid var(--rule)}
+.hub-dense button:hover{color:var(--ink)}
+.hub-dense button[aria-pressed="true"]{color:#fff;background:rgba(224,27,27,.3)}
 .chat.hubview .hub{display:flex;flex:1;padding-bottom:calc(var(--petc) + 6px)}   /* he stands above the chat box: the last headline stays above him */
 .chat.hubview .log{display:none}
 .chat.hubview .talk{flex:none}
 .hb{padding:16px max(18px,env(safe-area-inset-left));border-bottom:1px solid var(--rule)}
-.hb-h{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:11px;font-weight:600;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
-.h-time{font-family:var(--word);font-size:64px;line-height:.88;letter-spacing:.02em;color:var(--ink);text-shadow:0 0 30px rgba(224,27,27,.25);font-variant-numeric:tabular-nums}
-.h-date{color:var(--ink-dim);font-size:14px;margin-top:6px}
+.hb-h{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:var(--fh);font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:var(--hm)}
+.h-time{font-family:var(--word);font-size:var(--ftime);line-height:.88;letter-spacing:.02em;color:var(--ink);text-shadow:0 0 30px rgba(224,27,27,.25);font-variant-numeric:tabular-nums}
+.h-date{color:var(--ink-dim);font-size:var(--fm);margin-top:6px}
 /* the corner (Hector 2026-09-16: "to the right of the clock ... to the right of the weather"): beside the clock a sun
    crossing its arc by day (a moon by night), sunrise and sunset at the arc's ends, the countdown inside it; beside the
    weather the day's UV and Santa Clarita's air, each with its word and colour. Both blocks sit to the right of what was
@@ -243,35 +255,35 @@ button{cursor:pointer}
   .wx-w{display:none}
   .wx-w.wx-t{display:inline}
 }
-.h-temp{font-family:var(--word);font-size:60px;line-height:.88;color:var(--ink);white-space:nowrap}
+.h-temp{font-family:var(--word);font-size:var(--ftemp);line-height:.88;color:var(--ink);white-space:nowrap}
 .h-temp sup{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-dim);vertical-align:top;margin-left:3px;line-height:1}
-.h-cond{font-weight:600;font-size:17px;line-height:1.2}
-.h-range{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:4px}
-.hb-btn,.hl-ask{flex:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);
-  border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:3px 9px}
+.h-cond{font-weight:600;font-size:var(--fl2);line-height:1.2}
+.h-range{font-family:var(--mono);font-size:var(--fsm);color:var(--ink-dim);margin-top:4px}
+.hb-btn,.hl-ask{flex:none;font-family:var(--mono);font-size:var(--fx);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);
+  border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:var(--bp)}
 .hb-btn:hover,.hl-ask:hover{border-color:var(--rule-hot);color:var(--ink)}
 .hb-btn:disabled{opacity:.6;cursor:default}
-.h-list{list-style:none;display:flex;flex-direction:column;gap:14px}
-.hl-t{display:block;color:var(--ink);text-decoration:none;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.h-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
+.hl-t{display:block;color:var(--ink);text-decoration:none;font-size:var(--fl);line-height:1.35;overflow-wrap:anywhere}
 .hl-t:hover{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
-.hl-m{display:flex;align-items:center;gap:10px;margin-top:5px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-faint)}
+.hl-m{display:flex;align-items:center;gap:10px;margin-top:5px;font-family:var(--mono);font-size:var(--fx);letter-spacing:.04em;color:var(--ink-faint)}
 .hl-s{color:var(--red);font-weight:600}
 .hl-ask{margin-left:auto}
-.h-note{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:12px}
-.h-game{font-weight:600;font-size:16px}
+.h-note{font-family:var(--mono);font-size:var(--fx);color:var(--ink-faint);margin-top:var(--hm)}
+.h-game{font-weight:600;font-size:var(--fl2)}
 .h-game b{display:inline-block;min-width:1.6em;text-align:center;font-family:var(--mono);font-size:11px;padding:1px 5px;margin-right:6px;border:1px solid currentColor;vertical-align:2px}
 .h-game b.w{color:var(--go)}
 .h-game b.l{color:var(--red-hot)}
-.h-next{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:6px}
+.h-next{font-family:var(--mono);font-size:var(--fsm);color:var(--ink-dim);margin-top:6px}
 /* the day's scores for the league he picks (ESPN), under the Dodgers lines */
 .sc-ch{margin-top:12px}
-.sc-list{list-style:none;display:flex;flex-direction:column;gap:6px;font-variant-numeric:tabular-nums}
-.sc{display:grid;grid-template-columns:3.4em 4.8em 3.4em minmax(0,1fr);align-items:baseline;gap:8px;font-size:14px;line-height:1.3}
+.sc-list{list-style:none;display:flex;flex-direction:column;gap:var(--rgs);font-variant-numeric:tabular-nums}
+.sc{display:grid;grid-template-columns:3.4em 4.8em 3.4em minmax(0,1fr);align-items:baseline;gap:8px;font-size:var(--fm);line-height:1.3}
 .sc-t{font-weight:600;color:var(--ink-dim);white-space:nowrap}
 .sc-t.w{color:var(--ink)}
-.sc-s{font-family:var(--mono);font-size:13px;color:var(--ink);text-align:center;white-space:nowrap}
+.sc-s{font-family:var(--mono);font-size:var(--fs);color:var(--ink);text-align:center;white-space:nowrap}
 .sc.pre .sc-s{color:var(--ink-faint);font-size:11px}
-.sc-m{font-family:var(--mono);font-size:11px;color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-m{font-family:var(--mono);font-size:var(--fx);color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sc.live .sc-m{color:var(--red)}
 #h-dod-note{margin-top:0}
 /* folded (Hector 2026-09-15: "deployable like news and inbox"): the Dodgers lines and three games, the leagues and the rest behind "more" */
@@ -280,24 +292,24 @@ button{cursor:pointer}
 .hb-sports:not(.shut) #sc-more{display:none}
 /* the inbox: newest first, unread marked by a lit dot and brighter type */
 .ib-count{color:var(--red);margin-left:10px}
-.ib-list{list-style:none;display:flex;flex-direction:column;gap:13px}
+.ib-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
 .ib{position:relative;padding-left:15px}
 .ib::before{content:'';position:absolute;left:0;top:5px;width:6px;height:6px;border-radius:50%;border:1px solid var(--ink-faint)}
 .ib.new::before{background:var(--red);border-color:var(--red);box-shadow:0 0 8px rgba(224,27,27,.6)}
-.ib-top{display:flex;align-items:center;gap:10px;min-width:0;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-faint)}
+.ib-top{display:flex;align-items:center;gap:10px;min-width:0;font-family:var(--mono);font-size:var(--fx);letter-spacing:.04em;color:var(--ink-faint)}
 .ib-from{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink-dim)}
 .ib.new .ib-from{color:var(--ink)}
 .ib-age{flex:none}
 .ib-top .hl-ask{margin-left:auto}
-.ib-subj{display:block;margin-top:3px;font-size:15px;line-height:1.35;color:var(--ink-dim);text-decoration:none;overflow-wrap:anywhere}
+.ib-subj{display:block;margin-top:3px;font-size:var(--fl);line-height:1.35;color:var(--ink-dim);text-decoration:none;overflow-wrap:anywhere}
 .ib.new .ib-subj{color:var(--ink);font-weight:600}
 a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
-.ib-snip{margin-top:2px;font-size:13px;line-height:1.4;color:var(--ink-faint);overflow-wrap:anywhere;
+.ib-snip{margin-top:2px;font-size:var(--fs);line-height:1.4;color:var(--ink-faint);overflow-wrap:anywhere;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 /* live news TV: YouTube's player exists only between Play and Stop */
-.tv-ch{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.tv-c,.map-c{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);
-  border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:3px 9px}
+.tv-ch{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--hm)}
+.tv-c,.map-c{font-family:var(--mono);font-size:var(--fx);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);
+  border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:var(--bp)}
 .tv-c:hover,.map-c:hover{color:var(--ink);border-color:var(--rule-hot)}
 .tv-c[aria-pressed="true"],.map-c[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
 .tv-screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--rule);overflow:hidden}
@@ -323,7 +335,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .map-key .k-f{background:#FF5A1F}
 .map-key .k-s{width:14px;height:2px;border-radius:0;background:#6FB7FF}
 /* basemap and layer chips: Dark / Satellite, then Quakes / Disasters / Radar / US alerts / Wildfires / Storms (every layer starts off) */
-.map-ch{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:10px}
+.map-ch{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:var(--hm)}
 .map-cg{display:flex;flex-wrap:wrap;gap:6px}
 /* MapLibre's chrome in the hub's colours */
 .map-box .maplibregl-canvas{outline:none}
@@ -381,7 +393,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .hb:not(.shut) .hb-more{display:none}
 .hb-inbox.shut .ib:nth-child(n+4),.hb-inbox.shut .ib-snip,.hb-inbox.shut .ib-top .hl-ask,.hb-inbox.shut .ib-age{display:none}
 .hb-inbox.shut .ib-list,.hb-news.shut .h-list{gap:7px}
-.hb-inbox.shut .ib-subj,.hb-news.shut .hl-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.hb-inbox.shut .ib-subj,.hb-news.shut .hl-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fm)}
 .hb-inbox.shut .ib-subj{margin-top:1px}
 .hb-news.shut .h-list li:nth-child(n+4),.hb-news.shut .hl-m{display:none}
 .hb-tv.shut .tv-ch,.hb-tv.shut .tv-screen,.hb-tv.shut .tv-foot,.hb-map.shut .map-box,.hb-map.shut .map-key,.hb-map.shut .map-ch,.hb-map.shut .h-note{display:none}
@@ -418,24 +430,24 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .hb-tv.playing .tv-screen{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(224,27,27,.4)}
 .hb-tv.playing .hb-link{color:#fff;border-color:var(--red);background:rgba(224,27,27,.24);box-shadow:0 0 12px rgba(224,27,27,.55)}
 /* markets: metals and currencies, each with its change since yesterday */
-.mk-note{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--ink-faint)}
-.mk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 28px}
-.mk-cap{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
-.mk-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 18px}
+.mk-note{font-family:var(--mono);font-size:var(--fxs);font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--ink-faint)}
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--hm) 28px}
+.mk-cap{font-family:var(--mono);font-size:var(--fxs);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:var(--rgs)}
+.mk-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:var(--rgs) 18px}
 .mk{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;min-width:0;font-variant-numeric:tabular-nums}
-.mk-n{font-size:13px;color:var(--ink-dim)}
-.mk-v{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink)}
+.mk-n{font-size:var(--fs);color:var(--ink-dim)}
+.mk-v{font-family:var(--mono);font-size:var(--fm);font-weight:600;color:var(--ink)}
 .mk-u{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-left:-6px}
-.mk-c{font-family:var(--mono);font-size:11px;font-weight:600}
+.mk-c{font-family:var(--mono);font-size:var(--fx);font-weight:600}
 .mk-c.up{color:var(--go)}
 .mk-c.down{color:var(--red-hot)}
 .mk-c.flat{color:var(--ink-faint)}
-.iss-now{font-size:13px;line-height:1.45;color:var(--ink-dim);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.iss-list{list-style:none;display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.iss-now{font-size:var(--fs);line-height:1.45;color:var(--ink-dim);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.iss-list{list-style:none;display:flex;flex-direction:column;gap:var(--rgs);margin-top:var(--hm)}
 .iss-p{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;font-variant-numeric:tabular-nums}
-.iss-t{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink)}
-.iss-d{font-size:13px;color:var(--ink-dim)}
-.iss-b{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+.iss-t{font-family:var(--mono);font-size:var(--fm);font-weight:600;color:var(--ink)}
+.iss-d{font-size:var(--fs);color:var(--ink-dim)}
+.iss-b{font-family:var(--mono);font-size:var(--fxs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
 .iss-b.hi{color:var(--go)}
 .iss-b.mid{color:var(--ink-dim)}
 .hub .hb-iss.sized .iss-list{flex:1 1 auto;min-height:0;overflow-y:auto}
@@ -444,12 +456,12 @@ body.carrying{user-select:none;-webkit-user-select:none}
 /* the AI news brief on top of the news; with a brief, the folded list hides behind "Show all" */
 .brief-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
 .brief-bar .h-note{margin-top:0}
-.brief-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin:10px 0 2px}
+.brief-list{list-style:none;display:flex;flex-direction:column;gap:var(--hm);margin:var(--hm) 0 2px}
 .brief-list:empty{display:none}
-.bp{position:relative;padding-left:14px;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.bp{position:relative;padding-left:14px;font-size:var(--fl);line-height:1.4;overflow-wrap:anywhere}
 .bp::before{content:'';position:absolute;left:0;top:.5em;width:6px;height:6px;background:var(--red)}
 .bp-m{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin-top:4px}
-.bp-s{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--red)}
+.bp-s{font-family:var(--mono);font-size:var(--fxs);font-weight:600;letter-spacing:.04em;color:var(--red)}
 .bp-m .hl-ask{margin-left:auto}
 .hb-news.has-brief .brief{padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--rule)}
 .hb-news.shut.has-brief .brief{padding-bottom:0;border-bottom:0}
@@ -588,9 +600,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
   .garg{display:block;position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#050304}
   .garg img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;opacity:.8}
   .garg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,4,.62) 0%,rgba(5,3,4,.2) 38%,rgba(5,3,4,.8) 100%)}
-  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row dense;align-content:start;align-items:start;gap:14px;flex:1 1 auto;min-height:0;
-    padding:16px 16px calc(var(--pet) - var(--petband) + 12px);z-index:2}   /* over Gargantua; the last row scrolls clear above VaderClawd's head */
-  .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:14px 16px}
+  .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row dense;align-content:start;align-items:start;gap:var(--tg);flex:1 1 auto;min-height:0;
+    padding:var(--tg) var(--tg) calc(var(--pet) - var(--petband) + 12px);z-index:2}   /* over Gargantua; the last row scrolls clear above VaderClawd's head */
+  .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:var(--tp) var(--tpx)}
   .hub .hub-bar{padding:0}
   /* Hector 2026-09-16: "make him and the animations always on top of everything even the chat". His stage is the whole
      chat screen - the hub side and the conversation - drawn over both (above the hub's z-index 2 and the chat's 1) and
@@ -626,11 +638,11 @@ body.carrying{user-select:none;-webkit-user-select:none}
 @container (min-width:1100px){
   /* free range (Hector 2026-09-15): every widget is pinned to a column and a row, so nothing reflows and a gap
      stays where he leaves one. A 10px row grain with the gap moved onto the tile keeps vertical placement fine. */
-  .hub,.chat.hubview .hub{grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:row;grid-auto-rows:10px;column-gap:14px;row-gap:0}
-  .hub .hb{margin-bottom:14px}
-  .hb-news[data-size="M"] .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px}
-  .hb-news[data-size="L"] .h-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px}
-  .hb-inbox[data-size="L"]:not(.shut) .ib-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 24px}
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:row;grid-auto-rows:10px;column-gap:var(--tg);row-gap:0}
+  .hub .hb{margin-bottom:var(--tg)}
+  .hb-news[data-size="M"] .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--rg) 24px}
+  .hb-news[data-size="L"] .h-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--rg) 24px}
+  .hb-inbox[data-size="L"]:not(.shut) .ib-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--rg) 24px}
 }
 @media (prefers-reduced-motion:reduce){
   .sweep,.tape,.chip.busy::before,.app.thinking .bloom{animation:none}
@@ -680,7 +692,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
         <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
         <div class="side">
           <aside id="hub" class="hub" aria-label="Hub">
-            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-pet" class="hb-btn" type="button" aria-pressed="true" title="Switch VaderClawd off">VaderClawd: On</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
+            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><span id="hub-dense" class="hub-dense" role="group" aria-label="Tile size" title="How much room every tile takes"><button type="button" data-d="roomy" aria-pressed="true">Roomy</button><button type="button" data-d="compact" aria-pressed="false">Compact</button><button type="button" data-d="dense" aria-pressed="false">Dense</button></span><button id="hub-tidy" class="hb-btn" type="button" hidden title="Close the gaps: every tile packs up in reading order, widths kept">Tidy</button><button id="hub-pet" class="hb-btn" type="button" aria-pressed="true" title="Switch VaderClawd off">VaderClawd: On</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
             <section class="hb hb-time" data-w="time" aria-label="Clock">
               <div class="tm"><div id="h-time" class="h-time">--:--</div><div id="h-date" class="h-date"></div></div>
               <div id="sky" class="sky" hidden>
@@ -1504,17 +1516,21 @@ body.carrying{user-select:none;-webkit-user-select:none}
      corner to fit the height again. Inbox, headlines, the TV and the map fold from their title. The layout is
      remembered on this device (localStorage: widget names and sizes, never mail). Order is CSS order and never a DOM
      move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
-  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:104}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Sports', span:3, minH:120, shut:true},
-    {w:'inbox', name:'Inbox', span:3, minH:110, shut:true}, {w:'tv', name:'Live news', span:6, minH:200}, {w:'map', name:'World events', span:6, minH:180},
-    {w:'markets', name:'Markets', span:12, minH:90}, {w:'cams', name:'Live cameras', span:6, minH:200}, {w:'news', name:'News', span:6, minH:110, shut:true},
-    {w:'stocks', name:'Stocks & crypto', span:6, minH:110}, {w:'fuel', name:'Fuel & energy', span:6, minH:110}, {w:'iss', name:'ISS overhead', span:6, minH:110}];   // Hector 2026-09-16
-  var K_HUB='esq_hub', SPANS=[3,6,9,12], SPAN_WORD={3:'a quarter', 6:'half', 9:'three quarters', 12:'the full width'},
-      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=3, MAX_H=1400, IB_SHUT=3, HL_SHUT=3;
+  // minH is the floor a tile can be dragged down to (Hector 2026-09-16: as small as it goes); what it holds scrolls or clips inside
+  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:72}, {w:'weather', name:'Weather', span:3, minH:72}, {w:'dodgers', name:'Sports', span:3, minH:80, shut:true},
+    {w:'inbox', name:'Inbox', span:3, minH:80, shut:true}, {w:'tv', name:'Live news', span:6, minH:120}, {w:'map', name:'World events', span:6, minH:120},
+    {w:'markets', name:'Markets', span:12, minH:70}, {w:'cams', name:'Live cameras', span:6, minH:120}, {w:'news', name:'News', span:6, minH:80, shut:true},
+    {w:'stocks', name:'Stocks & crypto', span:6, minH:80}, {w:'fuel', name:'Fuel & energy', span:6, minH:80}, {w:'iss', name:'ISS overhead', span:6, minH:80}];   // Hector 2026-09-16
+  // widths are twelfths; the button cycles a sixth, a quarter, a third, half, two thirds, three quarters, full (Hector 2026-09-16: "the sports widget could be cut in half")
+  var K_HUB='esq_hub', SPANS=[2,3,4,6,8,9,12], SPAN_WORD={2:'a sixth', 3:'a quarter', 4:'a third', 6:'half', 8:'two thirds', 9:'three quarters', 12:'the full width'},
+      SPAN_GLYPH={2:'\u2159', 3:'\u00BC', 4:'\u2153', 6:'\u00BD', 8:'\u2154', 9:'\u00BE', 12:'1'},
+      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=2, MAX_H=1400, IB_SHUT=3, HL_SHUT=3,
+      DENSITIES=['roomy','compact','dense'], GAPS={roomy:14, compact:10, dense:6};   // the gap between tiles per size (the CSS --tg, mirrored for the grid maths)
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
   function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
   function wname(w){ var x=winfo(w); return x ? x.name : w }
   function hubDefault(){
-    var d={order:[], span:{}, h:{}, col:{}, row:{}, hidden:[], shut:{}};
+    var d={order:[], span:{}, h:{}, col:{}, row:{}, hidden:[], shut:{}, density:'roomy'};
     WIDGETS.forEach(function(x){ d.order.push(x.w); d.span[x.w]=x.span; d.shut[x.w]=!!x.shut });
     return d;
   }
@@ -1533,6 +1549,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
         if(sv.row && typeof sv.row==='object') Object.keys(sv.row).forEach(function(w){ var n=sv.row[w]; if(winfo(w) && typeof n==='number' && n>=0 && n<=2000) d.row[w]=Math.round(n) });
         if(Array.isArray(sv.hidden)) d.hidden=sv.hidden.filter(function(w,i,a){ return !!winfo(w) && a.indexOf(w)===i });
         if(sv.shut && typeof sv.shut==='object') Object.keys(sv.shut).forEach(function(w){ if(winfo(w)) d.shut[w]=sv.shut[w]===true });
+        if(DENSITIES.indexOf(sv.density)>-1) d.density=sv.density;
       }
     }catch(e){}
     return d;
@@ -1559,6 +1576,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     applyHub();
   }
   var ROWU=10, freezing=false;
+  function hubGap(){ return GAPS[(hub && hub.density) || 'roomy'] || 14 }
   // what he arranged, read top-to-bottom then left-to-right: how a phone (one column) stacks the same hub
   function visualOrder(){
     return hub.order.slice().sort(function(a,b){
@@ -1570,49 +1588,60 @@ body.carrying{user-select:none;-webkit-user-select:none}
   /* Pinning a widget to a row needs a height for every widget, because the grid has to know how many rows it fills.
      The first time this runs it measures the hub exactly as it looks today and freezes that, so nothing jumps. */
   function hubFreeze(){
-    var need=[];
+    var need=[], measured=false;
     hub.order.forEach(function(w){
       var t=tile(w); if(!t || !shown(w)) return;
       var x=winfo(w)||{};
-      if(!hub.h[w]) hub.h[w]=Math.max(x.minH||90, Math.round(t.getBoundingClientRect().height)||0);
+      if(!hub.h[w]){ hub.h[w]=Math.max(x.minH||90, Math.round(t.getBoundingClientRect().height)||0); measured=true }
       if(!hub.col[w] || hub.row[w]==null) need.push(w);
     });
-    if(!need.length) return;
+    if(!need.length){ if(measured){ hubSave(); applyHub() } return }
     /* The packed layout is WORKED OUT, not measured: reading tile positions gave every widget the same top and
        piled the hub into one corner, because layout had not settled when the measurement ran. Heights are
        measured (a height is stable in a way a position is not), the rest is arithmetic. */
     var rowTop=0;
     hub.order.forEach(function(w){                       // anything already placed keeps its cell; new ones go below it
       if(!shown(w) || need.indexOf(w)>-1 || hub.row[w]==null) return;
-      rowTop=Math.max(rowTop, hub.row[w]*ROWU+(hub.h[w]||90)+14);
+      rowTop=Math.max(rowTop, hub.row[w]*ROWU+(hub.h[w]||90)+hubGap());
     });
     var x=0, rowH=0;
     need.forEach(function(w){
       var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN));
-      if(x+sp>12){ rowTop+=rowH+14; x=0; rowH=0 }
+      if(x+sp>12){ rowTop+=rowH+hubGap(); x=0; rowH=0 }
       hub.col[w]=x+1;
       hub.row[w]=Math.ceil(rowTop/ROWU);
       x+=sp; rowH=Math.max(rowH, hub.h[w]||90);
     });
     hubSave(); applyHub();
   }
+  // Tidy (Hector 2026-09-16, "more space on the HUB"): every shown tile is measured again and packed up in reading order,
+  // widths kept, so the gaps close. A change of size does the same, since every height changes with it.
+  function hubTidy(){
+    if(!hub) return;
+    hub.order=visualOrder();
+    hub.order.forEach(function(w){ if(shown(w)){ delete hub.h[w]; delete hub.col[w]; delete hub.row[w] } });
+    hubSave(); applyHub();   // unsized, the tiles take their natural height; the next tick measures and packs them (hubFreeze)
+  }
+  function hubDensity(d){ if(!hub || DENSITIES.indexOf(d)<0 || hub.density===d) return; hub.density=d; hubTidy() }
   // the cell under the pointer, clamped so a widget can never start past the right edge
   function hubCellAt(x, y, w){
     var host=$('hub'), hr=host.getBoundingClientRect(), cs=getComputedStyle(host);
     var padL=parseFloat(cs.paddingLeft)||0, padR=parseFloat(cs.paddingRight)||0;
-    var colW=(host.clientWidth-padL-padR-11*14)/12;
+    var gap=hubGap(), colW=(host.clientWidth-padL-padR-11*gap)/12;
     if(!(colW>0)) return null;
     var bar=host.querySelector('.hub-bar');
-    var top=(bar ? bar.getBoundingClientRect().bottom-hr.top : parseFloat(cs.paddingTop)||0)+host.scrollTop+14;
+    var top=(bar ? bar.getBoundingClientRect().bottom-hr.top : parseFloat(cs.paddingTop)||0)+host.scrollTop+gap;
     var span=hub.span[w]||MIN_SPAN;
-    return {col:Math.max(1, Math.min(13-span, Math.round((x-hr.left-padL)/(colW+14))+1)),
+    return {col:Math.max(1, Math.min(13-span, Math.round((x-hr.left-padL)/(colW+gap))+1)),
             row:Math.max(0, Math.round((y-hr.top+host.scrollTop-top)/ROWU))};
   }
   function applyHub(){
     if(!hub) return;
-    var cols=gridCols(), free=cols>=12, bar=$('hub').querySelector('.hub-bar'), ROW0=1;
+    var cols=gridCols(), free=cols>=12, bar=$('hub').querySelector('.hub-bar'), ROW0=1, gap=hubGap();
+    $('hub').setAttribute('data-density', hub.density||'roomy');
+    [].forEach.call($('hub-dense').querySelectorAll('button'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-d')===(hub.density||'roomy') ? 'true' : 'false') });
     if(free && bar){
-      var brows=Math.max(1, Math.ceil(((bar.getBoundingClientRect().height||34)+14)/ROWU));
+      var brows=Math.max(1, Math.ceil(((bar.getBoundingClientRect().height||34)+gap)/ROWU));
       bar.style.gridRow='1 / span '+brows; ROW0=brows+1;
     } else if(bar) bar.style.gridRow='';
     (free ? hub.order : visualOrder()).forEach(function(w, i){
@@ -1622,7 +1651,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       if(free && hub.col[w] && hub.row[w]!=null && hub.h[w]){
         var col=Math.max(1, Math.min(13-span, hub.col[w]));
         t.style.gridColumn=col+' / span '+span;
-        t.style.gridRow=(ROW0+hub.row[w])+' / span '+Math.max(1, Math.ceil((hub.h[w]+14)/ROWU));
+        t.style.gridRow=(ROW0+hub.row[w])+' / span '+Math.max(1, Math.ceil((hub.h[w]+gap)/ROWU));
       } else {
         t.style.gridColumn=cols>1 ? 'span '+Math.min(cols, eff) : '';
         t.style.gridRow='';
@@ -1638,7 +1667,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       if(nxb) nxb.setAttribute('aria-label', (free ? 'Move right: ' : 'Move later: ')+wname(w));
       var sz=t.querySelector('.ht-size');
       if(sz){
-        sz.textContent=span===3 ? '¼' : span===6 ? '½' : span===9 ? '¾' : span===12 ? '1' : span+'/12';
+        sz.textContent=SPAN_GLYPH[span] || span+'/12';
         sz.setAttribute('aria-label', 'Width of '+wname(w)+': '+(SPAN_WORD[span] || span+' twelfths')+'. Tap to change');
       }
     });
@@ -1651,6 +1680,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     });
     add.hidden=!arranging || !hub.hidden.length;
     $('hub-reset').hidden=!arranging;
+    $('hub-tidy').hidden=!arranging;
     // a widget with no cell yet (first run, Reset, or one added later) gets today's layout frozen as its starting point
     if(gridCols()>=12 && !freezing && hub.order.some(function(w){ return shown(w) && (!hub.col[w] || hub.row[w]==null || !hub.h[w]) })){
       freezing=true;
@@ -2514,7 +2544,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
     var b=e.target.closest ? e.target.closest('button') : null; if(!b || !hub) return;
     var t=b.closest('.hb[data-w]'), w=t && t.getAttribute('data-w');
     if(b.id==='hub-arrange'){ arranging=!arranging; applyHub(); return }
-    if(b.id==='hub-reset'){ hub=hubDefault(); applyHub(); hubSave(); return }
+    if(b.id==='hub-reset'){ var dd=hub.density; hub=hubDefault(); hub.density=dd; applyHub(); hubSave(); return }   // the layout resets; the tile size he picked stays
+    if(b.id==='hub-tidy'){ hubTidy(); return }
+    if(b.hasAttribute('data-d') && b.closest('#hub-dense')){ hubDensity(b.getAttribute('data-d')); return }
     if(b.hasAttribute('data-show')){ var sw=b.getAttribute('data-show'); hub.hidden=hub.hidden.filter(function(x){ return x!==sw }); applyHub(); hubSave(); return }
     if(w && (b.classList.contains('hb-fold') || b.classList.contains('hb-more'))){
       hub.shut[w]=b.classList.contains('hb-more') ? false : !hub.shut[w]; applyHub(); hubSave(); return;
@@ -2554,7 +2586,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       var z=resizing, x=winfo(z.w), nw=z.w0+(e.clientX-z.x0);
       if(z.cols>1){
         var eff=Math.max(1, Math.min(z.cols, Math.round((nw+z.gap)/(z.colw+z.gap))));
-        hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // never narrower than a quarter: a one-column TV was 120px
+        hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // never narrower than a sixth (Hector 2026-09-16: the smallest tile he asked for)
         hub.col[z.w]=Math.min(hub.col[z.w]||1, 13-hub.span[z.w]);
       }
       hub.h[z.w]=Math.round(Math.max(x.minH, Math.min(MAX_H, z.h0+(e.clientY-z.y0))));
@@ -2734,7 +2766,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
   // for the test harness only: read state without touching the DOM contract
   window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
-    issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList } };
+    issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
+    get hub(){ return hub }, applyHub:applyHub, hubTidy:hubTidy };
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's own Fullscreen API, and while it is on
      the page drops its frame too (body.full) so the hub gets the whole screen. Safari fires webkitfullscreenchange. */
   function fullOn(){ return !!(document.fullscreenElement || document.webkitFullscreenElement) }

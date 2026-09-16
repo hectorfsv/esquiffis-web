@@ -34,7 +34,7 @@
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
   // a layout saved on the device, with junk in it: a duplicate, unknown names, a bad size
-  if(mode==='arrange') localStorage.setItem('esq_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'},
+  if(mode==='arrange') localStorage.setItem('esq_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'}, span:{weather:2, inbox:1}, density:'dense',
     hidden:['dodgers','nope'], shut:{inbox:false, bogus:true}}));
   var REPLY='Here is <b>bold</b> and <i>italic</i>, a link https://docs.x.ai/x and <a href="https://example.com/a">a tagged one</a>.\n• one\n• two<script>window.__pwned=1<\/script><img src=x onerror="window.__pwned=2"> <a href="javascript:alert(1)">bad link</a>';
   function ago(min){ return new Date(Date.now()-min*60000).toISOString() }
@@ -370,6 +370,51 @@
       T(true, 'iss: all checks ran');
     })();
   }
+  // Hector 2026-09-16: "i need to be able to modify the tiles the most i can, sizewise ... i need more space on the HUB. any chance than we can scale down?"
+  function densityOK(next){
+    var sw=$('hub-dense');
+    T(!!sw && sw.querySelectorAll('button').length===3, 'the tile-size switch is in the hub bar (Roomy / Compact / Dense)');
+    if(!WIDE || !sw) return next();
+    var on=sw.querySelector('[aria-pressed="true"]');
+    T(!!on && on.getAttribute('data-d')==='roomy' && $('hub').getAttribute('data-density')==='roomy', 'Roomy by default');
+    function tiles(){ return [].filter.call(document.querySelectorAll('#hub .hb[data-w]'), vis) }
+    function clipped(){ return tiles().filter(function(t){ return !t.classList.contains('shut') && t.scrollHeight>t.clientHeight+1 }).map(function(t){ return t.getAttribute('data-w') }) }
+    function bottom(){ return Math.max.apply(null, tiles().map(function(t){ return R(t).b })) }
+    function clashing(){ var parts=tiles(), c=''; parts.forEach(function(a,i){ parts.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) c=a.getAttribute('data-w')+'/'+b.getAttribute('data-w') }) }); return c }
+    // a fair baseline: tidy first, so the Roomy heights hold everything that landed since the unlock (the brief, the ISS passes)
+    window.__esq.hubTidy();
+    setTimeout(function(){
+    var pad0=parseFloat(getComputedStyle(tile('news')).paddingTop), fs0=parseFloat(getComputedStyle($('h-list').querySelector('.hl-t')).fontSize), b0=bottom(), c0=clipped();
+    T(c0.length===0 && !clashing(), 'roomy, tidied: no tile clips its content, none overlap ('+c0.join(',')+')');
+    sw.querySelector('[data-d="dense"]').click();
+    setTimeout(function(){
+      var pad1=parseFloat(getComputedStyle(tile('news')).paddingTop), fs1=parseFloat(getComputedStyle($('h-list').querySelector('.hl-t')).fontSize), b1=bottom(), c1=clipped(), saved=null;
+      try{ saved=JSON.parse(localStorage.getItem('esq_hub')||'{}') }catch(e){}
+      T($('hub').getAttribute('data-density')==='dense' && sw.querySelector('[data-d="dense"]').getAttribute('aria-pressed')==='true' && !!saved && saved.density==='dense', 'Dense: the hub is stamped dense, the chip lights, remembered on this device');
+      T(pad1<=pad0-5 && fs1<=fs0-1.5, 'Dense: tighter padding and smaller type ('+pad0+'->'+pad1+'px, '+fs0+'->'+fs1+'px)');
+      T(c1.length===0, 'Dense: every tile was re-measured, nothing clips ('+c1.join(',')+')');
+      T(b1<b0*0.92, 'Dense: the same tiles take less room, so more fits on the hub ('+Math.round(b0)+' -> '+Math.round(b1)+')');
+      T(!clashing(), 'Dense: no two tiles overlap ('+clashing()+')');
+      sw.querySelector('[data-d="roomy"]').click();
+      setTimeout(function(){
+        var pad2=parseFloat(getComputedStyle(tile('news')).paddingTop), c2=clipped();
+        T(pad2===pad0 && c2.length===0 && Math.abs(bottom()-b0)<=24, 'Roomy again: padding and heights back, nothing clips ('+Math.round(bottom())+' vs '+Math.round(b0)+')');
+        // Tidy: a gap he left under the last tile closes; widths and reading order stay
+        $('hub-arrange').click();
+        T(vis($('hub-tidy')), 'Tidy shows while arranging');
+        var hb=window.__esq.hub, last=hb.order.filter(function(w){ return vis(tile(w)) }).slice(-1)[0], top0=R(tile(last)).t, spans0=JSON.stringify(hb.span);
+        hb.row[last]=(hb.row[last]||0)+30; window.__esq.applyHub();
+        T(R(tile(last)).t>top0+250, 'the last tile ('+last+') pushed 300px down the grid ('+Math.round(R(tile(last)).t-top0)+')');
+        $('hub-tidy').click();
+        setTimeout(function(){
+          T(Math.abs(R(tile(last)).t-top0)<=2 && !clashing() && clipped().length===0 && JSON.stringify(hb.span)===spans0, 'Tidy: the gap closed, the tile is back where it was, widths kept, nothing overlaps ('+Math.round(R(tile(last)).t-top0)+')');
+          $('hub-arrange').click();
+          next();
+        }, 30);
+      }, 30);
+    }, 30);
+    }, 30);
+  }
   function hubOK(){
     // Hector 2026-09-16: "i want the map clean at first" - no event feed is read until its layer is switched on
     if(mode==='arrange') T(hubCalls.indexOf('quakes')>-1 && hubCalls.indexOf('gdacs')<0, 'the saved Quakes layer is read at login, the Disasters feed (off) is not');
@@ -588,11 +633,18 @@
     T(freeHub() ? (col('inbox')===Math.max(1, ibC0-1)) : (ord('inbox')<ord('weather') && ord('inbox')>ord('time')),
       freeHub() ? 'the arrow moves the inbox one column left ('+ibC0+' -> '+col('inbox')+')' : 'moving the inbox earlier passes the hidden Dodgers and lands before Weather');
     var sz=tile('map').querySelector('[data-act="size"]');
-    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u00BC', 'the width button cycles: full -> a quarter');
-    if(WIDE && innerWidth>=1900){ var hw=R($('hub')), mr=R(tile('map')); T(mr.r-mr.l<(hw.r-hw.l)/3, 'a small map takes one column ('+Math.round(mr.r-mr.l)+' of '+Math.round(hw.r-hw.l)+')'); }
-    sz.click(); T(tile('map').getAttribute('data-size')==='M' && sz.textContent==='\u00BD', 'a quarter -> half');
-    if(WIDE && innerWidth>=1900){ var hw2=R($('hub')), mr2=R(tile('map')); T(mr2.r-mr2.l>(hw2.r-hw2.l)/3 && mr2.r-mr2.l<(hw2.r-hw2.l)*.7, 'a medium map takes two columns'); }
-    sz.click(); T(tile('map').getAttribute('data-size')==='L' && sz.textContent==='\u00BE', 'half -> three quarters');
+    // Hector 2026-09-16: "i need to be able to get smaller tiles" - the width button cycles a sixth, a quarter, a third, half, two thirds, three quarters, full
+    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u2159', 'the width button cycles: full -> a sixth, the new floor');
+    if(WIDE && innerWidth>=1900){ var hw=R($('hub')), mr=R(tile('map')); T(mr.r-mr.l<(hw.r-hw.l)/5, 'a sixth-wide map is a small tile ('+Math.round(mr.r-mr.l)+' of '+Math.round(hw.r-hw.l)+')'); }
+    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u00BC', 'a sixth -> a quarter');
+    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u2153', 'a quarter -> a third');
+    sz.click(); T(tile('map').getAttribute('data-size')==='M' && sz.textContent==='\u00BD', 'a third -> half');
+    if(WIDE && innerWidth>=1900){ var hw2=R($('hub')), mr2=R(tile('map')); T(mr2.r-mr2.l>(hw2.r-hw2.l)/3 && mr2.r-mr2.l<(hw2.r-hw2.l)*.7, 'a half-wide map takes two columns'); }
+    sz.click(); T(tile('map').getAttribute('data-size')==='M' && sz.textContent==='\u2154', 'half -> two thirds');
+    sz.click(); T(tile('map').getAttribute('data-size')==='L' && sz.textContent==='\u00BE', 'two thirds -> three quarters');
+    // the saved sixth came back; the saved twelfth (below the floor) fell back to the default quarter; the saved Dense came back
+    if(WIDE && innerWidth>=1900){ var hw3=R($('hub')), wr=R(tile('weather')), ir=R(tile('inbox')); T(wr.r-wr.l<(hw3.r-hw3.l)/5 && ir.r-ir.l>(hw3.r-hw3.l)/5, 'a saved sixth-wide Weather comes back; a saved twelfth is refused and the inbox keeps its quarter ('+Math.round(wr.r-wr.l)+' / '+Math.round(ir.r-ir.l)+')'); }
+    T(tile('weather').getAttribute('data-size')==='S' && $('hub').getAttribute('data-density')==='dense' && !!$('hub-dense').querySelector('[data-d="dense"][aria-pressed="true"]'), 'saved Dense comes back with the layout');
     tile('weather').querySelector('[data-act="hide"]').click();
     var wb=[].filter.call($('hub-add').querySelectorAll('button'), function(b){ return /Weather/.test(b.textContent) })[0];
     T(!vis(tile('weather')) && !!wb, 'hide takes Weather off and keeps it under Arrange');
@@ -666,7 +718,7 @@
       T((r1.r-r1.l)<(r0.r-r0.l)*.75 && Math.abs((r1.b-r1.t)-((r0.b-r0.t)+120))<=3 && !tvT.classList.contains('resizing'),
         'dragging the corner makes the TV narrower and taller ('+Math.round(r0.r-r0.l)+'x'+Math.round(r0.b-r0.t)+' -> '+Math.round(r1.r-r1.l)+'x'+Math.round(r1.b-r1.t)+')');
       T(ts.b<=r1.b+1 && ts.b-ts.t>150, 'the player grows to fill the taller window ('+Math.round(ts.b-ts.t)+'px)');
-      T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/4-16, 'but never narrower than a quarter of the hub ('+Math.round(r1.r-r1.l)+'px)');
+      T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/6-16 && (r1.r-r1.l)<(R($('hub')).r-R($('hub')).l)/4, 'but never narrower than a sixth of the hub, the new floor (Hector 2026-09-16) ('+Math.round(r1.r-r1.l)+'px)');
       var sv2=JSON.parse(localStorage.getItem('esq_hub')||'{}');
       T(!!sv2.h && Math.abs(sv2.h.tv-(r1.b-r1.t))<=1 && typeof sv2.span.tv==='number' && sv2.span.tv<6, 'the free size is remembered ('+JSON.stringify(sv2.h)+', width '+(sv2.span&&sv2.span.tv)+'/12)');
       rz.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}));
@@ -1142,7 +1194,7 @@
           T(calls.length===n2+1 && calls[n2].a==='chat' && /Masterbuilt/.test(calls[n2].msg||'') && /order shipped/.test(calls[n2].msg||''), 'Ask on a message hands it to Esquiffis ('+(calls[n2]&&calls[n2].msg)+')');
           var n3=calls.length; $('ib-refresh').click();
           T(calls.length===n3+1 && calls[n3].a==='login', 'the inbox Refresh is the same single login call');
-          setTimeout(done, 300);
+          setTimeout(function(){ densityOK(done) }, 300);
         }, 300);
       }, 250);
       return;
