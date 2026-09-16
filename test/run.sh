@@ -22,7 +22,7 @@ if [ "$WHAT" = all ] || [ "$WHAT" = chat ]; then
   echo "CHAT  (9 modes x 4 viewports)"
   for m in ok badpw expired persist guard hub hubfail arrange timeout; do
     for v in "393 700" "393 852" "852 393" "2026 1037"; do set -- $v
-      budget=8000; [ "$m" = timeout ] && budget=140000; [ "$m" = hub ] && budget=24000   # hub: VaderClawd's climb and drop take real (virtual) seconds
+      budget=8000; [ "$m" = timeout ] && budget=140000; [ "$m" = hub ] && budget=30000   # hub: VaderClawd's climb and drop take real (virtual) seconds
       R=$(title "$1" "$2" "file://$B/c.html?t=$m" $budget)
       p=$(printf '%s' "$R" | grep -o PASS | wc -l | tr -d ' '); f=$(printf '%s' "$R" | grep -o FAIL | wc -l | tr -d ' ')
       PASS=$((PASS+p)); FAIL=$((FAIL+f))

@@ -26,7 +26,8 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams'); localStorage.removeItem('esq_map'); localStorage.removeItem('esq_scores'); localStorage.removeItem('esq_grab') }catch(e){}
+  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams'); localStorage.removeItem('esq_map'); localStorage.removeItem('esq_scores'); localStorage.removeItem('esq_pet') }catch(e){}
+  if(mode==='hub') window.PET_FIGHT='always';   // the swarm comes the moment he lands on a widget edge (the fight is checked in edgesOK)
   // a map setting saved on the device, with junk in it: the retired 3D/Globe views, an unknown layer, a layer that is not exactly true; a saved league
   if(mode==='arrange'){ localStorage.setItem('esq_map', JSON.stringify({base:'sat', view:{'3d':true, globe:true, bogus:true}, lay:{radar:true, quakes:true, bogus:true, alerts:'yes'}})); localStorage.setItem('esq_scores', 'mx') }
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
@@ -310,6 +311,7 @@
       T(!bad, tag+': every spot he settles on is on the hub side, clear of the chat'+(bad?' ('+bad+')':''));
       var h=window.PET_HOME(W,S2)+p.l;
       T(h+body<=tk.l+1 && h>=sd.l+(sd.r-sd.l)*.5, tag+': home is on the right of the hub side, short of the chat ('+Math.round(h)+' of '+Math.round(tk.l)+')');
+      T(!!s && (s.x+body<=tk.l-p.l+1 || s.mode==='held'), tag+': he is on the hub side, not over the chat (x '+(s&&Math.round(s.x))+', '+(s&&s.mode)+')');   // he enters from the left now
     } else {
       T(st.parentNode===$('dock') && Math.abs(p.b-c.t)<=1, tag+': he stands just above the chat box, inside the card');
       spotsOK(tag, []);
@@ -319,6 +321,8 @@
     // Hector 2026-09-16: "i want the map clean at first" - no event feed is read until its layer is switched on
     if(mode==='arrange') T(hubCalls.indexOf('quakes')>-1 && hubCalls.indexOf('gdacs')<0, 'the saved Quakes layer is read at login, the Disasters feed (off) is not');
     else T(hubCalls.indexOf('quakes')<0 && hubCalls.indexOf('gdacs')<0, 'the map starts clean: no quake or disaster feed at login');
+    // Hector 2026-09-16: "the button clear screen should be inside the chat only"
+    T(!!$('clear').closest('.talk') && !$('clear').closest('.head') && vis($('clear')) && R($('clear')).t>=R($('scr-chat')).t-1, 'Clear screen lives inside the conversation column, not the header');
     // Hector 2026-09-16: "switch to military time"
     T(!$('now').hidden && /^\d\d:\d\d$/.test($('now-time').textContent) && $('now-time').textContent===window.__esq.clockText(new Date()) && !/[AP]M/.test($('now-time').textContent),
       'the header shows the time, 24-hour ('+$('now-time').textContent+')');
@@ -720,34 +724,43 @@
     b.click(); T(asked.join()==='in', 'full: it asks the browser for full screen');
     fake=de; document.dispatchEvent(new Event('fullscreenchange'));
     var fr=getComputedStyle(document.querySelector('.frame'));
-    T(document.body.classList.contains('full') && b.getAttribute('aria-pressed')==='true' && b.getAttribute('aria-label')==='Exit full screen' && !vis(fin) && vis(fout) && b.textContent.trim()==='' && fr.paddingTop==='0px' && fr.paddingLeft==='0px' && !vis(document.querySelector('.brk.tr')) && getComputedStyle(document.querySelector('.panel')).clipPath==='none',
-      'full: in full screen the corners turn inward and the page drops its own frame - no padding, brackets or notch - so the hub gets every pixel');
+    T(document.body.classList.contains('full') && b.getAttribute('aria-pressed')==='true' && b.getAttribute('aria-label')==='Exit full screen' && !vis(fin) && vis(fout) && b.textContent.trim()==='' && fr.paddingTop==='0px' && fr.paddingLeft==='0px' && vis(document.querySelector('.brk.tr')) && vis(document.querySelector('.rail')) && getComputedStyle(document.querySelector('.panel')).clipPath!=='none' && getComputedStyle(document.querySelector('.panel')).borderTopWidth==='0px',
+      'full: in full screen the corners turn inward and the page drops its padding, border and shadow but keeps the tape rail, the notch and the brackets (Hector: "squeeze it in there")');
     b.click(); T(asked.join()==='in,out', 'full: pressed again it asks to leave');
     fake=null; document.dispatchEvent(new Event('fullscreenchange'));
     T(!document.body.classList.contains('full') && b.getAttribute('aria-label')==='Full screen' && vis(fin) && !vis(fout) && getComputedStyle(document.querySelector('.frame')).paddingTop!=='0px', 'full: and the frame comes back');
   }
-  // the switch that lets him pick VaderClawd up (Hector 2026-09-15: "grabbed and moved around, maybe a switch")
+  // VaderClawd can always be grabbed (Hector 2026-09-16: "grabbed always"); the hub bar switch is HIM, on or off
   function grabOK(){
-    var b=$('hub-grab'); if(!b || !window.__esq || !('petBox' in window.__esq)){ T(false, 'grab: the switch exists'); return }
-    T(b.getAttribute('aria-pressed')==='false' && /Grab VaderClawd/.test(b.textContent) && !document.body.classList.contains('petgrab'), 'grab: off by default');
+    var b=$('hub-pet'); if(!b || $('hub-grab') || !window.__esq || !('petBox' in window.__esq)){ T(false, 'pet: the On/Off switch exists and the grab switch is gone'); return }
+    T(b.getAttribute('aria-pressed')==='true' && /VaderClawd: On/.test(b.textContent) && !$('vc-stage').hidden && window.pet.state().paused===false, 'pet: on by default, and the button says so ('+b.textContent+')');
     var box=window.__esq.petBox, cv=$('vc-stage') && $('vc-stage').querySelector('canvas');
     if(!box || !cv){ T(false, 'grab: he reports where he is (box '+JSON.stringify(box)+')'); return }
     var r=cv.getBoundingClientRect(), cx=r.left+box.x+box.w/2, cy=r.top+box.y+box.h/2;
     function pev(type, x, y){ var e=new PointerEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, pointerId:7, isPrimary:true, pointerType:'mouse', button:0}); (document.elementFromPoint(x,y)||document.body).dispatchEvent(e); return e }
-    var e0=pev('pointerdown', cx, cy);
-    T(!e0.defaultPrevented && window.pet.state().mode!=='held' && !window.__esq.carrying, 'grab: with the switch off a press on him does nothing');
-    pev('pointerup', cx, cy);
-    b.click(); T(b.getAttribute('aria-pressed')==='true' && /on/.test(b.textContent) && localStorage.getItem('esq_grab')==='1' && document.body.classList.contains('petgrab'), 'grab: the switch turns on and is remembered');
     var e1=pev('pointerdown', cx, cy), st=window.pet.state();
-    T(e1.defaultPrevented && st.mode==='held' && window.__esq.carrying && document.body.classList.contains('carrying'), 'grab: a press on him picks him up ('+st.mode+')');
+    T(e1.defaultPrevented && st.mode==='held' && window.__esq.carrying && document.body.classList.contains('carrying'), 'grab: a press on him picks him up, no switch needed ('+st.mode+')');
     pev('pointermove', cx-160, cy-60); var st2=window.pet.state();
     T(st2.mode==='held' && Math.abs(st2.x-(box.x+box.w/2-160-18*st2.S))<6 && st2.lift>0, 'grab: he follows the pointer (x '+st2.x+', lift '+st2.lift+')');
     pev('pointermove', cx, cy-60); pev('pointerup', cx, cy-60); var st3=window.pet.state();
     T(st3.mode==='falling' && !window.__esq.carrying && !document.body.classList.contains('carrying'), 'grab: let go, he falls back to his floor ('+st3.mode+')');
     var tr=R(tile('time')), e2=pev('pointerdown', tr.l+20, tr.t+20);
     T(!e2.defaultPrevented && !window.__esq.carrying, 'grab: a press anywhere else is left alone'); pev('pointerup', tr.l+20, tr.t+20);
-    b.click(); T(b.getAttribute('aria-pressed')==='false' && localStorage.getItem('esq_grab')==='0', 'grab: and the switch turns off');
-    edgesOK(box, cv);
+    // the page's side of a drone blast (the engine's own fight is checked in edgesOK): the widget jolts and keeps a scorch
+    var wr=R(tile('weather')), n0=document.querySelectorAll('.hb-scorch').length;
+    window.PET_POST({type:'boom', x:wr.l+40-r.left, y:wr.t+10-r.top, on:'weather'});
+    var sc=tile('weather').querySelector('.hb-scorch');
+    T(tile('weather').classList.contains('hb-hit') && !!sc && parseFloat(sc.style.left)>=8 && parseFloat(sc.style.left)<=wr.r-wr.l-8 && parseFloat(sc.style.top)>=6 && document.querySelectorAll('.hb-scorch').length===n0+1,
+      'boom: a blast against a widget jolts it and leaves a scorch inside it ('+(sc && sc.style.left)+','+(sc && sc.style.top)+')');
+    window.PET_POST({type:'boom', x:10, y:10, on:'nope'}); T(document.querySelectorAll('.hb-scorch').length===n0+1, 'boom: an unknown widget is ignored');
+    // the switch: Off hides him and stops the engine, On brings him back
+    b.click(); var so=window.pet.state();
+    T(b.getAttribute('aria-pressed')==='false' && /VaderClawd: Off/.test(b.textContent) && $('vc-stage').hidden && !vis($('vc-stage')) && so.paused===true && localStorage.getItem('esq_pet')==='0' && !window.__esq.petBox,
+      'pet: Off hides his stage, pauses the engine (no frames) and is remembered');
+    var e3=pev('pointerdown', cx, cy); T(!e3.defaultPrevented && !window.__esq.carrying, 'pet: off, a press where he stood does nothing'); pev('pointerup', cx, cy);
+    b.click(); var sn=window.pet.state();
+    T(b.getAttribute('aria-pressed')==='true' && !$('vc-stage').hidden && sn.paused===false && localStorage.getItem('esq_pet')==='1' && $('vc-stage').parentNode===$('hub-floor'), 'pet: On brings him back on his floor');
+    setTimeout(function(){ edgesOK(box, cv) }, 200);   // he reports his box again a frame later
   }
   // the widget edges are his paths (Hector 2026-09-15: "all the edges of each individual window like a path for him")
   function edgesOK(box0, cv){
@@ -765,22 +778,31 @@
       T(st.perched===true && st.lift>20 && st.act==='climb' && zUp, 'edges: 6 s later he is up on a widget edge, drawn in front of it (lift '+st.lift+', '+st.act+')');
       var tiles=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis), on=tiles.filter(function(t){ var r=R(t), feetY=sr.bottom-st.lift*st.S, cx=sr.left+st.x+18*st.S; return Math.abs(r.t-feetY)<6 && cx>=r.l-8 && cx<=r.r+8 });
       T(on.length===1, 'edges: his feet are on a real widget\'s top edge'+(on[0] ? ' ('+on[0].getAttribute('data-w')+')' : ''));
-      pet.act('look'); var st2=pet.state();
-      T(st2.perched===false && !document.body.classList.contains('petfront'), 'edges: cut short, he is back on the floor (still in front: no petfront class needed any more)');
-      // carried over a widget and let go: he lands on its edge
-      var b=$('hub-grab'); b.click(); var box=window.__esq.petBox, r0=cv.getBoundingClientRect();
-      function pev(type, x, y){ var e=new PointerEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, pointerId:9, isPrimary:true, pointerType:'mouse', button:0}); (document.elementFromPoint(x,y)||document.body).dispatchEvent(e); return e }
+      var onW=on[0] ? on[0].getAttribute('data-w') : '';
+      // Hector 2026-09-16: "make him kill some drones or something when he is on top of windows ... damage some stuff": with
+      // PET_FIGHT='always' the swarm comes the moment he lands; 5 s on, a wreck has blown up against the widget he stands on
       setTimeout(function(){
-        box=window.__esq.petBox; if(!box){ T(false, 'edges: he reports where he is before the drop'); b.click(); return }
-        var tr=R(tile('time')), cx=r0.left+box.x+box.w/2, cy=r0.top+box.y+box.h/2;
-        pev('pointerdown', cx, cy); pev('pointermove', tr.l+60, tr.t-40); pev('pointerup', tr.l+60, tr.t-40);
+        var st5=pet.state(), minis=st5.drones.filter(function(d){ return d.kind==='mini' }), sc=onW ? tile(onW).querySelectorAll('.hb-scorch') : [];
+        T(st5.perched===true && st5.act==='climb' && (minis.length>0 || sc.length>0), 'fight: up on the edge a swarm came for him at his height ('+minis.length+' minis, '+sc.length+' scorch marks)');
+        T(minis.every(function(d){ return d.state==='fall' || d.lift>st5.lift-10 }), 'fight: the drones fly at his height, not down on the floor');
+        T(sc.length>=1 && sc[0].closest('.hb')===tile(onW), 'fight: a wreck blew up against the widget he stands on and scorched it ('+onW+', '+sc.length+')');
+        pet.act('look'); var st2=pet.state();
+        T(st2.perched===false && st2.drones.every(function(d){ return d.kind!=='mini' || d.state==='flee' || d.state==='fall' }), 'edges: cut short, he is back on the floor and the swarm scatters');
+        // carried over a widget and let go: he lands on its edge (no switch to turn on any more)
+        var r0=cv.getBoundingClientRect();
+        function pev(type, x, y){ var e=new PointerEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, pointerId:9, isPrimary:true, pointerType:'mouse', button:0}); (document.elementFromPoint(x,y)||document.body).dispatchEvent(e); return e }
         setTimeout(function(){
-          var st3=pet.state();
-          T(st3.perched===true && st3.act==='climb' && Math.abs((sr.bottom-st3.lift*st3.S)-tr.t)<3*st3.S, 'edges: dropped over the clock, he lands on its top edge (lift '+st3.lift+', '+st3.act+', feet within 2 sprite px)');
-          pet.act('look'); b.click();
-          T(true, 'edges: all checks ran');
-        }, 1500);
-      }, 300);
+          var box=window.__esq.petBox; if(!box){ T(false, 'edges: he reports where he is before the drop'); return }
+          var tr=R(tile('time')), cx=r0.left+box.x+box.w/2, cy=r0.top+box.y+box.h/2;
+          pev('pointerdown', cx, cy); pev('pointermove', tr.l+60, tr.t-40); pev('pointerup', tr.l+60, tr.t-40);
+          setTimeout(function(){
+            var st3=pet.state();
+            T(st3.perched===true && st3.act==='climb' && Math.abs((sr.bottom-st3.lift*st3.S)-tr.t)<3*st3.S, 'edges: dropped over the clock, he lands on its top edge (lift '+st3.lift+', '+st3.act+', feet within 2 sprite px)');
+            pet.act('look');
+            T(true, 'edges: all checks ran');
+          }, 1500);
+        }, 300);
+      }, 5000);
     }, 8000);
     }, 1500);
   }

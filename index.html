@@ -185,6 +185,9 @@ button{cursor:pointer}
 .m.note .body{color:var(--ink-dim);border-left:3px solid var(--ink-faint);padding:2px 0 2px 14px}
 
 .dock{position:relative;z-index:2;flex:none}
+/* Clear screen belongs to the conversation, not the header (Hector 2026-09-16: "inside the chat only") */
+.talk-bar{position:relative;z-index:1;flex:none;display:flex;justify-content:flex-end;padding:10px 18px 0}
+.chat.hubview .talk-bar{display:none}
 .composer{position:relative;z-index:1;flex:none;display:flex;gap:10px;align-items:flex-end;border-top:1px solid var(--rule);background:var(--panel-lo);
   padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
 .composer .in{flex:1;min-width:0;display:flex;background:rgba(0,0,0,.45);border:1px solid var(--rule)}
@@ -358,7 +361,13 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
    show while arranging. Folded widgets keep a short summary. */
 .hub-bar{order:0;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;padding:10px max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left))}
 .hub-add{display:flex;flex-wrap:wrap;gap:6px}
-#hub-grab[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
+#hub-pet[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
+/* a drone he cut down from a widget's edge blows up against it (Hector 2026-09-16): the tile jolts and keeps a scorch for a while */
+.hb-hit{animation:hbhit .5s ease-out}
+@keyframes hbhit{0%{transform:translate(0,0);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 60px rgba(255,90,31,.35)}15%{transform:translate(-3px,2px)}30%{transform:translate(3px,-2px)}45%{transform:translate(-2px,1px)}60%{transform:translate(2px,-1px);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 40px rgba(255,90,31,.18)}100%{transform:translate(0,0);box-shadow:none}}
+.hb-scorch{position:absolute;z-index:2;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(0,0,0,.9) 0 26%,rgba(70,24,12,.75) 42%,rgba(255,90,31,.25) 52%,transparent 70%);animation:scorch 16s linear forwards}
+@keyframes scorch{0%{opacity:1}55%{opacity:.85}100%{opacity:0}}
 body.carrying,body.carrying *{cursor:grabbing!important}
 body.carrying{user-select:none;-webkit-user-select:none}
 .hb{position:relative}
@@ -522,8 +531,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's chrome goes, and so does the page's own
      frame - no padding, rail, notch, brackets or shadow - so the hub gets every pixel */
   body.full .frame{padding:0;gap:0}
-  body.full .rail,body.full .brk{display:none}
-  body.full .panel{border:0;box-shadow:none;clip-path:none}
+  body.full .panel{border:0;box-shadow:none}   /* the tape rail, the notched corners and the brackets stay (Hector 2026-09-16: "squeeze it in there") */
   body.full .head{padding-top:6px;padding-bottom:6px}
   .name{font-size:18px}
   .model{display:inline}
@@ -637,7 +645,6 @@ body.carrying{user-select:none;-webkit-user-select:none}
           <span id="status" class="chip" aria-live="polite">Locked</span>
           <button id="full" class="gbtn gbtn-ico" type="button" aria-pressed="false" aria-label="Full screen" hidden title="Full screen: the hub on the whole screen, no browser chrome and no frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f-in" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"/><path class="f-out" d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M3 15h4a2 2 0 0 1 2 2v4M15 21v-4a2 2 0 0 1 2-2h4"/></svg></button>
           <button id="talk-fold" class="gbtn" type="button" aria-controls="scr-chat" aria-expanded="true" hidden>Chat</button>
-          <button id="clear" class="gbtn" type="button" hidden>Clear<span class="more"> screen</span></button>
         </div>
         <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
       </header>
@@ -662,7 +669,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
         <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
         <div class="side">
           <aside id="hub" class="hub" aria-label="Hub">
-            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-grab" class="hb-btn" type="button" aria-pressed="false" title="Pick VaderClawd up with the pointer and put him down somewhere else">Grab VaderClawd</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
+            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-pet" class="hb-btn" type="button" aria-pressed="true" title="Switch VaderClawd off">VaderClawd: On</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
             <section class="hb hb-time" data-w="time" aria-label="Clock">
               <div class="tm"><div id="h-time" class="h-time">--:--</div><div id="h-date" class="h-date"></div></div>
               <div id="sky" class="sky" hidden>
@@ -740,6 +747,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
         </div>
         <div class="talk">
           <div class="chat-art" aria-hidden="true"><img src="hero.webp" alt="" width="736" height="1408"></div>
+          <div class="talk-bar"><button id="clear" class="gbtn" type="button" hidden>Clear<span class="more"> screen</span></button></div>
           <main id="log" class="log">
             <div class="col" id="col">
               <div id="empty" class="empty">
@@ -817,7 +825,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
   }
   function placePet(){
     var st=$('vc-stage'), home=petHome();
-    if(st.parentNode!==home){ home.appendChild(st); try{ window.pet.restart() }catch(e){} }   // a new floor: he walks in from the right
+    st.hidden=!petOn; try{ window.pet.pause(!petOn) }catch(e){}   // switched off: no stage, no frames
+    if(!petOn) return;
+    if(st.parentNode!==home){ home.appendChild(st); try{ window.pet.restart() }catch(e){} }   // a new floor: he walks in from the left (the hub side)
     // on the hub side the widget edges are his ledges (Hector 2026-09-15); anywhere else there are none
     try{ window.pet.options({night:false, bubbles:true, march:false, sign:false, climb:home===$('hub-floor'), perchMin:20}) }catch(e){}
     feedPlatforms();
@@ -830,7 +840,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
   function feedPlatforms(){
     if(!window.pet || !window.pet.platforms) return;
     var st=$('vc-stage'), list=[];
-    if(st && st.parentNode===$('hub-floor') && hubOn){
+    if(st && !st.hidden && st.parentNode===$('hub-floor') && hubOn){
       var sr=st.getBoundingClientRect();
       [].forEach.call($('hub').querySelectorAll('.hb[data-w]'), function(t){
         if(t.hidden || t.classList.contains('off')) return;
@@ -2369,32 +2379,43 @@ body.carrying{user-select:none;-webkit-user-select:none}
     mapChipsPaint();
   });
   mapChipsPaint();
-  /* Hector 2026-09-15: "make vaderclawd able to be grabbed and moved around, maybe a switch to get it on or off".
-     The engine already knows how to be carried (the desktop pet is picked up the same way: grab, hold, drop) and it
-     reports his box through PET_POST. With the switch on, a press that lands on him lifts him, he follows the pointer
-     and falls to his floor where he is let go. Presses anywhere else are untouched. Off by default, remembered. */
-  var K_GRAB='esq_grab', grabOn=false, petBox=null, carrying=null;
-  try{ grabOn=localStorage.getItem(K_GRAB)==='1' }catch(e){}
+  /* Hector 2026-09-15/16: VaderClawd can ALWAYS be grabbed and moved (the engine's own grab, hold, drop; he reports his box
+     through PET_POST) - a press that lands on him lifts him, he follows the pointer and falls where he is let go; presses
+     anywhere else are untouched. The switch in the hub bar is HIM: VaderClawd on or off, remembered on this device. Off = his
+     stage hidden and the engine paused (no frames, no CPU). */
+  var K_PET='esq_pet', petOn=true, petBox=null, carrying=null;
+  try{ petOn=localStorage.getItem(K_PET)!=='0' }catch(e){}
   window.PET_POST=function(o){
     if(!o) return;
-    if(o.type==='hit') petBox=o.w ? o : null;   // (his climbs also arrive here; he is drawn in front of everything now, so nothing to do)
+    if(o.type==='hit') petBox=o.w ? o : null;
+    else if(o.type==='boom') petBoom(o);   // a drone he cut down blew up against a widget (Hector 2026-09-16: "damage some stuff")
   };
+  // the blast lands on the widget he is standing on: a jolt, and a scorch mark where it hit, fading over 16 s
+  function petBoom(o){
+    var t=o.on ? tile(String(o.on)) : null, cv=petCanvas(); if(!t || t.hidden || !cv || !num(o.x) || !num(o.y)) return;
+    var r=t.getBoundingClientRect(), cr=cv.getBoundingClientRect(), x=cr.left+o.x-r.left, y=cr.top+o.y-r.top;
+    var m=document.createElement('i'); m.className='hb-scorch';
+    m.style.left=Math.round(Math.max(8, Math.min(r.width-8, x)))+'px'; m.style.top=Math.round(Math.max(6, Math.min(r.height-8, y)))+'px';
+    t.appendChild(m); setTimeout(function(){ if(m.parentNode) m.parentNode.removeChild(m) }, 16500);
+    t.classList.remove('hb-hit'); void t.offsetWidth; t.classList.add('hb-hit');
+    setTimeout(function(){ t.classList.remove('hb-hit') }, 700);
+  }
   $('hub').addEventListener('scroll', schedPlatforms, {passive:true});
   window.addEventListener('resize', schedPlatforms);
   function petCanvas(){ var st=$('vc-stage'); return st ? st.querySelector('canvas') : null }
   function petHitAt(cx, cy){   // the point on his canvas if this client point is on him, else null
-    var cv=petCanvas(); if(!cv || !petBox || !grabOn) return null;
+    var cv=petCanvas(); if(!cv || !petBox || !petOn) return null;
     var r=cv.getBoundingClientRect(), x=cx-r.left, y=cy-r.top;
     return (x>=petBox.x-6 && x<=petBox.x+petBox.w+6 && y>=petBox.y-8 && y<=petBox.y+petBox.h+6) ? {x:x, y:y} : null;
   }
-  function grabPaint(){ var b=$('hub-grab'); b.setAttribute('aria-pressed', grabOn ? 'true' : 'false'); b.textContent=grabOn ? 'Grab: on' : 'Grab VaderClawd'; document.body.classList.toggle('petgrab', grabOn) }
+  function petPaint(){ var b=$('hub-pet'); b.setAttribute('aria-pressed', petOn ? 'true' : 'false'); b.textContent='VaderClawd: '+(petOn ? 'On' : 'Off'); b.title=petOn ? 'Switch VaderClawd off' : 'Switch VaderClawd on'; if(!petOn){ petLetGo(); petBox=null } placePet() }
   function petLetGo(e){
     if(!carrying || (e && e.pointerId!==undefined && e.pointerId!==carrying.id)) return;
     carrying=null; document.body.classList.remove('carrying'); try{ window.pet.drop() }catch(err){}
   }
-  $('hub-grab').addEventListener('click', function(){ grabOn=!grabOn; if(!grabOn) petLetGo(); try{ localStorage.setItem(K_GRAB, grabOn ? '1' : '0') }catch(e){} grabPaint() });
+  $('hub-pet').addEventListener('click', function(){ petOn=!petOn; try{ localStorage.setItem(K_PET, petOn ? '1' : '0') }catch(e){} petPaint() });
   document.addEventListener('pointerdown', function(e){
-    if(!grabOn || carrying || e.isPrimary===false) return;
+    if(!petOn || carrying || e.isPrimary===false) return;
     var h=petHitAt(e.clientX, e.clientY); if(!h || !window.pet || !window.pet.grab) return;
     e.preventDefault(); e.stopPropagation();
     carrying={id:e.pointerId}; document.body.classList.add('carrying');
@@ -2407,9 +2428,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
   }, true);
   document.addEventListener('pointerup', petLetGo, true); document.addEventListener('pointercancel', petLetGo, true);
   // a finger on him must carry him, not scroll the hub
-  document.addEventListener('touchstart', function(e){ if(grabOn && e.touches.length===1 && petHitAt(e.touches[0].clientX, e.touches[0].clientY)) e.preventDefault() }, {passive:false, capture:true});
+  document.addEventListener('touchstart', function(e){ if(petOn && e.touches.length===1 && petHitAt(e.touches[0].clientX, e.touches[0].clientY)) e.preventDefault() }, {passive:false, capture:true});
   document.addEventListener('touchmove', function(e){ if(carrying) e.preventDefault() }, {passive:false, capture:true});
-  grabPaint();
+  petPaint();
   /* iOS Safari shrinks the VISUAL viewport for the keyboard and leaves the layout
      viewport alone, so a 100dvh column would sit under the keys. Size the app to
      what is actually visible and pin it to the top of it. Nothing is fixed. */
@@ -3501,7 +3522,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
 
   /* ---------- roaming: his normal life ---------- */
   function sceneRoam(){
-    var sp=spd(),V=new Actor('vader',W+10*S,-1),t=0,mode='walk',timer=0,act=null,actName='',goneT=0;
+    var sp=spd(),V=new Actor('vader',-44*S,1),t=0,mode='walk',timer=0,act=null,actName='',goneT=0;
     // Hector 2026-09-14 (after v0.6): mostly just hanging out, one random animation every 30-60 s
     var nextAnim=9+Math.random()*8,benchKind='',benchT=0,standT=0;
     V.signK=0; V.signTo=0;
@@ -3737,15 +3758,35 @@ body.carrying{user-select:none;-webkit-user-select:none}
         wait(.7), run(function(){V.bladeTo=0}), wait(.5)
       ]);
     }
-    function swat(m){
-      var fx=0,fl=0,d=1;
+    // base: rows above the floor he is standing at (0 on the floor, his lift on a window edge); on: the window's id, so the
+    // shell can mark where the wreck blew up (Hector 2026-09-16: "IF he can damage some stuff sometimes it's cool")
+    function swat(m,base,on){
+      var fx=0,fl=0,d=1; base=base||0;
       return [
         run(function(){ d=mid(m,11)>=V.x+18*S?1:-1; V.dir=d; V.deg=125; m.state='dive'; fx=m.x; fl=m.lift; snd.beep(); }),
-        during(.4,function(k){ var e=ease(k),tx=V.x+(d>0?40:-15)*S; m.x=fx+(tx-fx)*e; m.lift=fl+(20-fl)*e; m.dir=-d; }),
+        during(.4,function(k){ var e=ease(k),tx=V.x+(d>0?40:-15)*S; m.x=fx+(tx-fx)*e; m.lift=fl+(base+20-fl)*e; m.dir=-d; }),
         during(.1,function(k){ V.deg=Math.round(125-135*k); }),        // ends level: a swat, not a stab into the floor
-        run(function(){ var h=droneCenter(m); burst(h[0],h[1],14,['#ffffff','#ffd35a','#ff3b30'],160); flash=.07; m.state='fall'; m.vx=d*22; m.vy=-45; }),
+        run(function(){ var h=droneCenter(m); burst(h[0],h[1],14,['#ffffff','#ffd35a','#ff3b30'],160); flash=.07; m.state='fall'; m.vx=d*22; m.vy=-45;
+          if(on) post({type:'boom',x:h[0]/dpr,y:h[1]/dpr,on:on}); }),
         wait(.28), run(function(){ V.deg=90; })
       ];
+    }
+    // up on a window's edge, a swarm comes for him at that height and he cuts it down; the wrecks fall past the window.
+    // Once per perch, about half the time (window.PET_FIGHT='always' in a harness, 'never' to switch it off).
+    function perchFight(on){
+      var ms=[],base=V.lift;
+      return seq([
+        run(function(){
+          base=V.lift;
+          for(var i=0;i<3;i++){ var fl=i%2===0,m=Drone('mini',fl?-(20+i*30)*S:W+(10+i*30)*S,base+30,fl?1:-1,0);
+            m.state='orbit'; m.orbit={a:i*2.094,w:(i%2?-1:1)*(2.2+Math.random()*.8),r:34+i*6,l:base+28+i*2,dl:6,cx:function(){return V.x+18*S}};
+            ms.push(m); }
+          say('swarm',null,2.4); V.emote=.7; }),
+        wait(.5), run(function(){ V.bladeTo=1; }), wait(1.4),
+        lazy(function(){ var sub=[]; ms.forEach(function(m){ sub=sub.concat(swat(m,V.lift,on)); }); return seq(sub); }),
+        wait(.4), during(.6,function(k){V.deg=90-720*ease(k)}), run(function(){V.deg=90; flash=.1;}),
+        wait(.7), run(function(){V.bladeTo=0}), wait(.5)
+      ]);
     }
     // TIE fighters scream over: he turns to watch and salutes with his saber
     function flyover(){
@@ -3840,11 +3881,13 @@ body.carrying{user-select:none;-webkit-user-select:none}
     // climb a window: ask the app for the whole screen and where the windows are,
     // Force-leap onto a top edge, stroll along it, ride it if it moves, fall if it goes
     function climb(startPlat){
-      var phase=startPlat?'perched':'ask',tt=0,plat=startPlat||null,airT=1;
+      var phase=startPlat?'perched':'ask',tt=0,plat=startPlat||null,airT=1,fight=null,fought=false,fightMode=window.PET_FIGHT||'random',
+          wantFight=fightMode==='always'||(fightMode!=='never'&&Math.random()<.5);   // decided once per perch, so he does not stroll off first
       climbWanted=true; post({type:'climb',want:true});
       if(startPlat){ V.perched=true; V.vy=0; V.lift=(FLOOR/dpr-startPlat.y)/S; V.target=V.x; V.squash=.2; }   // set down on an edge: carried there and let go
       function note(m){ post({type:'debug',key:'climb',msg:m}); }   // readable later: defaults read com.hectorfsv.vaderclawd debug_climb
       function finish(){ V.perched=false; if(climbWanted){ climbWanted=false; post({type:'climb',want:false}); } }
+      function scatter(){ if(!fight) return; fight=null; extras.drones.forEach(function(d){ if(d.kind==='mini'&&d.state!=='fall'){ d.state='flee'; d.vx=0; if(!d.dir) d.dir=1; } }); }
       function liveOf(){ for(var i=0;i<platforms.length;i++) if(platforms[i].id===plat.id) return platforms[i]; return null; }
       function pick(){
         var best=null,bd=1e9,floorY=FLOOR/dpr;
@@ -3888,11 +3931,13 @@ body.carrying{user-select:none;-webkit-user-select:none}
           return false;
         }
         if(phase==='perched'||phase==='leaving'){
-          if(!live){ V.perched=false; phase='fall'; note('window '+plat.id+' is gone: falling'); return false; }
+          if(!live){ V.perched=false; phase='fall'; note('window '+plat.id+' is gone: falling'); scatter(); return false; }
           V.lift=(FLOOR/dpr-live.y)/S;                                             // the window moved: he rides it
           var c2=V.x+18*S;
-          if(c2<live.x1-4*S||c2>live.x2+4*S){ V.perched=false; phase='fall'; return false; }
+          if(c2<live.x1-4*S||c2>live.x2+4*S){ V.perched=false; phase='fall'; scatter(); return false; }
+          if(fight){ if(fight(dt)) fight=null; return false; }                    // busy with the swarm: he stays put
           if(phase==='perched'&&here(V)){
+            if(wantFight&&!fought&&W>=200*S){ if(tt>1){ fought=true; fight=perchFight(plat.id); } return false; }   // the swarm first, a second after landing
             if(tt>(opts.perchMin||10)+Math.random()*6){
               var off=(c2-live.x1<live.x2-c2)?live.x1-40*S:live.x2+4*S; V.dir=off>V.x?1:-1; walk(V,off,spd()*.8); phase='leaving';
             } else if(Math.random()<dt*.5){

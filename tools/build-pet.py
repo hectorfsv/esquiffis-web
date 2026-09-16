@@ -56,9 +56,9 @@ js = once(js, "    if(away||was==='roam') return play(pick());\n    play('roam')
               "    play('roam');   // WEB: never a show")
 js = once_re(js, r"      if\(Math\.random\(\)<\.3\)\{\s+// a full show: he walks off and it plays\n.*?mode='exit'; return; \}\n", "")
 
-# he walks in from the RIGHT and settles where the page says he can be seen (window.PET_HOME / PET_PICK):
+# he settles where the page says he can be seen (window.PET_HOME / PET_PICK). He used to walk in from the RIGHT; since
+# 2026-09-16 his stage's right edge is the conversation, so he keeps the pet's own left entry (the hub side):
 # outside the card on the right, free to cross behind it to the left (Hector 2026-09-14)
-js = once(js, "var sp=spd(),V=new Actor('vader',-44*S,1),t=0,mode='walk',", "var sp=spd(),V=new Actor('vader',W+10*S,-1),t=0,mode='walk',")
 js = once(js, "walk(V,W*(.15+Math.random()*.3),sp*(isNight()?.6:1));",
               "walk(V,(function(){ try{ var h=window.PET_HOME&&window.PET_HOME(W,S); if(isFinite(h)) return h; }catch(e){} return W*(.62+Math.random()*.22); })(),sp);")
 
