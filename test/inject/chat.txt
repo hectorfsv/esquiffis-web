@@ -34,7 +34,7 @@
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
   // a layout saved on the device, with junk in it: a duplicate, unknown names, a bad size
-  if(mode==='arrange') localStorage.setItem('esq_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'}, span:{weather:2, inbox:1}, density:'dense',
+  if(mode==='arrange') localStorage.setItem('esq_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'}, span:{weather:2, inbox:1}, density:'dense', h:{tv:900},
     hidden:['dodgers','nope'], shut:{inbox:false, bogus:true}}));
   var REPLY='Here is <b>bold</b> and <i>italic</i>, a link https://docs.x.ai/x and <a href="https://example.com/a">a tagged one</a>.\n• one\n• two<script>window.__pwned=1<\/script><img src=x onerror="window.__pwned=2"> <a href="javascript:alert(1)">bad link</a>';
   function ago(min){ return new Date(Date.now()-min*60000).toISOString() }
@@ -311,16 +311,9 @@
       T(st.parentNode===fl && Math.abs(p.b-sc.b)<=1 && Math.abs(p.l-sc.l)<=1 && Math.abs(p.r-sc.r)<=2 && p.r>tk.l+100, tag+': his stage is the whole hub window, the chat column included ('+Math.round(p.r-p.l)+' wide)');
       T(+flCs.zIndex>+hubCs.zIndex && +flCs.zIndex>+getComputedStyle(talk).zIndex && flCs.pointerEvents==='none' && flCs.position==='absolute',
         tag+': drawn on top of the widgets and the chat (z '+flCs.zIndex+' over '+hubCs.zIndex+' and '+getComputedStyle(talk).zIndex+'), every press passes through');
-      // Hector 2026-09-15: "i like his size but i dont want to risk that much screen. blend him in"
-      T(band>=40 && band<=80 && p.b-p.t>=150, tag+': blended in - he keeps his size ('+Math.round(p.b-p.t)+'px canvas) but the hub side reserves only '+Math.round(band)+'px');
-      T(hb.b<=sd.b-band+1, tag+': the widgets stop at his feet band ('+Math.round(hb.b)+' <= '+Math.round(sd.b-band)+')');
-      var petS=(window.pet && window.pet.state && window.pet.state().S) || 2.5;
-      T(parseFloat(hubCs.paddingBottom)>=Math.max(0, Math.round(26*petS)+12-band), tag+': the last widgets can scroll clear above his standing head ('+hubCs.paddingBottom+')');
-      var inTile='';
-      for(var x=sd.l+4; x<sd.r-4 && !inTile; x+=24){
-        [sd.b-band+4, sd.b-4].forEach(function(y){ var e=document.elementFromPoint(Math.round(x), Math.round(y)); if(e && e.closest && e.closest('.hb')) inTile=Math.round(x)+','+Math.round(y) });
-      }
-      T(!inTile, tag+': no widget in his feet band (the Dodgers tile bug)'+(inTile?' at '+inTile:''));
+      // Hector 2026-09-16: "the bottom section has a dead space ... the pet is on top of everything. get rid of that dead space"
+      T(band===0 && p.b-p.t>=150, tag+': no feet band any more - he keeps his size ('+Math.round(p.b-p.t)+'px canvas) and the hub side reserves nothing ('+Math.round(band)+'px)');
+      T(parseFloat(hubCs.paddingBottom)<=8 && Math.abs(hb.b-sd.b)<=1, tag+': nothing reserved under the last row: the hub runs to the bottom of its side ('+hubCs.paddingBottom+', '+Math.round(hb.b)+' vs '+Math.round(sd.b)+')');
       // he can be carried anywhere, but on his own he never settles in front of the conversation or its box
       var s=window.pet&&window.pet.state(), S2=(s&&s.S)||1, body=36*S2, W=p.r-p.l, bad='';
       for(var i=0;i<40 && !bad;i++){ var px=window.PET_PICK(W,S2,i%2?W-60:10)+p.l; if(px+body>tk.l+1) bad='in the chat at '+Math.round(px); if(px<p.l-1) bad='off the floor '+Math.round(px) }
@@ -370,51 +363,6 @@
       T(true, 'iss: all checks ran');
     })();
   }
-  // Hector 2026-09-16: "i need to be able to modify the tiles the most i can, sizewise ... i need more space on the HUB. any chance than we can scale down?"
-  function densityOK(next){
-    var sw=$('hub-dense');
-    T(!!sw && sw.querySelectorAll('button').length===3, 'the tile-size switch is in the hub bar (Roomy / Compact / Dense)');
-    if(!WIDE || !sw) return next();
-    var on=sw.querySelector('[aria-pressed="true"]');
-    T(!!on && on.getAttribute('data-d')==='roomy' && $('hub').getAttribute('data-density')==='roomy', 'Roomy by default');
-    function tiles(){ return [].filter.call(document.querySelectorAll('#hub .hb[data-w]'), vis) }
-    function clipped(){ return tiles().filter(function(t){ return !t.classList.contains('shut') && t.scrollHeight>t.clientHeight+1 }).map(function(t){ return t.getAttribute('data-w') }) }
-    function bottom(){ return Math.max.apply(null, tiles().map(function(t){ return R(t).b })) }
-    function clashing(){ var parts=tiles(), c=''; parts.forEach(function(a,i){ parts.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) c=a.getAttribute('data-w')+'/'+b.getAttribute('data-w') }) }); return c }
-    // a fair baseline: tidy first, so the Roomy heights hold everything that landed since the unlock (the brief, the ISS passes)
-    window.__esq.hubTidy();
-    setTimeout(function(){
-    var pad0=parseFloat(getComputedStyle(tile('news')).paddingTop), fs0=parseFloat(getComputedStyle($('h-list').querySelector('.hl-t')).fontSize), b0=bottom(), c0=clipped();
-    T(c0.length===0 && !clashing(), 'roomy, tidied: no tile clips its content, none overlap ('+c0.join(',')+')');
-    sw.querySelector('[data-d="dense"]').click();
-    setTimeout(function(){
-      var pad1=parseFloat(getComputedStyle(tile('news')).paddingTop), fs1=parseFloat(getComputedStyle($('h-list').querySelector('.hl-t')).fontSize), b1=bottom(), c1=clipped(), saved=null;
-      try{ saved=JSON.parse(localStorage.getItem('esq_hub')||'{}') }catch(e){}
-      T($('hub').getAttribute('data-density')==='dense' && sw.querySelector('[data-d="dense"]').getAttribute('aria-pressed')==='true' && !!saved && saved.density==='dense', 'Dense: the hub is stamped dense, the chip lights, remembered on this device');
-      T(pad1<=pad0-5 && fs1<=fs0-1.5, 'Dense: tighter padding and smaller type ('+pad0+'->'+pad1+'px, '+fs0+'->'+fs1+'px)');
-      T(c1.length===0, 'Dense: every tile was re-measured, nothing clips ('+c1.join(',')+')');
-      T(b1<b0*0.92, 'Dense: the same tiles take less room, so more fits on the hub ('+Math.round(b0)+' -> '+Math.round(b1)+')');
-      T(!clashing(), 'Dense: no two tiles overlap ('+clashing()+')');
-      sw.querySelector('[data-d="roomy"]').click();
-      setTimeout(function(){
-        var pad2=parseFloat(getComputedStyle(tile('news')).paddingTop), c2=clipped();
-        T(pad2===pad0 && c2.length===0 && Math.abs(bottom()-b0)<=24, 'Roomy again: padding and heights back, nothing clips ('+Math.round(bottom())+' vs '+Math.round(b0)+')');
-        // Tidy: a gap he left under the last tile closes; widths and reading order stay
-        $('hub-arrange').click();
-        T(vis($('hub-tidy')), 'Tidy shows while arranging');
-        var hb=window.__esq.hub, last=hb.order.filter(function(w){ return vis(tile(w)) }).slice(-1)[0], top0=R(tile(last)).t, spans0=JSON.stringify(hb.span);
-        hb.row[last]=(hb.row[last]||0)+30; window.__esq.applyHub();
-        T(R(tile(last)).t>top0+250, 'the last tile ('+last+') pushed 300px down the grid ('+Math.round(R(tile(last)).t-top0)+')');
-        $('hub-tidy').click();
-        setTimeout(function(){
-          T(Math.abs(R(tile(last)).t-top0)<=2 && !clashing() && clipped().length===0 && JSON.stringify(hb.span)===spans0, 'Tidy: the gap closed, the tile is back where it was, widths kept, nothing overlaps ('+Math.round(R(tile(last)).t-top0)+')');
-          $('hub-arrange').click();
-          next();
-        }, 30);
-      }, 30);
-    }, 30);
-    }, 30);
-  }
   function hubOK(){
     // Hector 2026-09-16: "i want the map clean at first" - no event feed is read until its layer is switched on
     if(mode==='arrange') T(hubCalls.indexOf('quakes')>-1 && hubCalls.indexOf('gdacs')<0, 'the saved Quakes layer is read at login, the Disasters feed (off) is not');
@@ -426,6 +374,16 @@
       'the header shows the time, 24-hour ('+$('now-time').textContent+')');
     if(WIDE){
       T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
+      // Hector 2026-09-16: "the top section has some dead space ... put those on the red tape, next to chat"
+      var hp=$('hub-pet'), ha=$('hub-arrange'), tf=$('talk-fold');
+      T(!!hp && !!ha && !!hp.closest('.head') && !!ha.closest('.head') && vis(hp) && vis(ha) && ha.nextElementSibling===null && hp.nextElementSibling===ha && $('head-tools').nextElementSibling===tf && R(ha).r<=R(tf).l && Math.abs(R(ha).t-R(tf).t)<=2,
+        'VaderClawd and Arrange sit on the red tape, right before Chat');
+      T(!vis($('hub').querySelector('.hub-bar')) && !$('hub-dense'), 'no bar at the top of the hub while not arranging, and no size switch');
+      var firstTop=Math.min.apply(null, [].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).map(function(t){ return R(t).t }));
+      T(firstTop-R($('hub')).t<=8, 'the first tiles start right at the top of the hub ('+Math.round(firstTop-R($('hub')).t)+'px)');
+      var stRow=$('st-stocks').querySelector('.mk-n');
+      T(getComputedStyle(tile('news')).paddingTop==='7px' && !!stRow && getComputedStyle(stRow).fontSize==='12.5px' && getComputedStyle($('st-h')).fontSize==='11px' && getComputedStyle($('hub')).columnGap==='6px',
+        'one look: dense padding and gaps, compact type, roomy headers (7px, 12.5px, 11px, gap 6px)');
       // Hector 2026-09-15: "the chat can be half that size, in the right corner of the whole window. and center the vader image to the chat"
       var sc=R($('scr-chat')), tk=R(document.querySelector('.talk')), sd=R(document.querySelector('.side')), want=Math.min(640, Math.max(400, .25*(sc.r-sc.l)));
       T(Math.abs((tk.r-tk.l)-want)<=2 && Math.abs(tk.r-sc.r)<=1, 'the conversation is the right quarter of the window ('+Math.round(tk.r-tk.l)+' of '+Math.round(sc.r-sc.l)+')');
@@ -455,6 +413,7 @@
       }
     } else {
       T(!vis(document.querySelector('.garg')), 'no Gargantua on a narrow screen');
+      T(!!$('hub-pet').closest('.hub-bar') && !!$('hub-arrange').closest('.hub-bar'), 'on a phone VaderClawd and Arrange stay in the hub\'s bar');
       T(!vis($('hub')), 'on a narrow screen the hub is folded away');
       $('now').click();
       T(vis($('hub')) && !vis($('log')) && $('now').getAttribute('aria-expanded')==='true', 'tapping the time opens the hub');
@@ -644,7 +603,7 @@
     sz.click(); T(tile('map').getAttribute('data-size')==='L' && sz.textContent==='\u00BE', 'two thirds -> three quarters');
     // the saved sixth came back; the saved twelfth (below the floor) fell back to the default quarter; the saved Dense came back
     if(WIDE && innerWidth>=1900){ var hw3=R($('hub')), wr=R(tile('weather')), ir=R(tile('inbox')); T(wr.r-wr.l<(hw3.r-hw3.l)/5 && ir.r-ir.l>(hw3.r-hw3.l)/5, 'a saved sixth-wide Weather comes back; a saved twelfth is refused and the inbox keeps its quarter ('+Math.round(wr.r-wr.l)+' / '+Math.round(ir.r-ir.l)+')'); }
-    T(tile('weather').getAttribute('data-size')==='S' && $('hub').getAttribute('data-density')==='dense' && !!$('hub-dense').querySelector('[data-d="dense"][aria-pressed="true"]'), 'saved Dense comes back with the layout');
+    T(tile('weather').getAttribute('data-size')==='S' && !$('hub-dense'), 'the size switch is gone (Hector 2026-09-16: "so many options"); a saved density is ignored');
     tile('weather').querySelector('[data-act="hide"]').click();
     var wb=[].filter.call($('hub-add').querySelectorAll('button'), function(b){ return /Weather/.test(b.textContent) })[0];
     T(!vis(tile('weather')) && !!wb, 'hide takes Weather off and keeps it under Arrange');
@@ -723,6 +682,21 @@
       T(!!sv2.h && Math.abs(sv2.h.tv-(r1.b-r1.t))<=1 && typeof sv2.span.tv==='number' && sv2.span.tv<6, 'the free size is remembered ('+JSON.stringify(sv2.h)+', width '+(sv2.span&&sv2.span.tv)+'/12)');
       rz.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}));
       T(!tvT.style.height && !tvT.classList.contains('sized'), 'double-clicking the handle fits the height to the content again');
+      // Hector 2026-09-16: "size down the widgets when are compacted, not only when they are open. i need to be able to fill up small spaces"
+      var nT=tile('news'); if(!nT.classList.contains('shut')) $('news-h').click();   // fold it (the checks above unfolded it)
+      var nh=nT.querySelector('.ht-resize'), n0=R(nT), hOpen=(JSON.parse(localStorage.getItem('esq_hub')||'{}').h||{}).news;
+      T(nT.classList.contains('shut') && vis(nh), 'a folded tile has its corner handle too');
+      nh.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round(n0.r-4), clientY:Math.round(n0.b-4), pointerId:4}));
+      document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(n0.r-4), clientY:Math.round(n0.b-4-60), pointerId:4}));
+      document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:4}));
+      var n1=R(nT), sv3=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+      T(n1.b-n1.t<=(n0.b-n0.t)-50 && !!sv3.hs && typeof sv3.hs.news==='number' && sv3.hs.news>=36 && (sv3.h||{}).news===hOpen,
+        'dragging a folded tile shorter takes it down, kept as its folded height, the open height untouched ('+Math.round(n0.b-n0.t)+' -> '+Math.round(n1.b-n1.t)+', open '+hOpen+')');
+      $('news-h').click(); var n2=R(nT);
+      T(!nT.classList.contains('shut') && n2.b-n2.t>=(n1.b-n1.t)+40, 'unfolded, it takes its open height again ('+Math.round(n2.b-n2.t)+')');
+      $('news-h').click();
+      T(nT.classList.contains('shut') && Math.abs((R(nT).b-R(nT).t)-(n1.b-n1.t))<=1, 'folded again, it is back to the short folded height');
+      $('news-h').click();   // leave it open, as the checks above left it
     }
     $('hub-reset').click();
     T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('markets') && ord('markets')<ord('cams') && ord('cams')<ord('news')
@@ -1194,7 +1168,7 @@
           T(calls.length===n2+1 && calls[n2].a==='chat' && /Masterbuilt/.test(calls[n2].msg||'') && /order shipped/.test(calls[n2].msg||''), 'Ask on a message hands it to Esquiffis ('+(calls[n2]&&calls[n2].msg)+')');
           var n3=calls.length; $('ib-refresh').click();
           T(calls.length===n3+1 && calls[n3].a==='login', 'the inbox Refresh is the same single login call');
-          setTimeout(function(){ densityOK(done) }, 300);
+          setTimeout(done, 300);
         }, 300);
       }, 250);
       return;

@@ -202,24 +202,17 @@ button{cursor:pointer}
 
 /* ---------- the hub: clock, weather, headlines, Dodgers ---------- */
 .hub{display:none;position:relative;z-index:1;flex-direction:column;min-height:0;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-/* tile size (Hector 2026-09-16: "i need more space on the HUB ... any chance we can scale down?"): Roomy is the look so far;
-   Compact and Dense tighten every tile's padding, the gaps between tiles and the type inside, then every tile is measured
-   again and packed up (hubTidy). tp/tpx tile padding, tg the gap, hm header and note margins, bp button padding,
-   fh header type, fx small mono, fxs captions, fsm small figures, fs body, fm medium, fl large, fl2 the game/sky lines. */
-.hub{--tp:14px;--tpx:16px;--tg:14px;--hm:10px;--bp:3px 9px;--fh:11px;--fx:11px;--fxs:10.5px;--fsm:12px;--fs:13px;--fm:14px;--fl:15px;--fl2:16px;--ftime:64px;--ftemp:60px;--rg:14px;--rgs:6px}
-.hub[data-density="compact"]{--tp:10px;--tpx:12px;--tg:10px;--hm:7px;--bp:2px 7px;--fh:10.5px;--fx:10.5px;--fxs:10px;--fsm:11.5px;--fs:12.5px;--fm:13px;--fl:14px;--fl2:15px;--ftime:52px;--ftemp:48px;--rg:9px;--rgs:4px}
-.hub[data-density="dense"]{--tp:7px;--tpx:9px;--tg:6px;--hm:5px;--bp:2px 6px;--fh:10px;--fx:10px;--fxs:9.5px;--fsm:11px;--fs:12px;--fm:12.5px;--fl:13px;--fl2:14px;--ftime:44px;--ftemp:40px;--rg:6px;--rgs:3px}
-.hub-dense{display:inline-flex;border:1px solid var(--rule)}
-.hub-dense button{min-width:28px;height:24px;padding:0 8px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);background:rgba(0,0,0,.3)}
-.hub-dense button+button{border-left:1px solid var(--rule)}
-.hub-dense button:hover{color:var(--ink)}
-.hub-dense button[aria-pressed="true"]{color:#fff;background:rgba(224,27,27,.3)}
+/* the tiles' one look (Hector 2026-09-16: "i want the tile headers in roomy, and the rest on dense, but the size of the font
+   from compact"): headers as they were, the tightest padding, gaps and margins, type one step down. tp/tpx tile padding,
+   tg the gap between tiles (mirrored in the grid maths as GAP), hhm the header's margin, hm every other margin, bp button
+   padding, fh header type, fx small mono, fxs captions, fsm small figures, fs body, fm medium, fl large, fl2 the game/sky lines. */
+.hub{--tp:7px;--tpx:9px;--tg:6px;--hhm:10px;--hm:5px;--bp:2px 7px;--fh:11px;--fx:10.5px;--fxs:10px;--fsm:11.5px;--fs:12.5px;--fm:13px;--fl:14px;--fl2:15px;--ftime:52px;--ftemp:48px;--rg:6px;--rgs:3px}
 .chat.hubview .hub{display:flex;flex:1;padding-bottom:calc(var(--petc) + 6px)}   /* he stands above the chat box: the last headline stays above him */
 .chat.hubview .log{display:none}
 .chat.hubview .talk{flex:none}
 .hb{padding:16px max(18px,env(safe-area-inset-left));border-bottom:1px solid var(--rule)}
 .hb-h{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:var(--fh);font-weight:600;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:var(--hm)}
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:var(--hhm)}
 .h-time{font-family:var(--word);font-size:var(--ftime);line-height:.88;letter-spacing:.02em;color:var(--ink);text-shadow:0 0 30px rgba(224,27,27,.25);font-variant-numeric:tabular-nums}
 .h-date{color:var(--ink-dim);font-size:var(--fm);margin-top:6px}
 /* the corner (Hector 2026-09-16: "to the right of the clock ... to the right of the weather"): beside the clock a sun
@@ -373,7 +366,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
    show while arranging. Folded widgets keep a short summary. */
 .hub-bar{order:0;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;padding:10px max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left))}
 .hub-add{display:flex;flex-wrap:wrap;gap:6px}
-#hub-pet[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
+#hub-pet[aria-pressed="true"],#hub-arrange[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
+.head-tools{display:contents}
 /* a drone he cut down from a widget's edge blows up against it (Hector 2026-09-16): the tile jolts and keeps a scorch for a while */
 .hb-hit{animation:hbhit .5s ease-out}
 @keyframes hbhit{0%{transform:translate(0,0);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 60px rgba(255,90,31,.35)}15%{transform:translate(-3px,2px)}30%{transform:translate(3px,-2px)}45%{transform:translate(-2px,1px)}60%{transform:translate(2px,-1px);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 40px rgba(255,90,31,.18)}100%{transform:translate(0,0);box-shadow:none}}
@@ -417,14 +411,12 @@ body.carrying{user-select:none;-webkit-user-select:none}
   background:linear-gradient(135deg,transparent 45%,var(--rule-hot) 45%,var(--rule-hot) 53%,transparent 53%,transparent 66%,var(--rule-hot) 66%,var(--rule-hot) 74%,transparent 74%)}
 .hub.arranging .ht-resize{display:block}
 @media (pointer:fine){ .hub .hb:hover>.ht-resize{display:block} }
-.hub .hb.shut>.ht-resize{display:none}
 .hb.resizing{outline:1px solid var(--red);outline-offset:-1px}
 .hub .hb.sized{display:flex;flex-direction:column;overflow:hidden}
 .hub .hb.sized>*{flex:none}
 .hub .hb-time.sized{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}   /* the clock tile stays a row: the sun arc to the right of the time */
 .hb-inbox.sized .ib-list,.hb-news.sized .h-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .hb-tv.sized .tv-screen,.hb-map.sized .map-box{flex:1 1 auto;aspect-ratio:auto;min-height:120px}
-.hub .hb.shut{height:auto!important}
 .hub .hb.sized.shut{display:block}
 /* the TV on air: its frame and the YouTube button light red (Hector) */
 .hb-tv.playing .tv-screen{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(224,27,27,.4)}
@@ -596,14 +588,15 @@ body.carrying{user-select:none;-webkit-user-select:none}
    floor - a box of its own, so no widget can ever stand where he walks. */
 @media (min-width:1100px){
   .chat{flex-direction:row}
-  .side{display:flex;flex-direction:column;position:relative;flex:1 1 auto;min-width:0;padding-bottom:var(--petband);border-right:1px solid var(--rule);container-type:inline-size}   /* the band at the bottom is VaderClawd's feet */
+  .side{display:flex;flex-direction:column;position:relative;flex:1 1 auto;min-width:0;padding-bottom:0;border-right:1px solid var(--rule);container-type:inline-size}   /* no feet band: he is drawn over everything (Hector 2026-09-16: "get rid of that dead space") */
   .garg{display:block;position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:#050304}
   .garg img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;opacity:.8}
   .garg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,3,4,.62) 0%,rgba(5,3,4,.2) 38%,rgba(5,3,4,.8) 100%)}
   .hub,.chat.hubview .hub{display:grid;grid-template-columns:minmax(0,1fr);grid-auto-flow:row dense;align-content:start;align-items:start;gap:var(--tg);flex:1 1 auto;min-height:0;
-    padding:var(--tg) var(--tg) calc(var(--pet) - var(--petband) + 12px);z-index:2}   /* over Gargantua; the last row scrolls clear above VaderClawd's head */
+    padding:var(--tg);z-index:2}   /* over Gargantua; nothing reserved under the last row */
   .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:var(--tp) var(--tpx)}
   .hub .hub-bar{padding:0}
+  .hub:not(.arranging) .hub-bar{display:none}   /* Hector 2026-09-16: no empty row at the top; the bar (hidden widgets, Tidy, Reset) only while arranging */
   /* Hector 2026-09-16: "make him and the animations always on top of everything even the chat". His stage is the whole
      chat screen - the hub side and the conversation - drawn over both (above the hub's z-index 2 and the chat's 1) and
      letting every press through. The widgets' top edges are still his ledges (Hector 2026-09-15); the hub side keeps a
@@ -667,6 +660,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
           <button id="now" class="now" type="button" aria-controls="hub" aria-expanded="false" hidden><span id="now-time">--:--</span><span id="now-temp" class="nt"></span></button>
           <span id="status" class="chip" aria-live="polite">Locked</span>
           <button id="full" class="gbtn gbtn-ico" type="button" aria-pressed="false" aria-label="Full screen" hidden title="Full screen: the hub on the whole screen, no browser chrome and no frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f-in" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"/><path class="f-out" d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M3 15h4a2 2 0 0 1 2 2v4M15 21v-4a2 2 0 0 1 2-2h4"/></svg></button>
+          <span id="head-tools" class="head-tools"><button id="hub-pet" class="gbtn" type="button" aria-pressed="true" title="Switch VaderClawd off" hidden>VaderClawd: On</button><button id="hub-arrange" class="gbtn" type="button" aria-pressed="false" hidden>Arrange</button></span>
           <button id="talk-fold" class="gbtn" type="button" aria-controls="scr-chat" aria-expanded="true" hidden>Chat</button>
         </div>
         <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
@@ -692,7 +686,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
         <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
         <div class="side">
           <aside id="hub" class="hub" aria-label="Hub">
-            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><span id="hub-dense" class="hub-dense" role="group" aria-label="Tile size" title="How much room every tile takes"><button type="button" data-d="roomy" aria-pressed="true">Roomy</button><button type="button" data-d="compact" aria-pressed="false">Compact</button><button type="button" data-d="dense" aria-pressed="false">Dense</button></span><button id="hub-tidy" class="hb-btn" type="button" hidden title="Close the gaps: every tile packs up in reading order, widths kept">Tidy</button><button id="hub-pet" class="hb-btn" type="button" aria-pressed="true" title="Switch VaderClawd off">VaderClawd: On</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
+            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-tidy" class="hb-btn" type="button" hidden title="Close the gaps: every tile packs up in reading order, widths kept">Tidy</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button></div>
             <section class="hb hb-time" data-w="time" aria-label="Clock">
               <div class="tm"><div id="h-time" class="h-time">--:--</div><div id="h-date" class="h-date"></div></div>
               <div id="sky" class="sky" hidden>
@@ -970,7 +964,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
-    pw=''; clearPw(); clearInbox(); tvStop(); camsStop(); setBusy(false);
+    pw=''; clearPw(); clearInbox(); tvStop(); camsStop(); setBusy(false); if(hub) placeTools();
     show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
   }
   function show(id){
@@ -1524,13 +1518,12 @@ body.carrying{user-select:none;-webkit-user-select:none}
   // widths are twelfths; the button cycles a sixth, a quarter, a third, half, two thirds, three quarters, full (Hector 2026-09-16: "the sports widget could be cut in half")
   var K_HUB='esq_hub', SPANS=[2,3,4,6,8,9,12], SPAN_WORD={2:'a sixth', 3:'a quarter', 4:'a third', 6:'half', 8:'two thirds', 9:'three quarters', 12:'the full width'},
       SPAN_GLYPH={2:'\u2159', 3:'\u00BC', 4:'\u2153', 6:'\u00BD', 8:'\u2154', 9:'\u00BE', 12:'1'},
-      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=2, MAX_H=1400, IB_SHUT=3, HL_SHUT=3,
-      DENSITIES=['roomy','compact','dense'], GAPS={roomy:14, compact:10, dense:6};   // the gap between tiles per size (the CSS --tg, mirrored for the grid maths)
+      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=2, MAX_H=1400, MIN_HS=36, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=2;   // GAP mirrors the CSS --tg for the grid maths; LOOK stamps a layout measured under the current look
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
   function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
   function wname(w){ var x=winfo(w); return x ? x.name : w }
   function hubDefault(){
-    var d={order:[], span:{}, h:{}, col:{}, row:{}, hidden:[], shut:{}, density:'roomy'};
+    var d={order:[], span:{}, h:{}, hs:{}, col:{}, row:{}, hidden:[], shut:{}, look:LOOK};
     WIDGETS.forEach(function(x){ d.order.push(x.w); d.span[x.w]=x.span; d.shut[x.w]=!!x.shut });
     return d;
   }
@@ -1549,7 +1542,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
         if(sv.row && typeof sv.row==='object') Object.keys(sv.row).forEach(function(w){ var n=sv.row[w]; if(winfo(w) && typeof n==='number' && n>=0 && n<=2000) d.row[w]=Math.round(n) });
         if(Array.isArray(sv.hidden)) d.hidden=sv.hidden.filter(function(w,i,a){ return !!winfo(w) && a.indexOf(w)===i });
         if(sv.shut && typeof sv.shut==='object') Object.keys(sv.shut).forEach(function(w){ if(winfo(w)) d.shut[w]=sv.shut[w]===true });
-        if(DENSITIES.indexOf(sv.density)>-1) d.density=sv.density;
+        if(sv.hs && typeof sv.hs==='object') Object.keys(sv.hs).forEach(function(w){ var n=sv.hs[w]; if(winfo(w) && typeof n==='number' && n>=MIN_HS && n<=MAX_H) d.hs[w]=Math.round(n) });   // a folded tile's own height
+        d.look=sv.look===LOOK ? LOOK : 0;   // measured under an older look: every height is measured again at unlock
       }
     }catch(e){}
     return d;
@@ -1562,6 +1556,11 @@ body.carrying{user-select:none;-webkit-user-select:none}
   function hubInit(){
     if(hubReady) return;
     hubReady=true; hub=hubLoad();
+    if(hub.look!==LOOK){   // the tiles changed shape since this layout was measured (round 21): keep his order and widths, measure the rest again
+      hub.look=LOOK; hub.order=visualOrder();
+      hub.order.forEach(function(w){ delete hub.h[w]; delete hub.hs[w]; delete hub.col[w]; delete hub.row[w] });
+    }
+    placeTools();
     WIDGETS.forEach(function(x){
       var t=tile(x.w); if(!t) return;
       var tools=document.createElement('div'); tools.className='hb-tools';
@@ -1576,7 +1575,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
     applyHub();
   }
   var ROWU=10, freezing=false;
-  function hubGap(){ return GAPS[(hub && hub.density) || 'roomy'] || 14 }
+  function hubGap(){ return GAP }
+  function tileH(w){ return hub.shut[w] ? hub.hs[w] : hub.h[w] }   // a tile has an open height and a folded one
   // what he arranged, read top-to-bottom then left-to-right: how a phone (one column) stacks the same hub
   function visualOrder(){
     return hub.order.slice().sort(function(a,b){
@@ -1592,7 +1592,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
     hub.order.forEach(function(w){
       var t=tile(w); if(!t || !shown(w)) return;
       var x=winfo(w)||{};
-      if(!hub.h[w]){ hub.h[w]=Math.max(x.minH||90, Math.round(t.getBoundingClientRect().height)||0); measured=true }
+      if(hub.shut[w]){ if(!hub.hs[w]){ hub.hs[w]=Math.max(MIN_HS, Math.round(t.getBoundingClientRect().height)||0); measured=true } }   // folded: its own, shorter height
+      else if(!hub.h[w]){ hub.h[w]=Math.max(x.minH||90, Math.round(t.getBoundingClientRect().height)||0); measured=true }
       if(!hub.col[w] || hub.row[w]==null) need.push(w);
     });
     if(!need.length){ if(measured){ hubSave(); applyHub() } return }
@@ -1602,7 +1603,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     var rowTop=0;
     hub.order.forEach(function(w){                       // anything already placed keeps its cell; new ones go below it
       if(!shown(w) || need.indexOf(w)>-1 || hub.row[w]==null) return;
-      rowTop=Math.max(rowTop, hub.row[w]*ROWU+(hub.h[w]||90)+hubGap());
+      rowTop=Math.max(rowTop, hub.row[w]*ROWU+(tileH(w)||90)+hubGap());
     });
     var x=0, rowH=0;
     need.forEach(function(w){
@@ -1610,7 +1611,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       if(x+sp>12){ rowTop+=rowH+hubGap(); x=0; rowH=0 }
       hub.col[w]=x+1;
       hub.row[w]=Math.ceil(rowTop/ROWU);
-      x+=sp; rowH=Math.max(rowH, hub.h[w]||90);
+      x+=sp; rowH=Math.max(rowH, tileH(w)||90);
     });
     hubSave(); applyHub();
   }
@@ -1619,10 +1620,14 @@ body.carrying{user-select:none;-webkit-user-select:none}
   function hubTidy(){
     if(!hub) return;
     hub.order=visualOrder();
-    hub.order.forEach(function(w){ if(shown(w)){ delete hub.h[w]; delete hub.col[w]; delete hub.row[w] } });
+    hub.order.forEach(function(w){ if(shown(w)){ delete hub.h[w]; delete hub.hs[w]; delete hub.col[w]; delete hub.row[w] } });
     hubSave(); applyHub();   // unsized, the tiles take their natural height; the next tick measures and packs them (hubFreeze)
   }
-  function hubDensity(d){ if(!hub || DENSITIES.indexOf(d)<0 || hub.density===d) return; hub.density=d; hubTidy() }
+  // VaderClawd and Arrange sit in the header beside Chat on a wide screen (Hector 2026-09-16: "put those on the red tape, next to chat"); on a phone in the hub's bar
+  function placeTools(){
+    var wide=isWide(), host=wide ? $('head-tools') : $('hub').querySelector('.hub-bar'), locked=$('scr-lock').classList.contains('on');
+    [$('hub-pet'), $('hub-arrange')].forEach(function(b){ if(b.parentNode!==host) host.appendChild(b); b.hidden=locked });   // hidden until the hub is open (they start hidden in the markup: the lock screen's header has no room)
+  }
   // the cell under the pointer, clamped so a widget can never start past the right edge
   function hubCellAt(x, y, w){
     var host=$('hub'), hr=host.getBoundingClientRect(), cs=getComputedStyle(host);
@@ -1638,27 +1643,27 @@ body.carrying{user-select:none;-webkit-user-select:none}
   function applyHub(){
     if(!hub) return;
     var cols=gridCols(), free=cols>=12, bar=$('hub').querySelector('.hub-bar'), ROW0=1, gap=hubGap();
-    $('hub').setAttribute('data-density', hub.density||'roomy');
-    [].forEach.call($('hub-dense').querySelectorAll('button'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-d')===(hub.density||'roomy') ? 'true' : 'false') });
-    if(free && bar){
+    $('hub').classList.toggle('arranging', arranging);   // first: the bar only exists on the wide grid while arranging
+    if(bar) bar.style.gridRow='';
+    if(free && bar && getComputedStyle(bar).display!=='none'){
       var brows=Math.max(1, Math.ceil(((bar.getBoundingClientRect().height||34)+gap)/ROWU));
       bar.style.gridRow='1 / span '+brows; ROW0=brows+1;
     } else if(bar) bar.style.gridRow='';
     (free ? hub.order : visualOrder()).forEach(function(w, i){
       var t=tile(w); if(!t) return;
-      var span=hub.span[w], eff=cols>=12 ? span : Math.max(1, Math.round(span*cols/12));
+      var span=hub.span[w], eff=cols>=12 ? span : Math.max(1, Math.round(span*cols/12)), H=tileH(w);
       t.style.order=String(i+1);
-      if(free && hub.col[w] && hub.row[w]!=null && hub.h[w]){
+      if(free && hub.col[w] && hub.row[w]!=null){
         var col=Math.max(1, Math.min(13-span, hub.col[w]));
         t.style.gridColumn=col+' / span '+span;
-        t.style.gridRow=(ROW0+hub.row[w])+' / span '+Math.max(1, Math.ceil((hub.h[w]+gap)/ROWU));
+        t.style.gridRow=(ROW0+hub.row[w])+' / span '+(H ? Math.max(1, Math.ceil((H+gap)/ROWU)) : 1);   // no height yet: one row until the next tick measures it
       } else {
         t.style.gridColumn=cols>1 ? 'span '+Math.min(cols, eff) : '';
         t.style.gridRow='';
       }
       t.setAttribute('data-size', span<=4 ? 'S' : span<=8 ? 'M' : 'L');
-      t.style.height=hub.h[w] ? hub.h[w]+'px' : '';
-      t.classList.toggle('sized', !!hub.h[w]);
+      t.style.height=(free && H) ? H+'px' : '';
+      t.classList.toggle('sized', !!(free && H));
       t.classList.toggle('off', hub.hidden.indexOf(w)>-1);
       t.classList.toggle('shut', !!hub.shut[w]);
       var f=t.querySelector('.hb-fold'); if(f) f.setAttribute('aria-expanded', hub.shut[w] ? 'false' : 'true');
@@ -1671,7 +1676,6 @@ body.carrying{user-select:none;-webkit-user-select:none}
         sz.setAttribute('aria-label', 'Width of '+wname(w)+': '+(SPAN_WORD[span] || span+' twelfths')+'. Tap to change');
       }
     });
-    $('hub').classList.toggle('arranging', arranging);
     $('hub-arrange').setAttribute('aria-pressed', arranging ? 'true' : 'false');
     $('hub-arrange').textContent=arranging ? 'Done' : 'Arrange';
     var add=$('hub-add'); add.textContent='';
@@ -1682,7 +1686,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     $('hub-reset').hidden=!arranging;
     $('hub-tidy').hidden=!arranging;
     // a widget with no cell yet (first run, Reset, or one added later) gets today's layout frozen as its starting point
-    if(gridCols()>=12 && !freezing && hub.order.some(function(w){ return shown(w) && (!hub.col[w] || hub.row[w]==null || !hub.h[w]) })){
+    if(gridCols()>=12 && !freezing && hub.order.some(function(w){ return shown(w) && (!hub.col[w] || hub.row[w]==null || !tileH(w)) })){
       freezing=true;
       setTimeout(function(){ freezing=false; hubFreeze() }, 0);   // a virtual-time harness never fires rAF
     }
@@ -2543,10 +2547,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
   $('hub').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button') : null; if(!b || !hub) return;
     var t=b.closest('.hb[data-w]'), w=t && t.getAttribute('data-w');
-    if(b.id==='hub-arrange'){ arranging=!arranging; applyHub(); return }
-    if(b.id==='hub-reset'){ var dd=hub.density; hub=hubDefault(); hub.density=dd; applyHub(); hubSave(); return }   // the layout resets; the tile size he picked stays
+    if(b.id==='hub-reset'){ hub=hubDefault(); applyHub(); hubSave(); return }
     if(b.id==='hub-tidy'){ hubTidy(); return }
-    if(b.hasAttribute('data-d') && b.closest('#hub-dense')){ hubDensity(b.getAttribute('data-d')); return }
     if(b.hasAttribute('data-show')){ var sw=b.getAttribute('data-show'); hub.hidden=hub.hidden.filter(function(x){ return x!==sw }); applyHub(); hubSave(); return }
     if(w && (b.classList.contains('hb-fold') || b.classList.contains('hb-more'))){
       hub.shut[w]=b.classList.contains('hb-more') ? false : !hub.shut[w]; applyHub(); hubSave(); return;
@@ -2557,17 +2559,18 @@ body.carrying{user-select:none;-webkit-user-select:none}
     else if(act==='size'){ var cur=hub.span[w], nx=SPANS.filter(function(x){ return x>cur })[0] || SPANS[0]; hub.span[w]=nx; hub.col[w]=Math.min(hub.col[w]||1, 13-nx); applyHub(); hubSave() }
     else if(act==='hide'){ if(hub.hidden.indexOf(w)<0) hub.hidden.push(w); applyHub(); hubSave() }
   });
-  // double-click a corner handle: the height fits the content again
+  $('hub-arrange').addEventListener('click', function(){ if(!hub) return; arranging=!arranging; applyHub() });   // lives in the header on a wide screen, in the hub's bar on a phone
+  // double-click a corner handle: the height fits the content again (the folded height if the tile is folded)
   $('hub').addEventListener('dblclick', function(e){
     var h=e.target.closest ? e.target.closest('.ht-resize') : null; if(!h || !hub) return;
-    delete hub.h[h.parentNode.getAttribute('data-w')]; applyHub(); hubSave();
+    var dw=h.parentNode.getAttribute('data-w'); if(hub.shut[dw]) delete hub.hs[dw]; else delete hub.h[dw]; applyHub(); hubSave();
   });
   // pointer events, so a mouse, a pen and a finger all work: the corner handle resizes, the widget itself moves
   $('hub').addEventListener('pointerdown', function(e){
     if(!hub || !e.target.closest) return;
     var rz=e.target.closest('.ht-resize');
     if(rz){
-      var t=rz.parentNode; if(t.classList.contains('shut')) return;
+      var t=rz.parentNode;   // a folded tile resizes too (Hector 2026-09-16: "size down the widgets when compacted ... fill up small spaces")
       var r=t.getBoundingClientRect(), cs=getComputedStyle($('hub')), tr=(cs.gridTemplateColumns || '').split(' ').filter(Boolean);
       e.preventDefault();
       resizing={w:t.getAttribute('data-w'), el:t, x0:e.clientX, y0:e.clientY, w0:r.width, h0:r.height, cols:gridCols(),
@@ -2589,7 +2592,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
         hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // never narrower than a sixth (Hector 2026-09-16: the smallest tile he asked for)
         hub.col[z.w]=Math.min(hub.col[z.w]||1, 13-hub.span[z.w]);
       }
-      hub.h[z.w]=Math.round(Math.max(x.minH, Math.min(MAX_H, z.h0+(e.clientY-z.y0))));
+      var nh=Math.round(Math.min(MAX_H, z.h0+(e.clientY-z.y0)));
+      if(hub.shut[z.w]) hub.hs[z.w]=Math.max(MIN_HS, nh); else hub.h[z.w]=Math.max(x.minH, nh);   // the folded and the open height are each their own
       applyHub();
       return;
     }
@@ -2750,7 +2754,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
   // sizeTape adds copies, which resizes the observed box: do it just after the notification, not inside it (WebKit reports a 'ResizeObserver loop' otherwise)
   if(window.ResizeObserver && $('tape')) try{ new ResizeObserver(function(){ setTimeout(sizeTape, 0) }).observe($('tape').firstElementChild) }catch(e){}
   window.addEventListener('resize', function(){
-    fitMark(); placePet(); sizeTape(); $('talk-fold').hidden=!isWide() || $('scr-lock').classList.contains('on'); $('full').hidden=$('talk-fold').hidden; applyTalk(); if(hub) applyHub(); else startMap();
+    fitMark(); placePet(); sizeTape(); $('talk-fold').hidden=!isWide() || $('scr-lock').classList.contains('on'); $('full').hidden=$('talk-fold').hidden; if(hub) placeTools(); applyTalk(); if(hub) applyHub(); else startMap();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape() });
