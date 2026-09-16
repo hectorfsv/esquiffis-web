@@ -410,6 +410,27 @@
       document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr.l+6), clientY:Math.round((tr.t+tr.b)/2), pointerId:1}));
       document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:1}));
       T(ord('news')<ord('time') && !tile('news').classList.contains('dragging'), 'dropping Headlines on the clock puts it before the clock');
+      // Hector 2026-09-15: "once i click ARRANGE i can just drag and move each widget"
+      tile('time').scrollIntoView({block:'center'});
+      var mk=tile('markets'), mr=R(mk), tr2=R(tile('time'));
+      mk.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((mr.l+mr.r)/2), clientY:Math.round(mr.t+8), pointerId:7}));
+      T(mk.classList.contains('dragging'), 'arranging: pressing the widget itself picks it up, no grip needed');
+      document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr2.l+6), clientY:Math.round((tr2.t+tr2.b)/2), pointerId:7}));
+      document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:7}));
+      T(ord('markets')<ord('time') && !mk.classList.contains('dragging'), 'dragging a widget by its body moves it (markets before the clock)');
+      var nb=tile('time').querySelector('[data-act="next"]');
+      T(!!nb, 'the widget tools are still there while arranging');
+      if(nb){
+        nb.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:1, clientY:1, pointerId:8}));
+        T(!tile('time').classList.contains('dragging'), 'a tool button takes its click instead of starting a drag');
+        document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:8}));
+      }
+      tap('hub-arrange');   // Done: the widgets must stop being draggable
+      var t2=tile('time'), r3=R(t2);
+      t2.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((r3.l+r3.r)/2), clientY:Math.round(r3.t+8), pointerId:9}));
+      T(!t2.classList.contains('dragging'), 'with Arrange off, pressing a widget does nothing');
+      document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:9}));
+      tap('hub-arrange');   // back into Arrange for the resize checks below
       // Hector 2026-09-15: "make each window of the hub free range, so i can make them smaller or bigger"
       tile('tv').scrollIntoView({block:'center'});
       var tvT=tile('tv'), r0=R(tvT), rz=tvT.querySelector('.ht-resize');

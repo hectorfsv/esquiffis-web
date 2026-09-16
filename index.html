@@ -308,6 +308,11 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .ht-grip{cursor:grab;touch-action:none}
 .ht-size{display:none}   /* one column on a phone: nothing to resize */
 .hb.dragging{opacity:.5}
+/* Hector 2026-09-15: "once i click ARRANGE i can just drag and move each widget" - the whole tile is the handle while
+   arranging, so a finger has to drag it instead of scrolling the hub, and a player must not swallow the press */
+.hub.arranging .hb{cursor:grab;touch-action:none}
+.hub.arranging .hb.dragging{cursor:grabbing}
+.hub.arranging .hb iframe{pointer-events:none}
 /* free size: a corner handle (while arranging, or on hover with a mouse); a widget given a height lays out as a column
    whose list, player or map takes the room */
 .ht-resize{display:none;position:absolute;z-index:3;right:1px;bottom:1px;width:20px;height:20px;cursor:nwse-resize;touch-action:none;
@@ -1166,7 +1171,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 
   /* ---------- the hub you arrange ----------
      After WorldMonitor (Hector 2026-09-15). Arrange shows move / width / hide on every widget: arrows work everywhere
-     (the phone included), the grip drags on a desktop. Every widget is free-size (Hector: "free range, so i can make
+     (the phone included), the whole widget drags while arranging. Every widget is free-size (Hector: "free range, so i can make
      them smaller or bigger"): drag its corner to any width in twelfths of the hub and any height; double-click the
      corner to fit the height again. Inbox, headlines, the TV and the map fold from their title. The layout is
      remembered on this device (localStorage: widget names and sizes, never mail). Order is CSS order and never a DOM
@@ -1692,7 +1697,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     var h=e.target.closest ? e.target.closest('.ht-resize') : null; if(!h || !hub) return;
     delete hub.h[h.parentNode.getAttribute('data-w')]; applyHub(); hubSave();
   });
-  // pointer events, so a mouse, a pen and a finger all work: the corner handle resizes, the grip moves
+  // pointer events, so a mouse, a pen and a finger all work: the corner handle resizes, the widget itself moves
   $('hub').addEventListener('pointerdown', function(e){
     if(!hub || !e.target.closest) return;
     var rz=e.target.closest('.ht-resize');
@@ -1705,8 +1710,10 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       t.classList.add('resizing');
       return;
     }
-    var g=e.target.closest('.ht-grip'); if(!g || !arranging) return;
-    var tt=g.closest('.hb[data-w]'); if(!tt) return;
+    // while arranging the whole widget is the handle, not just the grip (the grip stays as the visible affordance)
+    if(!arranging) return;
+    var tt=e.target.closest('.hb[data-w]'); if(!tt) return;
+    if(e.target.closest('.hb-tools') && !e.target.closest('.ht-grip')) return;   // move, width and hide stay clickable
     e.preventDefault(); drag={w:tt.getAttribute('data-w'), el:tt, last:''}; tt.classList.add('dragging');
   });
   document.addEventListener('pointermove', function(e){
