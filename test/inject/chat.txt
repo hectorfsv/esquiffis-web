@@ -28,7 +28,7 @@
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
   try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams'); localStorage.removeItem('esq_map'); localStorage.removeItem('esq_scores'); localStorage.removeItem('esq_grab') }catch(e){}
   // a map setting saved on the device, with junk in it: an unknown layer, a layer that is not exactly true; a saved league
-  if(mode==='arrange'){ localStorage.setItem('esq_map', JSON.stringify({base:'night', lay:{radar:true, bogus:true, alerts:'yes'}})); localStorage.setItem('esq_scores', 'mx') }
+  if(mode==='arrange'){ localStorage.setItem('esq_map', JSON.stringify({base:'sat', view:{'3d':true, globe:true, bogus:true}, lay:{radar:true, bogus:true, alerts:'yes'}})); localStorage.setItem('esq_scores', 'mx') }
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
@@ -70,21 +70,32 @@
     {properties:{eventtype:'DR',alertlevel:'Purple',iscurrent:'true',name:'unknown level'},geometry:{coordinates:[2,2]}}]};
   // a stand-in for exactly the Leaflet surface the page uses, recording what it is asked to draw (the harness runs
   // offline; real Leaflet is checked in WebKit, which loads this file WITHOUT ?t=)
-  // groups[0] is the events group (quakes + disaster alerts), then weather alerts, wildfires, storms; tileLayers records
-  // every basemap, hillshade, label and radar layer with whether it is on the map right now
-  var mapCalls={groups:[], tileLayers:[], panes:{}, tiles:0, tileUrl:'', views:0, invalidate:0, get markers(){ return mapCalls.groups[0] ? mapCalls.groups[0].layers : [] }};
+  // a stand-in for exactly the MapLibre surface the page uses (the harness runs offline; real MapLibre is checked in
+  // WebKit, which loads this file WITHOUT ?t=): sources hold their GeoJSON, layers their order, the style what was set
+  var mapCalls={sources:{}, layers:[], style:null, styleLoads:0, terrain:null, projection:'mercator', pitch:0, rotate:false, popups:[], controls:0, resized:0, map:null, opts:null,
+    get markers(){ var s=mapCalls.sources.events; return (s && s.data && s.data.features) || [] }};
   window.__mapCalls=mapCalls;
-  if(q.has('t')) window.L={
-    map:function(el,o){ mapCalls.el=el; mapCalls.opts=o; var m={setView:function(){ mapCalls.views++; return m }, invalidateSize:function(){ mapCalls.invalidate++; return m }, attributionControl:{setPrefix:function(){}},
-      createPane:function(n){ var p={style:{}, classList:{add:function(c){ p.cls=c }}}; mapCalls.panes[n]=p; return p }, getPane:function(n){ return mapCalls.panes[n] }}; return m },
-    tileLayer:function(u,o){ var t={url:u, o:o||{}, on:false, addTo:function(){ t.on=true; return t }, remove:function(){ t.on=false; return t }, setUrl:function(nu){ t.url=nu; return t }}; mapCalls.tileLayers.push(t); mapCalls.tiles++; mapCalls.tileUrl=u; return t },
-    // the dark basemap is a canvas GridLayer (base + hillshade multiplied); the stand-in records both templates
-    GridLayer:{extend:function(proto){ return function(o){ var t={url:(o&&o.base)||'', hs:(o&&o.hs)||'', canvas:typeof proto.createTile==='function', o:o||{}, on:false, addTo:function(){ t.on=true; return t }, remove:function(){ t.on=false; return t }}; mapCalls.tileLayers.push(t); mapCalls.tiles++; mapCalls.tileUrl=t.url; return t } }},
-    layerGroup:function(){ var g={layers:[], addTo:function(){ return g }, clearLayers:function(){ g.layers=[]; return g }, addLayer:function(x){ g.layers.push(x); return g }}; mapCalls.groups.push(g); return g },
-    circleMarker:function(ll,o){ var mk={ll:ll, o:o, bindPopup:function(n){ mk.popup=n; return mk }, addTo:function(g){ g.addLayer(mk); return mk }}; return mk },
-    polyline:function(ll,o){ var pl={ll:ll, o:o, bindPopup:function(n){ pl.popup=n; return pl }, addTo:function(g){ g.addLayer(pl); return pl }}; return pl },
-    geoJSON:function(f,o){ if(!f || f.type!=='Feature' || !f.geometry || !f.geometry.type) throw new Error('Invalid GeoJSON object.');   // as strict as Leaflet
-      var gj={f:f, o:o||{}, bindPopup:function(n){ gj.popup=n; return gj }, addTo:function(g){ g.addLayer(gj); return gj }}; return gj }
+  if(q.has('t')) window.maplibregl={
+    Map:function(o){
+      var m=this, H={}; mapCalls.opts=o; mapCalls.style=o.style; mapCalls.map=m;
+      function fireLoad(){ setTimeout(function(){ mapCalls.styleLoads++; (H['style.load']||[]).forEach(function(f){ f() }) }, 0) }
+      m.on=function(ev,a,b){ var cb=b||a, key=b ? ev+':'+a : ev; (H[key]=H[key]||[]).push(cb); return m }; m.once=m.on; m.off=function(){ return m };
+      m.fire=function(ev,layer,payload){ (H[layer ? ev+':'+layer : ev]||[]).forEach(function(f){ f(payload) }) };   // tests tap a feature
+      m.addControl=function(){ mapCalls.controls++; return m }; m.resize=function(){ mapCalls.resized++; return m };
+      m.addSource=function(id,s){ mapCalls.sources[id]={type:s.type, data:s.data, tiles:s.tiles, setData:function(d){ this.data=d }, setTiles:function(t){ this.tiles=t }}; return m };
+      m.getSource=function(id){ return mapCalls.sources[id] }; m.removeSource=function(id){ delete mapCalls.sources[id]; return m };
+      m.addLayer=function(l,before){ l._before=before; mapCalls.layers.push(l); return m };
+      m.getLayer=function(id){ return mapCalls.layers.filter(function(l){ return l.id===id })[0] }; m.removeLayer=function(id){ mapCalls.layers=mapCalls.layers.filter(function(l){ return l.id!==id }); return m };
+      m.getStyle=function(){ var st=mapCalls.style; return {layers:(st && st.layers) || []} };
+      m.setStyle=function(s){ mapCalls.style=s; mapCalls.sources={}; mapCalls.layers=[]; mapCalls.terrain=null; fireLoad(); return m };
+      m.setTerrain=function(t){ mapCalls.terrain=t; return m }; m.setProjection=function(p){ mapCalls.projection=p && p.type; return m };
+      m.easeTo=function(o){ if(o && o.pitch!==undefined) mapCalls.pitch=o.pitch; if(o && o.zoom!==undefined) mapCalls.zoom=o.zoom; return m }; m.getPitch=function(){ return mapCalls.pitch }; m.getZoom=function(){ return mapCalls.zoom||(o.zoom||0) };
+      m.getCanvas=function(){ return {style:{}} }; m.dragRotate={enable:function(){ mapCalls.rotate=true }, disable:function(){ mapCalls.rotate=false }}; m.touchPitch=m.dragRotate;
+      m.isStyleLoaded=function(){ return true }; m.loaded=function(){ return true };
+      fireLoad();
+    },
+    NavigationControl:function(){},
+    Popup:function(o){ var p={o:o, setLngLat:function(ll){ p.ll=ll; return p }, setDOMContent:function(n){ p.node=n; return p }, addTo:function(){ mapCalls.popups.push(p); return p }, remove:function(){ return p }}; return p }
   };
   // the map layers: RainViewer's frame index, NWS alerts (2 outlined, 1 zone-only, 1 nameless), EONET (2 fires, 1 bad, 1 storm track, sea ice)
   var RADAR={version:'2.0', host:'https://tilecache.rainviewer.com', radar:{past:[{time:1789532400, path:'/v2/radar/old1'},{time:1789533000, path:'/v2/radar/a6ee65c34d73'}], nowcast:[]}};
@@ -116,24 +127,34 @@
   var MLB={dates:[{games:[
     {gameDate:new Date(Date.now()-864e5).toISOString(),status:{abstractGameState:'Final'},teams:{home:{team:{id:119,name:'Los Angeles Dodgers'},score:5},away:{team:{id:135,name:'San Diego Padres'},score:2}}},
     {gameDate:new Date(Date.now()+864e5).toISOString(),status:{abstractGameState:'Preview'},teams:{home:{team:{id:137,name:'San Francisco Giants'}},away:{team:{id:119,name:'Los Angeles Dodgers'}}}}]}]};
-  // the countries file the Wars layer shades (four countries only; the page's baked list decides which are at war)
-  var COUNTRIES={type:'FeatureCollection', features:[
-    {type:'Feature', id:'UKR', properties:{name:'Ukraine'}, geometry:{type:'Polygon', coordinates:[[[30,50],[32,50],[32,52],[30,50]]]}},
-    {type:'Feature', id:'ISR', properties:{name:'Israel'}, geometry:{type:'Polygon', coordinates:[[[34.5,31],[35.5,31],[35.5,33],[34.5,31]]]}},
-    {type:'Feature', id:'SDN', properties:{name:'Sudan'}, geometry:{type:'Polygon', coordinates:[[[25,12],[35,12],[35,20],[25,12]]]}},
-    {type:'Feature', id:'PSE', properties:{name:'West Bank'}, geometry:{type:'Polygon', coordinates:[[[35,31.5],[35.5,31.5],[35.5,32.5],[35,31.5]]]}},
-    {type:'Feature', id:'CHE', properties:{name:'Switzerland'}, geometry:{type:'Polygon', coordinates:[[[6,46],[10,46],[10,47.5],[6,46]]]}}]};
-  // ESPN's scoreboard for whatever league is asked: one live game, one final, one still to come, one malformed
+  // OpenFreeMap's dark style, cut down: two sources, a fill, a border and a label layer (the page keeps labels on top)
+  var STYLE={version:8, name:'dark', glyphs:'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', sprite:'https://tiles.openfreemap.org/sprites/ofm_f384/ofm',
+    sources:{ne2_shaded:{type:'raster', tiles:['https://tiles.openfreemap.org/natural_earth/ne2sr/{z}/{x}/{y}.png']}, openmaptiles:{type:'vector', url:'https://tiles.openfreemap.org/planet'}},
+    layers:[{id:'background', type:'background', paint:{'background-color':'#111'}}, {id:'water', type:'fill', source:'openmaptiles', 'source-layer':'water'},
+      {id:'boundary_country_z0-4', type:'line', source:'openmaptiles', 'source-layer':'boundary'}, {id:'place_city', type:'symbol', source:'openmaptiles', 'source-layer':'place'}, {id:'place_country_major', type:'symbol', source:'openmaptiles', 'source-layer':'place'}]};
+  // the sky under the clock: today's sunrise 3 h ago, sunset in 4 h, tomorrow a day later; Santa Clarita's air
+  function isoLocal(ms){ var d=new Date(ms); function p(n){ return (n<10?'0':'')+n } return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()) }
+  var SUN_RISE=Date.now()-3*3600000, SUN_SET=Date.now()+4*3600000;
+  var SUN={daily:{time:['t','t'], sunrise:[isoLocal(SUN_RISE), isoLocal(SUN_RISE+864e5)], sunset:[isoLocal(SUN_SET), isoLocal(SUN_SET+864e5)], uv_index_max:[7.3, 6.1]}};
+  var AIR={current:{time:'now', us_aqi:63, pm2_5:15.0}};
+  // ESPN's scoreboard for whatever league is asked: one live game, one final, two still to come, one malformed
   var ESPN={events:[
     {date:new Date(Date.now()+3*3600000).toISOString(), status:{type:{state:'pre', shortDetail:'9/17 - 8:15 PM EDT'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'BUF'}, score:'0'}, {homeAway:'home', team:{abbreviation:'DET'}, score:'0'}]}]},
+    {date:new Date(Date.now()+26*3600000).toISOString(), status:{type:{state:'pre', shortDetail:'9/18 - 1:00 PM EDT'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'ATL'}, score:'0'}, {homeAway:'home', team:{abbreviation:'CAR'}, score:'0'}]}]},
     {date:new Date(Date.now()-3*3600000).toISOString(), status:{type:{state:'post', completed:true, shortDetail:'Final'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'TB'}, score:'2', winner:true}, {homeAway:'home', team:{abbreviation:'ATH'}, score:'1', winner:false}]}]},
     {date:new Date(Date.now()-1*3600000).toISOString(), status:{type:{state:'in', shortDetail:'Top 7th'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'LAD'}, score:'3'}, {homeAway:'home', team:{abbreviation:'SD'}, score:'1'}]}]},
     {date:new Date().toISOString(), status:{type:{state:'pre'}}, competitions:[]}]};
   function res(status, body){ return Promise.resolve({ok:status>=200&&status<300, status:status,
     json:function(){return Promise.resolve(body)}, text:function(){return Promise.resolve(typeof body==='string'?body:JSON.stringify(body))}}) }
+  var REAL_FETCH=window.fetch.bind(window);
   window.fetch=function(u,o){
-    var url=String(u);
+    var url=(u && typeof u==='object' && u.url) ? u.url : String(u);   // MapLibre passes a Request
+    // real MapLibre in WebKit (no ?t=): the map's own assets come from the real network, only the feeds are faked
+    if(!q.has('t') && /openfreemap\.org|amazonaws\.com|arcgisonline\.com|tilecache\.rainviewer\.com/.test(url)) return REAL_FETCH(u,o);
+    if(/air-quality-api/.test(url)){ hubCalls.push('air'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,AIR) }
+    if(/daily=sunrise/.test(url)){ hubCalls.push('sun'); return FAIL_HUB ? res(503,'') : res(200,SUN) }
     if(/open-meteo/.test(url)){ hubCalls.push('wx'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,WX) }
+    if(/tiles\.openfreemap\.org\/styles/.test(url)){ hubCalls.push('style'); return res(200,STYLE) }   // a static file: up even when every feed is down
     if(/foxnews/.test(url)){
       var fk=/\/us\.xml/.test(url) ? 'foxus' : /politics/.test(url) ? 'foxpol' : 'fox';
       hubCalls.push(fk); return FAIL_HUB ? res(503,'') : res(200, fk==='foxus' ? FOXUS : fk==='foxpol' ? FOXPOL : FOX);
@@ -147,7 +168,6 @@
     if(/api\.rainviewer\.com/.test(url)){ hubCalls.push('radar'); return FAIL_HUB ? res(503,'') : res(200,RADAR) }
     if(/api\.weather\.gov/.test(url)){ hubCalls.push('nws'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,NWS) }
     if(/eonet\.gsfc\.nasa\.gov/.test(url)){ hubCalls.push('eonet'); return FAIL_HUB ? res(503,'') : res(200,EONET) }
-    if(/countries\.geo\.json/.test(url)){ hubCalls.push('countries'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,COUNTRIES) }
     var mg=url.match(/api\.gold-api\.com\/price\/([A-Z]+)/);
     if(mg){ hubCalls.push('gold'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,{symbol:mg[1], price:METAL[mg[1]]}) }
     if(/currency-api/.test(url)){ hubCalls.push('snap'); if(FAIL_HUB) return Promise.reject(new Error('down'));
@@ -334,6 +354,7 @@
       T($('h-list').children.length===0 && /Refresh/.test($('h-note').textContent), 'no headlines: it says to tap Refresh');
       T(!$('h-mlb').hidden && !!$('h-dod') && $('h-dod').hidden && /unavailable/.test(tx('h-dod-note')) && /MLB scores are unavailable/.test(tx('sc-note')) && qa('sc-list').length===0,
         'no Dodgers data and no ESPN: the Dodgers lines hide, the scores say so ('+tx('sc-note')+')');
+      skyOK();
       T(!!$('mk-metals') && qa('mk-metals').length===0 && qa('mk-fx').length===0 && /unavailable/.test(tx('mk-note')), 'markets down: it says so');
       T(briefCalls.length===0 && /No headlines to summarize yet/.test(tx('brief-meta')), 'news: with no headlines at all, no brief is spent and it says why ('+tx('brief-meta')+')');
       T($('ib-list').children.length===0 && /Refresh/.test($('ib-note').textContent) && $('ib-count').textContent==='', 'no inbox from an older workflow: it says to tap Refresh ('+$('ib-note').textContent+')');
@@ -436,18 +457,18 @@
     // the saved map setting: Night lights and Radar come back, the unknown layer and the not-quite-true one do not
     var mb=$('map-base'), ml=$('map-lay'), mcs=window.__mapCalls;
     function prs(g){ return g ? [].filter.call(g.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }).join() : 'no chips' }
-    T(prs(mb)==='Night lights' && prs(ml)==='Radar', 'a saved map setting comes back: Night lights + Radar, junk ignored ('+prs(mb)+' / '+prs(ml)+')');
-    if(mcs.panes && mcs.panes.lbl) setTimeout(function(){   // on a phone the map was just created: the radar index answers a tick later
-      var onT=mcs.tileLayers.filter(function(t){ return t.on });
-      T(onT.length===3 && /VIIRS_Black_Marble/.test(onT[0].url) && /rainviewer/.test(onT[2].url) && hubCalls.indexOf('radar')>-1 && hubCalls.indexOf('nws')<0,
-        'the map opens on Black Marble with the radar fetched and drawn, alerts not fetched ('+onT.map(function(t){ return t.url.replace(/^.*\/([^\/]+)\/MapServer.*$|^.*rainviewer.*$/, function(m,a){ return a||'radar' }) }).join(',')+')'); }, 30);
+    T(prs(mb)==='Satellite' && prs(ml)==='Radar' && prs($('map-view'))==='3D', 'a saved map setting comes back: Satellite + 3D + Radar, junk ignored ('+prs(mb)+' / '+prs($('map-view'))+' / '+prs(ml)+')');
+    if(mcs.map) setTimeout(function(){   // on a phone the map was just created: the style and the radar index answer a tick later
+      var st=mcs.style;
+      T(!!st && !!st.sources.esri && !!mcs.terrain && mcs.projection==='mercator' && !!mcs.sources.radar && hubCalls.indexOf('radar')>-1 && hubCalls.indexOf('nws')<0,
+        'the map opens on Satellite in 3D (Globe dropped: one or the other), the radar fetched and drawn, alerts not fetched ('+(st && Object.keys(st.sources).join(','))+' / terrain '+!!mcs.terrain+' / '+mcs.projection+')'); }, 60);
     T(!vis(tile('dodgers')) && !tile('inbox').classList.contains('shut') && tile('news').classList.contains('shut'), 'hidden and unfolded as saved; unknown names ignored');
     var tools=tile('tv').querySelector('.hb-tools');
     T(!vis(tools) && !vis($('hub-reset')), 'the move / size / hide tools stay out of sight until Arrange');
     $('hub-arrange').click();
     T($('hub-arrange').getAttribute('aria-pressed')==='true' && /Done/.test($('hub-arrange').textContent) && vis(tools) && vis($('hub-reset')), 'Arrange shows the tools on every widget');
     var add=$('hub-add').querySelectorAll('button');
-    T(add.length===1 && /Scores/.test(add[0].textContent), 'a hidden widget waits under Arrange ('+(add[0]&&add[0].textContent)+')');
+    T(add.length===1 && /Sports/.test(add[0].textContent), 'a hidden widget waits under Arrange ('+(add[0]&&add[0].textContent)+')');
     var espn=hubCalls.filter(function(k){ return /^espn:/.test(k) });   // scoresOK has already switched to NFL by now: judge by the FIRST fetch
     T(!!$('sc-ch') && espn[0]==='espn:soccer/mex.1' && hubCalls.indexOf('espn:baseball/mlb')<0, 'the saved league comes back: Liga MX fetched first, MLB never ('+espn.join(',')+')');
     // the TV keeps playing while it moves: the very same player, never re-created or moved in the page
@@ -551,7 +572,7 @@
     }
     $('hub-reset').click();
     T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('markets') && ord('markets')<ord('cams') && ord('cams')<ord('news')
-      && tile('news').classList.contains('shut') && tile('inbox').classList.contains('shut') && tile('map').getAttribute('data-size')==='M' && vis(tile('dodgers')) && !tile('tv').style.height, 'Reset layout puts everything back');
+      && tile('news').classList.contains('shut') && tile('inbox').classList.contains('shut') && tile('dodgers').classList.contains('shut') && tile('map').getAttribute('data-size')==='M' && vis(tile('dodgers')) && !tile('tv').style.height, 'Reset layout puts everything back');
     $('hub-arrange').click();
     T($('hub-arrange').getAttribute('aria-pressed')==='false' && !vis(tools), 'Done hides the tools again');
     if(!WIDE) $('now').click();
@@ -628,16 +649,58 @@
     function pressed(){ return [].filter.call(ch.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }).join() }
     var rows=ul.querySelectorAll('li'), expName=mode==='arrange' ? 'Liga MX' : 'MLB', expKey=mode==='arrange' ? 'espn:soccer/mex.1' : 'espn:baseball/mlb';   // arrange mode saved Liga MX
     T(ch.children.length===5 && pressed()===expName && hubCalls.indexOf(expKey)>-1, 'scores: five leagues, '+expName+' pressed, fetched from ESPN by the browser ('+pressed()+')');
-    T(rows.length===3 && rows[0].classList.contains('live') && rows[1].classList.contains('final') && rows[2].classList.contains('pre'), 'scores: live first, then finals, then what is coming; a malformed game dropped ('+rows.length+')');
-    T(rows.length===3 && /LAD/.test(rows[0].textContent) && /3 – 1/.test(rows[0].textContent) && /Top 7th/.test(rows[0].querySelector('.sc-m').textContent), 'scores: the live game shows its score and inning ('+rows[0].textContent.replace(/\s+/g,' ')+')');
-    T(rows.length===3 && /TB/.test(rows[1].textContent) && rows[1].querySelector('.sc-t.w').textContent==='TB' && rows[1].querySelectorAll('.sc-t.w').length===1 && /Final/.test(rows[1].textContent), 'scores: the final lights the winner');
-    T(rows.length===3 && /BUF/.test(rows[2].textContent) && /\bat\b/.test(rows[2].querySelector('.sc-s').textContent) && /\d:\d\d/.test(rows[2].querySelector('.sc-m').textContent), 'scores: a game to come shows its time ('+(rows[2].querySelector('.sc-m')||{}).textContent+')');
-    T(/1 live/.test(tx('sc-note')) && /1 final/.test(tx('sc-note')) && /1 coming/.test(tx('sc-note')) && /ESPN/.test(tx('sc-note')), 'scores: the note counts ('+tx('sc-note')+')');
+    T(rows.length===4 && rows[0].classList.contains('live') && rows[1].classList.contains('final') && rows[2].classList.contains('pre') && rows[3].classList.contains('pre'), 'scores: live first, then finals, then what is coming; a malformed game dropped ('+rows.length+')');
+    T(rows.length===4 && /LAD/.test(rows[0].textContent) && /3 – 1/.test(rows[0].textContent) && /Top 7th/.test(rows[0].querySelector('.sc-m').textContent), 'scores: the live game shows its score and inning ('+rows[0].textContent.replace(/\s+/g,' ')+')');
+    T(rows.length===4 && /TB/.test(rows[1].textContent) && rows[1].querySelector('.sc-t.w').textContent==='TB' && rows[1].querySelectorAll('.sc-t.w').length===1 && /Final/.test(rows[1].textContent), 'scores: the final lights the winner');
+    T(rows.length===4 && /BUF/.test(rows[2].textContent) && /\bat\b/.test(rows[2].querySelector('.sc-s').textContent) && /\d:\d\d/.test(rows[2].querySelector('.sc-m').textContent) && /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) /.test(rows[3].querySelector('.sc-m').textContent),
+      'scores: a game to come shows its time, one on another day its weekday ('+(rows[2].querySelector('.sc-m')||{}).textContent+' / '+(rows[3].querySelector('.sc-m')||{}).textContent+')');
+    T(/1 live/.test(tx('sc-note')) && /1 final/.test(tx('sc-note')) && /2 coming/.test(tx('sc-note')) && /ESPN/.test(tx('sc-note')), 'scores: the note counts ('+tx('sc-note')+')');
+    // Hector 2026-09-15: "Sports", "deployable like news and inbox" - folded: the Dodgers lines and three games, the leagues behind the fold
+    var sp=tile('dodgers'), fold=sp && sp.querySelector('.hb-fold');
+    T(!!fold && /Sports/.test(fold.textContent) && (mode==='arrange' || (sp.classList.contains('shut') && !vis(ch) && vis(rows[2]) && !vis(rows[3]) && vis($('sc-more')) && /1 more/.test(tx('sc-more')))),
+      'sports: the tile is Sports, folded by default to the Dodgers lines and three games, the leagues and the rest behind "1 more"');
+    if(fold && sp.classList.contains('shut') && vis(sp)){ fold.click();   // (arrange mode hides this tile on purpose)
+      T(!sp.classList.contains('shut') && vis(ch) && vis(rows[3]) && !vis($('sc-more')) && fold.getAttribute('aria-expanded')==='true', 'sports: unfolded, the leagues and every game show');
+      fold.click(); T(sp.classList.contains('shut') && !vis(ch), 'sports: and it folds again'); }
     var n0=hubCalls.length; [].filter.call(ch.children, function(c){ return c.textContent==='NFL' })[0].click();
     T(hubCalls[n0]==='espn:football/nfl' && pressed()==='NFL' && localStorage.getItem('esq_scores')==='nfl', 'scores: NFL fetches the NFL board and is remembered');
     var tick=window.__esq && window.__esq.hubTick, n1=hubCalls.length; if(tick) tick(Date.now()+6*60000);
     T(!!tick && hubCalls.slice(n1).some(function(k){ return /^espn:/.test(k) }), 'scores: with a game on, 6 minutes later the board refreshes by itself (0 n8n calls)');
     var n2=hubCalls.length; if(tick) tick(Date.now()+60000); T(!hubCalls.slice(n2).some(function(k){ return /^espn:/.test(k) }), 'scores: not again a minute later');
+  }
+  // the sky under the clock (Hector 2026-09-15: "sunrise, sunset, UV and santa clarita air ... a sun and a moon")
+  function skyOK(){
+    var box=$('sky'); if(!box || !window.__esq.paintSky){ T(false, 'sky: the corner under the clock exists'); return }
+    if(FAIL_HUB){ T(box.hidden && hubCalls.indexOf('sun')>-1 && hubCalls.indexOf('air')>-1, 'sky: sun and air down, the corner stays empty'); return }
+    var sun=$('sky-sun'), moon=$('sky-moon');
+    T(vis(box) && hubCalls.indexOf('sun')>-1 && hubCalls.indexOf('air')>-1, 'sky: sun times and air come from the browser (Open-Meteo), not n8n');
+    T(!sun.classList.contains('off') && moon.classList.contains('off') && /^Day/.test(tx('sky-line')) && /sunset in (4h|3h 5\dm)/.test(tx('sky-line')) && !box.classList.contains('night'), 'sky: by day the sun is out and the line counts down to sunset ('+tx('sky-line')+')');
+    var tr=(sun.getAttribute('transform')||'').match(/translate\(([\d.]+) ([\d.]+)\)/), x=tr ? +tr[1] : -1, y=tr ? +tr[2] : -1, want=60-50*Math.cos(Math.PI*3/7);
+    T(Math.abs(x-want)<3 && y>0 && y<52, 'sky: the sun sits 3/7 of the way along its arc ('+x+','+y+' vs '+want.toFixed(1)+')');
+    T(tx('sky-rise')==='Sunrise '+window.__esq.clockText(new Date(SUN_RISE)) && tx('sky-set')==='Sunset '+window.__esq.clockText(new Date(SUN_SET)), 'sky: sunrise and sunset in his clock format ('+tx('sky-rise')+' / '+tx('sky-set')+')');
+    T(tx('sky-uv')==='UV 7  ·  High' && tx('sky-air')==='Air 63  ·  Moderate' && $('sky-air').style.color==='rgb(232, 197, 71)', 'sky: UV with its word, the air with its word and colour ('+tx('sky-uv')+' / '+tx('sky-air')+')');
+    window.__esq.paintSky(SUN_SET+3600000);   // an hour after sunset
+    T(sun.classList.contains('off') && !moon.classList.contains('off') && /^Night/.test(tx('sky-line')) && /sunrise in/.test(tx('sky-line')) && box.classList.contains('night') && /UV tomorrow 6/.test(tx('sky-uv')),
+      'sky: after sunset the moon crosses instead and the line counts down to sunrise, UV is tomorrow\'s ('+tx('sky-line')+' / '+tx('sky-uv')+')');
+    window.__esq.paintSky();
+    var tick=window.__esq.hubTick, h=hubCalls.length; if(tick) tick(Date.now()+31*60000);
+    T(hubCalls.slice(h).indexOf('air')>-1 && hubCalls.slice(h).indexOf('sun')<0, 'sky: the air refreshes every 30 minutes by itself, the sun times not yet (0 n8n calls)');
+  }
+  // full screen (Hector 2026-09-15: "a fullscreen button that uses those extra borders of the safari")
+  function fullOK(){
+    var b=$('full'); if(!b){ T(false, 'full: the button exists'); return }
+    var asked=[], fake=null, de=document.documentElement;
+    de.requestFullscreen=function(){ asked.push('in'); return Promise.resolve() }; document.exitFullscreen=function(){ asked.push('out'); return Promise.resolve() };
+    try{ Object.defineProperty(document, 'fullscreenElement', {get:function(){ return fake }, configurable:true}) }catch(e){}
+    T(vis(b) && b.getAttribute('aria-pressed')==='false' && /Full screen/.test(b.textContent) && !document.body.classList.contains('full'), 'full: a Full screen button in the header, off');
+    b.click(); T(asked.join()==='in', 'full: it asks the browser for full screen');
+    fake=de; document.dispatchEvent(new Event('fullscreenchange'));
+    var fr=getComputedStyle(document.querySelector('.frame'));
+    T(document.body.classList.contains('full') && b.getAttribute('aria-pressed')==='true' && /Exit/.test(b.textContent) && fr.paddingTop==='0px' && fr.paddingLeft==='0px' && !vis(document.querySelector('.brk.tr')) && getComputedStyle(document.querySelector('.panel')).clipPath==='none',
+      'full: in full screen the page drops its own frame - no padding, brackets or notch - so the hub gets every pixel');
+    b.click(); T(asked.join()==='in,out', 'full: pressed again it asks to leave');
+    fake=null; document.dispatchEvent(new Event('fullscreenchange'));
+    T(!document.body.classList.contains('full') && /^Full screen$/.test(b.textContent) && getComputedStyle(document.querySelector('.frame')).paddingTop!=='0px', 'full: and the frame comes back');
   }
   // the switch that lets him pick VaderClawd up (Hector 2026-09-15: "grabbed and moved around, maybe a switch")
   function grabOK(){
@@ -696,93 +759,92 @@
     }, 8000);
     }, 1500);
   }
-  // the basemaps and the layers he can switch on (Hector 2026-09-15: "better quality map", "earthquakes and that stuff")
+  // the basemaps, the 3D/globe views and the layers he can switch on (Hector 2026-09-15: "better quality map", "3D?")
   function mapLayersOK(allowAsk){
-    var mc=window.__mapCalls, ch=$('map-ch'), base=$('map-base'), lay=$('map-lay');
-    if(!q.has('t')) return;   // real Leaflet (WebKit): no stand-in to read, and clicking chips here would fight a screenshot script
-    if(!ch || !base || !lay || !mc.tileLayers){ T(false, 'map: basemap and layer chips exist'); return }
-    function on(){ return mc.tileLayers.filter(function(t){ return t.on }) }
+    var mc=window.__mapCalls, ch=$('map-ch'), base=$('map-base'), view=$('map-view'), lay=$('map-lay');
+    if(!q.has('t')) return;   // real MapLibre (WebKit): no stand-in to read, and clicking chips here would fight a screenshot script
+    if(!ch || !base || !view || !lay || !mc.map){ T(false, 'map: basemap, view and layer chips exist over a live map'); return }
+    var M=mc.map;
     function pressed(g){ return [].filter.call(g.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }) }
     function chip(g, txt){ return [].filter.call(g.children, function(c){ return c.textContent===txt })[0] }
     function saved(){ try{ return JSON.parse(localStorage.getItem('esq_map')||'null') }catch(e){ return null } }
-    var t0=on();
-    T(t0.length===2 && t0[0].canvas && /World_Dark_Gray_Base/.test(t0[0].url) && /World_Hillshade\//.test(t0[0].hs) && /World_Dark_Gray_Reference/.test(t0[1].url) && t0[1].o.pane==='lbl',
-      'map: the dark base is a canvas of Esri dark + hillshade, with Esri labels on top (no key)');
-    T(!mc.panes.hs && !!mc.panes.lbl && String(mc.panes.lbl.style.zIndex)==='300' && String(mc.panes.wx.style.zIndex)==='260',
-      'map: no blend-mode pane (WebKit ignores it); radar under the labels, labels under the events');
-    T(pressed(base).join()==='Dark' && pressed(lay).length===0 && base.children.length===4 && lay.children.length===5, 'map: Dark is the pressed basemap, no layer on ('+pressed(base)+')');
-    chip(base,'Satellite').click(); var t1=on();
-    T(t1.length===2 && /World_Imagery/.test(t1[0].url) && /World_Boundaries_and_Places/.test(t1[1].url) && t1[1].o.pane==='lbl' && pressed(base).join()==='Satellite' && !!saved() && saved().base==='sat',
-      'map: Satellite = Esri imagery + boundaries and places labels, no hillshade, remembered');
-    chip(base,'Night lights').click(); var t2=on();
-    T(t2.length===2 && /gibs\.earthdata\.nasa\.gov.*VIIRS_Black_Marble.*Level8.*\.png$/.test(t2[0].url) && t2[0].o.maxNativeZoom===8 && /World_Dark_Gray_Reference/.test(t2[1].url), 'map: Night lights = NASA Black Marble + dark labels');
-    var yday=new Date(Date.now()-864e5).toISOString().slice(0,10);
-    chip(base,'Latest pass').click(); var t3=on();
-    T(t3.length===2 && t3[0].url.indexOf('VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/'+yday+'/GoogleMapsCompatible_Level9/')>-1 && /\.jpg$/.test(t3[0].url) && /World_Boundaries_and_Places/.test(t3[1].url),
-      'map: Latest pass = yesterday\'s NASA true colour ('+yday+') + place labels');
-    chip(base,'Dark').click(); T(on().length===2 && on()[0].canvas && pressed(base).join()==='Dark' && saved().base==='dark', 'map: and back to Dark');
-    var h0=hubCalls.length; chip(lay,'Radar').click();
+    function layerIds(){ return mc.layers.map(function(l){ return l.id }) }
+    function feats(id){ var s=mc.sources[id]; return (s && s.data && s.data.features) || [] }
+    var st=mc.style;
+    T(!!st && st.sources && !!st.sources.openmaptiles && /openfreemap\.org\/planet/.test(st.sources.openmaptiles.url) && st.layers.some(function(l){ return l.type==='symbol' }) && hubCalls.indexOf('style')>-1,
+      'map: a vector map - OpenFreeMap\'s dark style fetched by the browser, no key');
+    T(!!mc.opts && mc.opts.cooperativeGestures===true && mc.opts.dragRotate===false && mc.opts.maxZoom===12, 'map: one finger scrolls the hub, a plain wheel scrolls the page (cooperative gestures)');
+    var ids=layerIds(), evL=mc.layers.filter(function(l){ return l.id==='events-c' })[0], alL=mc.layers.filter(function(l){ return l.id==='alerts-f' })[0];
+    T(['alerts-f','alerts-l','storms-l','storms-c','fires-c','events-c'].every(function(i){ return ids.indexOf(i)>-1 }) && !!mc.sources.events && !!mc.sources.dem && mc.sources.dem.type==='raster-dem',
+      'map: the event layers and the terrain source are in place ('+ids.join(',')+')');
+    T(!!alL && alL._before==='place_city' && !!evL && !evL._before, 'map: weather shapes sit under the labels, event dots on top');
+    T(pressed(base).join()==='Dark' && pressed(view).length===0 && pressed(lay).length===0 && base.children.length===2 && view.children.length===2 && lay.children.length===4,
+      'map: Dark pressed, no view or layer on; night lights, latest pass and wars are gone ('+base.children.length+'/'+view.children.length+'/'+lay.children.length+')');
+    chip(base,'Satellite').click();
     setTimeout(function(){
-      var rt=on().filter(function(t){ return /rainviewer/.test(t.url) })[0];
-      if(FAIL_HUB) T(hubCalls.indexOf('radar',h0)>-1 && !rt && /Radar unavailable/.test(tx('map-note')), 'map: radar down, it says so ('+tx('map-note')+')');
-      else T(hubCalls.indexOf('radar',h0)>-1 && !!rt && rt.url==='https://tilecache.rainviewer.com/v2/radar/a6ee65c34d73/256/{z}/{x}/{y}/2/1_1.png' && rt.o.pane==='wx' && /Radar \d/.test(tx('map-note')) && saved().lay.radar===true,
-          'map: Radar = RainViewer\'s newest frame from the browser, under the labels, its time in the note ('+tx('map-note')+')');
-      chip(lay,'Radar').click();
-      T(!on().some(function(t){ return /rainviewer/.test(t.url) }) && !/Radar/.test(tx('map-note')) && saved().lay.radar===false, 'map: Radar off removes it');
-      var h1=hubCalls.length; chip(lay,'US alerts').click(); chip(lay,'Wildfires').click(); chip(lay,'Storms').click();
+      var s2=mc.style;
+      T(!!s2 && s2.sources.esri && /World_Imagery/.test(s2.sources.esri.tiles[0]) && s2.layers[0].type==='raster' && s2.layers.every(function(l){ return l.type==='raster' || l.type==='symbol' || /boundary/.test(l.id) })
+        && s2.layers.some(function(l){ return l.type==='symbol' }) && !s2.layers.some(function(l){ return l.id==='water' }) && pressed(base).join()==='Satellite' && !!saved() && saved().base==='sat',
+        'map: Satellite = Esri imagery under the dark style\'s labels and borders, remembered');
+      T(mc.styleLoads>=2 && layerIds().indexOf('events-c')>-1 && feats('events').length===(FAIL_HUB ? 0 : 5), 'map: after the basemap change the events are drawn again ('+feats('events').length+')');
+      chip(base,'Dark').click();
       setTimeout(function(){
-        var ag=mc.groups[1], fg=mc.groups[2], sg=mc.groups[3];
-        T(hubCalls.slice(h1).filter(function(k){ return k==='nws' }).length===1 && hubCalls.slice(h1).filter(function(k){ return k==='eonet' }).length===1 && !!ag && !!fg && !!sg,
-          'map: alerts, wildfires and storms are three switches and two browser fetches (EONET once for both)');
-        if(FAIL_HUB){
-          T(/US alerts unavailable/.test(tx('map-note')) && /Wildfires unavailable/.test(tx('map-note')) && /Storms unavailable/.test(tx('map-note')) && ag.layers.length===0 && fg.layers.length===0 && sg.layers.length===0,
-            'map: every layer down, each says so ('+tx('map-note')+')');
-          var wfc=chip(lay,'Wars'); if(wfc){ wfc.click(); setTimeout(function(){ T(/Wars unavailable/.test(tx('map-note')), 'wars: the countries file down, it says so ('+tx('map-note')+')') }, 30); } else T(false, 'wars: the Wars chip exists');
-          return;
-        }
-        T(ag.layers.length===2 && /2 severe weather alerts \(\+1 with no map shape\)/.test(tx('map-note')), 'map: 2 outlined NWS alerts drawn, the zone-only one counted, the nameless one dropped ('+tx('map-note')+')');
-        var tor=ag.layers.filter(function(l){ return l.popup && /Tornado/.test(l.popup.textContent) })[0], fl=ag.layers.filter(function(l){ return l.popup && /Flood/.test(l.popup.textContent) })[0];
-        T(!!tor && tor.o.style.color==='#FF3B30' && !!fl && fl.o.style.color==='#FF8A3D', 'map: a tornado warning is red, a severe flood warning orange');
-        T(!!fl && !fl.popup.querySelector('img') && /<img/.test(fl.popup.textContent) && window.__pwned===undefined && /Severe alert/.test(fl.popup.textContent) && /NWS/.test(fl.popup.textContent) && /Maumee/.test(fl.popup.textContent),
-          'map: markup in an alert name stays text; the area, severity and NWS in the popup');
-        T(fg.layers.length===2 && /2 wildfires/.test(tx('map-note')) && fg.layers.every(function(l){ return l.o.color==='#FF5A1F' }), 'map: 2 named wildfires drawn (EONET), no coordinates dropped, sea ice ignored');
-        var bad=fg.layers.filter(function(l){ return /<img/.test(l.popup.textContent) })[0], meers=fg.layers.filter(function(l){ return /MEERS/.test(l.popup.textContent) })[0];
-        T(!!bad && !bad.popup.querySelector('img') && !bad.popup.querySelector('a') && window.__pwned===undefined && !!meers && !meers.popup.querySelector('a') && !/^Wildfire/.test(meers.popup.querySelector('.ev-t').textContent),
-          'map: a fire\'s links are dropped (evil, and IRWIN\'s login page), its name loses the "Wildfire" prefix');
-        T(sg.layers.length===2 && sg.layers[0].ll.length===3 && sg.layers[0].ll[2][0]===20.4 && sg.layers[0].ll[2][1]===-142.4 && /Norbert/.test(sg.layers[1].popup.textContent) && /1 storm/.test(tx('map-note'))
-          && [].every.call(sg.layers[1].popup.querySelectorAll('a'), function(a){ return /^https:\/\/www\.nhc\.noaa\.gov\//.test(a.href) }) && !!sg.layers[1].popup.querySelector('a'),
-          'map: the storm is a 3-point track ending at its last position, with its NHC link');
-        T([].filter.call(document.querySelectorAll('.map-key [data-key]'), function(k){ return !k.hidden }).length===3, 'map: the key shows the three layers that are on');
-        if(allowAsk && !window.__esq.busy){ var n=calls.length; tor.popup.querySelector('.hl-ask').click();
-          T(calls.length===n+1 && calls[n].a==='chat' && /NWS/.test(calls[n].msg||'') && /Tornado Warning/.test(calls[n].msg||''), 'map: Ask hands the alert to Esquiffis'); }
-        chip(lay,'Wildfires').click();
-        T(fg.layers.length===0 && sg.layers.length===2 && !/wildfire/.test(tx('map-note')) && /1 storm/.test(tx('map-note')) && saved().lay.fires===false && saved().lay.storms===true, 'map: Wildfires off leaves the storm track');
-        // Hector 2026-09-15: "in their map they mark the zones that are at war" - the countries of Wikipedia's ongoing wars, shaded
-        var wars=window.__esq.wars, wg=mc.groups[4], hw=hubCalls.length, wchip=chip(lay,'Wars');
-        if(!wchip){ T(false, 'wars: the Wars chip exists'); return }
-        wchip.click();
+        T(mc.style===window.__esq.darkStyle || (mc.style && !mc.style.sources.esri), 'map: and back to Dark');
+        chip(view,'3D').click();
+        T(!!mc.terrain && mc.terrain.source==='dem' && layerIds().indexOf('hills')>-1 && mc.pitch>=50 && mc.rotate===true && pressed(view).join()==='3D' && saved().view['3d']===true,
+          'map: 3D = terrain from the free DEM, hillshade under the labels, a tilt, and the map can be rotated');
+        chip(view,'Globe').click();
+        T(mc.projection==='globe' && !mc.terrain && layerIds().indexOf('hills')<0 && pressed(view).join()==='Globe' && saved().view['3d']===false && saved().view.globe===true && mc.zoom>1, 'map: Globe turns 3D off (one or the other), the projection is a globe and it eases in to fill the box');
+        chip(view,'Globe').click();
+        T(mc.projection==='mercator' && pressed(view).length===0 && mc.pitch===0, 'map: Globe off is a flat map again');
+        var h0=hubCalls.length; chip(lay,'Radar').click();
         setTimeout(function(){
-          var codes={}; (wars||[]).forEach(function(w){ (w.c||[]).forEach(function(c){ codes[c]=1 }) });
-          var expect=['UKR','ISR','SDN','PSE','CHE'].filter(function(c){ return codes[c] }).length;
-          T(Array.isArray(wars) && wars.length>=10 && wars.every(function(w){ return typeof w.n==='string' && /^(major|minor)$/.test(w.t) && Array.isArray(w.c) && w.c.length }) && codes.UKR && codes.SDN && !codes.CHE,
-            'wars: a baked list of ongoing wars, each with a tier and its countries ('+(wars||[]).length+' wars)');
-          T(hubCalls.indexOf('countries',hw)>-1 && !!wg && wg.layers.length===expect && expect>=3 && /countries at war/.test(tx('map-note')) && new RegExp(String(window.__esq.wars.length ? '' : 'x')).test(''),
-            'wars: the countries file comes from the browser once and every listed country in it is shaded ('+(wg ? wg.layers.length : '-')+' of '+expect+'): '+tx('map-note'));
-          var ukr=wg && wg.layers.filter(function(l){ return l.f && l.f.id==='UKR' })[0], che=wg && wg.layers.filter(function(l){ return l.f && l.f.id==='CHE' })[0];
-          T(!!ukr && !che && ukr.o.style.color==='#FF3B30' && /Ukraine · Major war/.test(ukr.popup.textContent) && /since 20\d\d/.test(ukr.popup.textContent) && /Wikipedia/.test(ukr.popup.textContent)
-            && [].every.call(ukr.popup.querySelectorAll('a'), function(a){ return /^https:\/\/en\.wikipedia\.org\//.test(a.href) }) && !!ukr.popup.querySelector('a'),
-            'wars: Ukraine is shaded red as a major war since its year, Switzerland is not; the popup links only to Wikipedia');
-          if(allowAsk && ukr && !window.__esq.busy){ var n=calls.length; ukr.popup.querySelector('.hl-ask').click();
-            T(calls.length===n+1 && /latest on the war in Ukraine/.test(calls[n].msg||''), 'wars: Ask asks Esquiffis for the latest on that war'); }
-          chip(lay,'Wars').click(); T(wg.layers.length===0 && !/at war/.test(tx('map-note')) && saved().lay.wars===false, 'wars: off clears the shading');
-          var hw2=hubCalls.length; chip(lay,'Wars').click(); T(hubCalls.indexOf('countries',hw2)<0 && wg.layers.length===expect, 'wars: on again draws from memory, no second fetch');
-          chip(lay,'Wars').click();
-        }, 30);
-        var tick=window.__esq.hubTick; chip(lay,'Radar').click();
-        setTimeout(function(){
-          var h3=hubCalls.length; tick(Date.now()+16*60000); var fresh=hubCalls.slice(h3);
-          T(fresh.indexOf('radar')>-1 && fresh.indexOf('nws')>-1 && fresh.indexOf('eonet')>-1, 'map: 16 minutes later radar, alerts and storms refresh by themselves, 0 n8n calls ('+fresh.filter(function(k,i,a){ return a.indexOf(k)===i }).join(',')+')');
-          var h4=hubCalls.length; tick(Date.now()+60000); T(hubCalls.length===h4, 'map: nothing refetched a minute later');
+          var rs=mc.sources.radar, rl=mc.layers.filter(function(l){ return l.id==='radar-r' })[0];
+          if(FAIL_HUB) T(hubCalls.indexOf('radar',h0)>-1 && !rs && /Radar unavailable/.test(tx('map-note')), 'map: radar down, it says so ('+tx('map-note')+')');
+          else T(hubCalls.indexOf('radar',h0)>-1 && !!rs && rs.tiles[0]==='https://tilecache.rainviewer.com/v2/radar/a6ee65c34d73/256/{z}/{x}/{y}/2/1_1.png' && !!rl && rl._before==='place_city' && /Radar \d/.test(tx('map-note')) && saved().lay.radar===true,
+              'map: Radar = RainViewer\'s newest frame from the browser, under the labels, its time in the note ('+tx('map-note')+')');
+          chip(lay,'Radar').click();
+          T(!mc.sources.radar && layerIds().indexOf('radar-r')<0 && !/Radar/.test(tx('map-note')) && saved().lay.radar===false, 'map: Radar off removes it');
+          var h1=hubCalls.length; chip(lay,'US alerts').click(); chip(lay,'Wildfires').click(); chip(lay,'Storms').click();
+          setTimeout(function(){
+            T(hubCalls.slice(h1).filter(function(k){ return k==='nws' }).length===1 && hubCalls.slice(h1).filter(function(k){ return k==='eonet' }).length===1,
+              'map: alerts, wildfires and storms are three switches and two browser fetches (EONET once for both)');
+            if(FAIL_HUB){
+              T(/US alerts unavailable/.test(tx('map-note')) && /Wildfires unavailable/.test(tx('map-note')) && /Storms unavailable/.test(tx('map-note')) && feats('alerts').length===0 && feats('fires').length===0 && feats('storms').length===0,
+                'map: every layer down, each says so ('+tx('map-note')+')');
+              return;
+            }
+            var al=feats('alerts');
+            T(al.length===2 && /2 severe weather alerts \(\+1 with no map shape\)/.test(tx('map-note')), 'map: 2 outlined NWS alerts drawn, the zone-only one counted, the nameless one dropped ('+tx('map-note')+')');
+            var tor=al.filter(function(f){ var p=window.__esq.popupFor(f.properties.id); return p && /Tornado/.test(p.textContent) })[0], fl=al.filter(function(f){ var p=window.__esq.popupFor(f.properties.id); return p && /Flood/.test(p.textContent) })[0];
+            T(!!tor && tor.properties.color==='#FF3B30' && !!fl && fl.properties.color==='#FF8A3D', 'map: a tornado warning is red, a severe flood warning orange');
+            var flp=fl && window.__esq.popupFor(fl.properties.id);
+            T(!!flp && !flp.querySelector('img') && /<img/.test(flp.textContent) && window.__pwned===undefined && /Severe alert/.test(flp.textContent) && /NWS/.test(flp.textContent) && /Maumee/.test(flp.textContent),
+              'map: markup in an alert name stays text; the area, severity and NWS in the popup');
+            var fi=feats('fires');
+            T(fi.length===2 && /2 wildfires/.test(tx('map-note')), 'map: 2 named wildfires drawn (EONET), no coordinates dropped, sea ice ignored');
+            var bad=fi.map(function(f){ return window.__esq.popupFor(f.properties.id) }).filter(function(p){ return /<img/.test(p.textContent) })[0], meers=fi.map(function(f){ return window.__esq.popupFor(f.properties.id) }).filter(function(p){ return /MEERS/.test(p.textContent) })[0];
+            T(!!bad && !bad.querySelector('img') && !bad.querySelector('a') && window.__pwned===undefined && !!meers && !meers.querySelector('a') && !/^Wildfire/.test(meers.querySelector('.ev-t').textContent),
+              'map: a fire\'s links are dropped (evil, and IRWIN\'s login page), its name loses the "Wildfire" prefix');
+            var sm=feats('storms'), line=sm.filter(function(f){ return f.geometry.type==='LineString' })[0], pt=sm.filter(function(f){ return f.geometry.type==='Point' })[0], sp=pt && window.__esq.popupFor(pt.properties.id);
+            T(sm.length===2 && !!line && line.geometry.coordinates.length===3 && !!pt && pt.geometry.coordinates[1]===20.4 && pt.geometry.coordinates[0]===-142.4 && !!sp && /Norbert/.test(sp.textContent) && /1 storm/.test(tx('map-note'))
+              && [].every.call(sp.querySelectorAll('a'), function(a){ return /^https:\/\/www\.nhc\.noaa\.gov\//.test(a.href) }) && !!sp.querySelector('a'),
+              'map: the storm is a 3-point track ending at its last position, with its NHC link');
+            T([].filter.call(document.querySelectorAll('.map-key [data-key]'), function(k){ return !k.hidden }).length===3, 'map: the key shows the three layers that are on');
+            if(allowAsk && tor && !window.__esq.busy){ var n=calls.length; window.__esq.popupFor(tor.properties.id).querySelector('.hl-ask').click();
+              T(calls.length===n+1 && calls[n].a==='chat' && /NWS/.test(calls[n].msg||'') && /Tornado Warning/.test(calls[n].msg||''), 'map: Ask hands the alert to Esquiffis'); }
+            // a tap on a feature opens its popup on the map
+            M.fire('click', 'alerts-f', {features:[{properties:{id:tor.properties.id}}], lngLat:{lng:-98.4, lat:34.7}});
+            T(mc.popups.length===1 && !!mc.popups[0].node && /Tornado/.test(mc.popups[0].node.textContent) && mc.popups[0].ll.lat===34.7, 'map: tapping a shape opens its popup where it was tapped');
+            chip(lay,'Wildfires').click();
+            T(feats('fires').length===0 && feats('storms').length===2 && !/wildfire/.test(tx('map-note')) && /1 storm/.test(tx('map-note')) && saved().lay.fires===false && saved().lay.storms===true, 'map: Wildfires off leaves the storm track');
+            var tick=window.__esq.hubTick; chip(lay,'Radar').click();
+            setTimeout(function(){
+              var h3=hubCalls.length; tick(Date.now()+16*60000); var fresh=hubCalls.slice(h3);
+              T(fresh.indexOf('radar')>-1 && fresh.indexOf('nws')>-1 && fresh.indexOf('eonet')>-1, 'map: 16 minutes later radar, alerts and storms refresh by themselves, 0 n8n calls ('+fresh.filter(function(k,i,a){ return a.indexOf(k)===i }).join(',')+')');
+              var h4=hubCalls.length; tick(Date.now()+60000); T(hubCalls.length===h4, 'map: nothing refetched a minute later');
+            }, 30);
+          }, 30);
         }, 30);
       }, 30);
     }, 30);
@@ -795,15 +857,15 @@
       T(/unavailable/.test($('map-note').textContent) && mc.markers.length===0, 'map: both feeds down, it says so ('+$('map-note').textContent+')');
       return;
     }
-    T(mc.tileLayers && mc.tileLayers.length>=1 && /^https:\/\/server\.arcgisonline\.com\/.*World_Dark_Gray_Base/.test(mc.tileLayers[0].url), 'map: the dark basemap is Esri (no key, no watermark)');
+    T(!!mc.map && mc.controls>=1, 'map: MapLibre drew the map with its zoom control');
     T(mc.markers.length===5, 'map: 2 quakes + 3 alerts drawn; green GDACS quakes, ended, unknown and coordinate-less events dropped ('+mc.markers.length+')');
     T(/2 earthquakes/.test($('map-note').textContent) && /3 disaster alerts/.test($('map-note').textContent) && /Updated/.test($('map-note').textContent), 'map: the count line ('+$('map-note').textContent+')');
-    var pops=mc.markers.map(function(m){ return m.popup }).filter(Boolean), tc=pops.filter(function(p){ return /Cyclone/.test(p.textContent) })[0];
+    var pops=mc.markers.map(function(f){ return window.__esq.popupFor(f.properties.id) }).filter(Boolean), tc=pops.filter(function(p){ return /Cyclone/.test(p.textContent) })[0];
     T(pops.length===5 && !!tc && !tc.querySelector('img') && /<img/.test(tc.textContent) && window.__pwned===undefined, 'map: markup in an event name stays text');
     T(pops.every(function(p){ return [].every.call(p.querySelectorAll('a'), function(a){ return /^https:\/\/(earthquake\.usgs\.gov|www\.gdacs\.org)\//.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }) }), 'map: Details links only to USGS or GDACS, in a new tab');
     T(!!tc && !tc.querySelector('a') && pops.filter(function(p){ return /Fiji/.test(p.textContent) && !p.querySelector('a') }).length===1, 'map: a link to any other site is dropped');
-    var red=mc.markers.filter(function(m){ return m.o.color==='#FF3B30' }).length, quake=mc.markers.filter(function(m){ return m.o.color==='#E8A33D' }).length;
-    T(red===1 && quake===2, 'map: colored by what it is (quakes amber, a red alert red)');
+    var red=mc.markers.filter(function(f){ return f.properties.color==='#FF3B30' }).length, quake=mc.markers.filter(function(f){ return f.properties.ring===true && f.properties.color==='#E8A33D' }).length;
+    T(red===1 && quake===2, 'map: colored by what it is (quakes amber rings, a red alert red)');
     var ask=tc && tc.querySelector('.hl-ask'), n=calls.length;
     if(allowAsk && ask && !window.__esq.busy){ ask.click(); T(calls.length===n+1 && calls[n].a==='chat' && /Tropical Cyclone/.test(calls[n].msg||'') && /GDACS/.test(calls[n].msg||''), 'map: Ask hands the event to Esquiffis'); }
   }
@@ -881,8 +943,8 @@
         T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
         tvOK();
         mapOK(false); mapLayersOK(false);
-        camsOK();
-        if(WIDE) grabOK();
+        camsOK(); skyOK();
+        if(WIDE){ fullOK(); grabOK(); }
         // "the stuff than can be refresh auto without execution from N8N, do it": 16 minutes on, the browser refreshes by itself
         var nN8n=calls.length, h0=hubCalls.length, tick=window.__esq && window.__esq.hubTick;
         if(typeof tick==='function') tick(Date.now()+16*60000);

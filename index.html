@@ -202,6 +202,18 @@ button{cursor:pointer}
   letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
 .h-time{font-family:var(--word);font-size:64px;line-height:.88;letter-spacing:.02em;color:var(--ink);text-shadow:0 0 30px rgba(224,27,27,.25);font-variant-numeric:tabular-nums}
 .h-date{color:var(--ink-dim);font-size:15px;margin-top:6px}
+/* the sky under the clock (Hector 2026-09-15): a sun crossing its arc by day, a moon by night; sunrise, sunset, UV, Santa Clarita air */
+.sky{display:flex;align-items:center;gap:14px;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.sky-arc{flex:none;width:120px;height:58px;overflow:visible}
+.sky-h{stroke:var(--rule-hot);stroke-width:1}
+.sky-p{fill:none;stroke:var(--ink-faint);stroke-width:1;stroke-dasharray:3 4;opacity:.7}
+#sky-sun circle{fill:var(--amber);filter:drop-shadow(0 0 6px rgba(232,163,61,.8))}
+#sky-moon path{fill:#C9CFDA;filter:drop-shadow(0 0 5px rgba(201,207,218,.5))}
+.sky-arc .off{display:none}
+.sky.night .sky-p{opacity:.35}
+.sky-facts{min-width:0;display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-dim)}
+.sky-line{color:var(--ink);font-weight:600}
+.sky-row{display:flex;flex-wrap:wrap;gap:4px 14px}
 .wx-row{display:flex;align-items:center;gap:16px}
 .h-temp{font-family:var(--word);font-size:60px;line-height:.88;color:var(--ink);white-space:nowrap}
 .h-temp sup{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-dim);vertical-align:top;margin-left:3px;line-height:1}
@@ -234,6 +246,10 @@ button{cursor:pointer}
 .sc-m{font-family:var(--mono);font-size:11px;color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sc.live .sc-m{color:var(--red)}
 #h-dod-note{margin-top:0}
+/* folded (Hector 2026-09-15: "deployable like news and inbox"): the Dodgers lines and three games, the leagues and the rest behind "more" */
+.hb-sports.shut .sc-ch,.hb-sports.shut .sc-list li:nth-child(n+4),.hb-sports.shut #h-dod-note{display:none}
+.hb-sports.shut .sc-list{gap:4px}
+.hb-sports:not(.shut) #sc-more{display:none}
 /* the inbox: newest first, unread marked by a lit dot and brighter type */
 .ib-count{color:var(--red);margin-left:10px}
 .ib-list{list-style:none;display:flex;flex-direction:column;gap:13px}
@@ -278,10 +294,25 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .map-key .k-w{width:10px;height:7px;border-radius:0;background:rgba(255,59,48,.35);border:1px solid #FF3B30}
 .map-key .k-f{background:#FF5A1F}
 .map-key .k-s{width:14px;height:2px;border-radius:0;background:#6FB7FF}
-.map-key .k-war{width:11px;height:8px;border-radius:0;background:rgba(255,59,48,.45)}
 /* basemap and layer chips: Dark / Satellite / Night lights / Latest pass, then Radar / US alerts / Wildfires / Storms */
 .map-ch{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:10px}
 .map-cg{display:flex;flex-wrap:wrap;gap:6px}
+/* MapLibre's chrome in the hub's colours */
+.map-box .maplibregl-canvas{outline:none}
+.map-box .maplibregl-popup-content{background:#15100F;color:var(--ink);border:1px solid var(--rule);border-radius:0;box-shadow:0 10px 30px rgba(0,0,0,.6);padding:10px 12px;min-width:210px;font-family:var(--disp);font-size:14px;line-height:1.35}
+.map-box .maplibregl-popup-anchor-bottom .maplibregl-popup-tip{border-top-color:#15100F}
+.map-box .maplibregl-popup-anchor-top .maplibregl-popup-tip{border-bottom-color:#15100F}
+.map-box .maplibregl-popup-anchor-left .maplibregl-popup-tip{border-right-color:#15100F}
+.map-box .maplibregl-popup-anchor-right .maplibregl-popup-tip{border-left-color:#15100F}
+.map-box .maplibregl-popup-close-button{color:var(--ink-dim);font-size:18px;padding:0 6px}
+.map-box .maplibregl-ctrl-group{background:#15100F;border:1px solid var(--rule);border-radius:0;box-shadow:none}
+.map-box .maplibregl-ctrl-group button{background:#15100F;border-color:var(--rule)}
+.map-box .maplibregl-ctrl-group button:hover{background:#1F1817}
+.map-box .maplibregl-ctrl-group button .maplibregl-ctrl-icon{filter:invert(.85)}
+.map-box .maplibregl-ctrl-attrib{background:rgba(10,7,8,.72);color:var(--ink-faint);font-size:9px}
+.map-box .maplibregl-ctrl-attrib a{color:var(--ink-dim)}
+.map-box .maplibregl-ctrl-attrib-button{filter:invert(.8)}
+.map-box .maplibregl-cooperative-gesture-screen{background:rgba(6,4,5,.72);color:var(--ink);font-family:var(--disp)}
 .map-box.leaflet-container{background:#0b0809;font-family:var(--disp)}
 /* Leaflet's stylesheet arrives after this one and wins ties, so every override is scoped one class deeper */
 .map-box.leaflet-container .leaflet-popup-content-wrapper,.map-box.leaflet-container .leaflet-popup-tip{background:#15100F;color:var(--ink);border:1px solid var(--rule);border-radius:0;box-shadow:0 10px 30px rgba(0,0,0,.6)}
@@ -462,6 +493,12 @@ body.carrying{user-select:none;-webkit-user-select:none}
   .brk.tr{top:6px;right:6px;border-top:2px solid var(--red);border-right:2px solid var(--red)}
   .brk.bl{bottom:6px;left:6px;border-bottom:2px solid var(--red);border-left:2px solid var(--red)}
   .head{padding:14px 18px}
+  /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's chrome goes, and so does the page's own
+     frame - no padding, rail, notch, brackets or shadow - so the hub gets every pixel */
+  body.full .frame{padding:0;gap:0}
+  body.full .rail,body.full .brk{display:none}
+  body.full .panel{border:0;box-shadow:none;clip-path:none}
+  body.full .head{padding-top:6px;padding-bottom:6px}
   .name{font-size:18px}
   .model{display:inline}
   .gbtn .more{display:inline}
@@ -571,6 +608,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
         <div class="head-r">
           <button id="now" class="now" type="button" aria-controls="hub" aria-expanded="false" hidden><span id="now-time">--:--</span><span id="now-temp" class="nt"></span></button>
           <span id="status" class="chip" aria-live="polite">Locked</span>
+          <button id="full" class="gbtn" type="button" aria-pressed="false" hidden title="The hub on the whole screen, no browser chrome and no frame">Full screen</button>
           <button id="talk-fold" class="gbtn" type="button" aria-controls="scr-chat" aria-expanded="true" hidden>Chat</button>
           <button id="clear" class="gbtn" type="button" hidden>Clear<span class="more"> screen</span></button>
         </div>
@@ -601,6 +639,18 @@ body.carrying{user-select:none;-webkit-user-select:none}
             <section class="hb" data-w="time" aria-label="Clock">
               <div id="h-time" class="h-time">--:--</div>
               <div id="h-date" class="h-date"></div>
+              <div id="sky" class="sky" hidden>
+                <svg id="sky-arc" class="sky-arc" viewBox="0 0 120 58" aria-hidden="true">
+                  <path class="sky-h" d="M4 52 H116"/><path class="sky-p" d="M10 52 A50 50 0 0 1 110 52"/>
+                  <g id="sky-sun" class="off"><circle r="6"/></g>
+                  <g id="sky-moon" class="off"><path d="M0-7a7 7 0 1 0 6 10.5A6 6 0 0 1 0-7z"/></g>
+                </svg>
+                <div class="sky-facts">
+                  <div id="sky-line" class="sky-line"></div>
+                  <div class="sky-row"><span id="sky-rise"></span><span id="sky-set"></span></div>
+                  <div class="sky-row"><span id="sky-uv"></span><span id="sky-air"></span></div>
+                </div>
+              </div>
             </section>
             <section class="hb" data-w="weather" aria-label="Weather">
               <div class="hb-h">Santa Clarita</div>
@@ -609,12 +659,13 @@ body.carrying{user-select:none;-webkit-user-select:none}
                 <div><div id="h-cond" class="h-cond">Checking the sky</div><div id="h-range" class="h-range"></div></div>
               </div>
             </section>
-            <section id="h-mlb" class="hb hb-scores" data-w="dodgers" aria-label="Scores">
-              <div class="hb-h">Dodgers</div>
+            <section id="h-mlb" class="hb hb-sports" data-w="dodgers" aria-labelledby="sp-h">
+              <div class="hb-h"><button id="sp-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="sc-list">Sports</button></div>
               <div id="h-dod" hidden><div id="h-last" class="h-game"></div><div id="h-next" class="h-next"></div></div>
               <p id="h-dod-note" class="h-note" hidden></p>
               <div id="sc-ch" class="tv-ch sc-ch" role="group" aria-label="League"></div>
               <ul id="sc-list" class="sc-list"></ul>
+              <button id="sc-more" class="hb-more" type="button" hidden></button>
               <p id="sc-note" class="h-note">Loading scores…</p>
             </section>
             <section class="hb hb-inbox" data-w="inbox" aria-labelledby="ib-h">
@@ -639,8 +690,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
               <div class="tv-foot"><span id="tv-note" class="h-note">Nothing loads until you press Play.</span><button id="tv-stop" class="hb-btn" type="button" hidden>Stop</button></div>
             </section>
             <section class="hb hb-map" data-w="map" aria-labelledby="map-h">
-              <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span><i class="k-q"></i>Quake</span><span><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span><span data-key="wars" hidden><i class="k-war"></i>At war</span></span></div>
-              <div id="map-ch" class="map-ch"><span id="map-base" class="map-cg" role="group" aria-label="Basemap"></span><span id="map-lay" class="map-cg" role="group" aria-label="Layers"></span></div>
+              <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span><i class="k-q"></i>Quake</span><span><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span></span></div>
+              <div id="map-ch" class="map-ch"><span id="map-base" class="map-cg" role="group" aria-label="Basemap"></span><span id="map-view" class="map-cg" role="group" aria-label="View"></span><span id="map-lay" class="map-cg" role="group" aria-label="Layers"></span></div>
               <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes, disaster alerts, weather and wildfires"></div>
               <p id="map-note" class="h-note">The map loads when the hub is on screen.</p>
             </section>
@@ -845,7 +896,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     ['scr-lock','scr-chat'].forEach(function(s){ $(s).classList.toggle('on', s===id) });
     var locked=id==='scr-lock';
     $('clear').hidden=locked; $('now').hidden=locked;
-    $('talk-fold').hidden=locked || !isWide();
+    $('talk-fold').hidden=locked || !isWide(); $('full').hidden=$('talk-fold').hidden;
     app.classList.toggle('chatting', !locked);
     if(locked){ hubView(false); setStatus('Locked'); fitMark(); }
     placePet();
@@ -1126,6 +1177,59 @@ body.carrying{user-select:none;-webkit-user-select:none}
       }).catch(function(){ dodShow(false, 'The Dodgers feed is unavailable right now.') });
   }
   function dodShow(ok, note){ $('h-dod').hidden=!ok; $('h-dod-note').hidden=ok; $('h-dod-note').textContent=ok ? '' : note }
+  /* Hector 2026-09-15: the empty corner by the clock - sunrise, sunset, the day's UV and Santa Clarita's air, with a sun
+     crossing an arc from sunrise to sunset and a moon crossing it overnight. Open-Meteo's forecast and air-quality
+     APIs (CORS *, no key, 0 executions): sun times every 6 hours, air every 30 minutes, the arc moves every minute. */
+  var SUN_URL='https://api.open-meteo.com/v1/forecast?latitude=34.3917&longitude=-118.5426&daily=sunrise,sunset,uv_index_max&timezone=America%2FLos_Angeles&forecast_days=2',
+      AIR_URL='https://air-quality-api.open-meteo.com/v1/air-quality?latitude=34.3917&longitude=-118.5426&current=us_aqi,pm2_5&timezone=America%2FLos_Angeles',
+      SUN_MS=6*60*60*1000, AIR_MS=30*60*1000;
+  var skyD={rise:[], set:[], uv:[]}, air=null, lastSun=0, lastAir=0;
+  var AQI_CAT=[[50,'Good','#3FD07A'], [100,'Moderate','#E8C547'], [150,'Unhealthy for sensitive groups','#FF8A3D'], [200,'Unhealthy','#FF3B30'], [300,'Very unhealthy','#B44CFF'], [1e9,'Hazardous','#7E0023']];
+  function uvWord(u){ return u<3 ? 'Low' : u<6 ? 'Moderate' : u<8 ? 'High' : u<11 ? 'Very high' : 'Extreme' }
+  function spanText(ms){ var m=Math.max(0, Math.round(ms/60000)), h=Math.floor(m/60); return h ? h+'h '+(m%60)+'m' : m+'m' }
+  function loadSun(){
+    lastSun=Date.now();
+    fetch(SUN_URL).then(function(r){ if(!r.ok) throw new Error('sun '+r.status); return r.json() }).then(function(d){
+      var dl=(d && d.daily) || {}, rise=(dl.sunrise||[]).map(function(s){ return Date.parse(s) }), set=(dl.sunset||[]).map(function(s){ return Date.parse(s) });
+      if(!isFinite(rise[0]) || !isFinite(set[0])) throw new Error('sun shape');
+      skyD={rise:rise, set:set, uv:(dl.uv_index_max||[]).map(Number)}; paintSky();
+    }).catch(function(){ skyD={rise:[], set:[], uv:[]}; paintSky() });
+  }
+  function loadAir(){
+    lastAir=Date.now();
+    fetch(AIR_URL).then(function(r){ if(!r.ok) throw new Error('air '+r.status); return r.json() }).then(function(d){
+      var c=(d && d.current) || {}; air=num(c.us_aqi) ? {aqi:c.us_aqi, pm:num(c.pm2_5) ? c.pm2_5 : null} : null; paintSky();
+    }).catch(function(){ air=null; paintSky() });
+  }
+  function paintSky(now){
+    now=(typeof now==='number' && isFinite(now)) ? now : Date.now();
+    var boxEl=$('sky'); if(!boxEl) return;
+    var haveSun=skyD.rise.length>0 && isFinite(skyD.rise[0]) && isFinite(skyD.set[0]);
+    if(!haveSun && !air){ boxEl.hidden=true; return }
+    boxEl.hidden=false;
+    var sun=$('sky-sun'), moon=$('sky-moon'), line='', f=0, day=false, uvi=0;
+    if(haveSun){
+      var r0=skyD.rise[0], s0=skyD.set[0], r1=isFinite(skyD.rise[1]) ? skyD.rise[1] : r0+864e5, s1=isFinite(skyD.set[1]) ? skyD.set[1] : s0+864e5;
+      if(now<r0){ f=(now-(s0-864e5))/(r0-(s0-864e5)); line='Night  ·  sunrise in '+spanText(r0-now) }         // before today's sunrise: still last night
+      else if(now<s0){ day=true; f=(now-r0)/(s0-r0); line='Day  ·  sunset in '+spanText(s0-now) }
+      else if(now<r1){ f=(now-s0)/(r1-s0); line='Night  ·  sunrise in '+spanText(r1-now); uvi=1 }
+      else if(now<s1){ day=true; f=(now-r1)/(s1-r1); line='Day  ·  sunset in '+spanText(s1-now); uvi=1 }
+      else { f=1; line='Night'; uvi=1 }
+      f=Math.max(0, Math.min(1, f));
+      var a=Math.PI*f, x=60-50*Math.cos(a), y=52-50*Math.sin(a);
+      (day ? sun : moon).setAttribute('transform', 'translate('+x.toFixed(1)+' '+y.toFixed(1)+')');
+      sun.classList.toggle('off', !day); moon.classList.toggle('off', day);
+      $('sky-rise').textContent='Sunrise '+clockText(new Date(now<s0 ? r0 : r1));
+      $('sky-set').textContent='Sunset '+clockText(new Date(now<s0 ? s0 : s1));
+      var uv=skyD.uv[uvi];
+      $('sky-uv').textContent=num(uv) ? 'UV'+(uvi ? ' tomorrow ' : ' ')+Math.round(uv)+'  ·  '+uvWord(uv) : '';
+    } else { sun.classList.add('off'); moon.classList.add('off'); $('sky-rise').textContent=''; $('sky-set').textContent=''; $('sky-uv').textContent='' }
+    $('sky-line').textContent=line;
+    var ae=$('sky-air');
+    if(air){ var cat=AQI_CAT.filter(function(c){ return air.aqi<=c[0] })[0]; ae.textContent='Air '+Math.round(air.aqi)+'  ·  '+cat[1]; ae.style.color=cat[2] }
+    else { ae.textContent=''; ae.style.color='' }
+    boxEl.classList.toggle('night', !day);
+  }
   /* Hector 2026-09-15: "can we add more teams there, maybe the result of the day?" ESPN's public scoreboards (measured
      CORS *, no key, 0 executions) give the day's games for the league he picks: live first, then finals, then what is
      still to come. Refreshed every 15 minutes, every 5 while a game is on. The league is remembered. */
@@ -1174,6 +1278,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     });
     var live=rows.filter(function(r){ return r.state==='live' }).length, fin=rows.filter(function(r){ return r.state==='final' }).length;
     scLive=live>0;
+    $('sc-more').hidden=rows.length<=3; $('sc-more').textContent=(rows.length-3)+' more';   // folded: three games, the rest behind "more"
     $('sc-note').textContent=rows.length ? (live ? live+' live  ·  ' : '')+fin+' final  ·  '+(rows.length-live-fin)+' coming  ·  ESPN, '+clockText(new Date()) : 'No '+pick.name+' games today.';
   }
   function startHub(fresh){
@@ -1181,7 +1286,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     mapLoadSaved(); mapChipsPaint(); scLoadSaved(); scPaint();   // his basemap, layers and league, read at unlock like the hub layout
     if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
-    loadWeather(); var feeds=loadFeeds(); loadMlb(); loadScores(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
+    loadWeather(); var feeds=loadFeeds(); loadMlb(); loadScores(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief(); loadSun(); loadAir();
     if(!platTimer) platTimer=setInterval(feedPlatforms, 1000);   // the ledges follow every move, fold and resize within a second
     if(fresh){
       lastServerTry=Date.now();   // the login call that just happened is the inbox and headlines refresh
@@ -1213,7 +1318,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
     if(MAP && mapSet.lay.radar && now-lastRadar>=RADAR_MS) radarLoad();
     if(MAP && mapSet.lay.alerts && now-lastNws>=NWS_MS) nwsLoad();
     if(MAP && (mapSet.lay.fires || mapSet.lay.storms) && now-lastEonet>=EONET_MS) eonetLoad();
-    if(MAP && mapSet.base==='pass' && passDay!==gibsDay()) mapBaseApply();   // a new UTC day: the latest finished pass moves on
+    if(now-lastSun>=SUN_MS) loadSun();   // the sky under the clock: sun times every 6 hours, air every 30 minutes, the arc every minute
+    if(now-lastAir>=AIR_MS) loadAir();
+    paintSky(now);
     var serverDue=pw && !refreshing && now-lastServerTry>=SERVER_MS, briefDue=pw && !briefing && now-lastBriefTry>=BRIEF_MS;
     if(serverDue) refreshHub(null, briefDue);   // the inbox + BBC and Jerusalem Post headlines: 1 execution every 2 hours; a due brief waits for them
     else if(briefDue) runBrief();               // the brief: 1 execution every 2 hours while the hub is open
@@ -1318,7 +1425,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
      corner to fit the height again. Inbox, headlines, the TV and the map fold from their title. The layout is
      remembered on this device (localStorage: widget names and sizes, never mail). Order is CSS order and never a DOM
      move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
-  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:90}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Scores', span:3, minH:120},
+  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:90}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Sports', span:3, minH:120, shut:true},
     {w:'inbox', name:'Inbox', span:3, minH:110, shut:true}, {w:'tv', name:'Live news', span:6, minH:200}, {w:'map', name:'World events', span:6, minH:180},
     {w:'markets', name:'Markets', span:12, minH:90}, {w:'cams', name:'Live cameras', span:6, minH:200}, {w:'news', name:'News', span:6, minH:110, shut:true}];
   var K_HUB='esq_hub', SPANS=[3,6,9,12], SPAN_WORD={3:'a quarter', 6:'half', 9:'three quarters', 12:'the full width'},
@@ -1764,197 +1871,174 @@ body.carrying{user-select:none;-webkit-user-select:none}
   }
   function camsStop(){ camsOn=false; camsPaint() }
 
-  /* ---------- world events map ----------
-     Earthquakes M4.5+ in the last day (USGS) and current disaster alerts (GDACS: cyclones, floods, volcanoes,
-     droughts, wildfires - and earthquakes only when GDACS rates them Orange or Red, since USGS already shows them).
-     Both let a browser read them: 0 n8n executions, refreshed every 15 minutes while the tab is open. Leaflet 1.9.4
-     (pinned and integrity-checked) loads only when the map is first on screen; nothing moves once it is drawn.
-     Hector 2026-09-15 ("better quality map, 2D with a better view; earthquakes and that stuff"): FOUR BASEMAPS and FOUR
-     LAYERS, every one read straight from the browser with no key and 0 executions (each measured CORS * 2026-09-15).
-     Basemaps: Esri's dark canvas with Esri's Reference LABELS on top and Esri hillshade multiplied in on a canvas (the
-     relief shows and the dark stays dark - see darkReliefLayer); Esri satellite imagery with Esri's boundaries-and-places labels; NASA's
-     Black Marble night lights; and NASA's latest VIIRS true-colour pass (yesterday UTC - today's tiles are only half
-     there until the orbits finish, and GIBS answers 404 for the rest). CARTO stays out: its tiles print "API KEY
-     REQUIRED" across the image. Layers: RainViewer's newest radar frame (10 min); NWS severe and extreme US weather
-     alerts - only the ones the feed outlines, most advisories name zones with no shape and those are counted; NASA
-     EONET's named wildfires and storm tracks (one fetch serves both). NASA FIRMS's satellite fire detections send no
-     CORS header and GOES FireTemp paints the whole scene, clouds included (looked at it), so wildfires are EONET's
-     named incidents. Geopolitical events are not here yet: GDELT's map API is gone (404, measured 2026-09-15). */
+  /* ---------- world events map (MapLibre GL) ----------
+     Earthquakes M4.5+ in the last day (USGS) and current disaster alerts (GDACS: cyclones, floods, volcanoes, droughts,
+     wildfires - and earthquakes only when GDACS rates them Orange or Red, since USGS already shows them). Both let a
+     browser read them: 0 n8n executions, refreshed every 15 minutes while the tab is open.
+     Hector 2026-09-15 ("it looks kinda blurry. 3D?"): the map is VECTOR now. MapLibre GL 5.6 (pinned, integrity-checked,
+     loaded the first time the map is on screen) draws OpenFreeMap's dark style - free, no key, CORS * (measured) - so
+     coastlines and labels are crisp at every zoom and size. Satellite = Esri World_Imagery under the same style's labels
+     and borders. 3D = real terrain from the AWS terrarium tiles (free, no key) with a tilt; Globe = MapLibre's globe
+     projection (one or the other). Layers he can switch on, each 0 executions: RainViewer's newest radar frame (10 min);
+     NWS severe and extreme US alerts (only the ones the feed outlines; zone-only ones are counted); NASA EONET's named
+     wildfires and storm tracks (one fetch for both). Every event is a GeoJSON feature; its popup is built from the DOM
+     (text only) when tapped. One finger scrolls the hub and a plain wheel scrolls the page (cooperative gestures).
+     Gone on Hector's word: the night-lights and latest-pass basemaps, and the shaded "wars" countries. */
   var QUAKES_URL='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson',
       GDACS_URL='https://www.gdacs.org/gdacsapi/api/events/geteventlist/EVENTS4APP', MAP_MS=15*60*1000;
   var RADAR_URL='https://api.rainviewer.com/public/weather-maps.json', RADAR_MS=10*60*1000,
       NWS_URL='https://api.weather.gov/alerts/active?status=actual&message_type=alert&severity=Extreme,Severe', NWS_MS=15*60*1000,
       EONET_URL='https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=14', EONET_MS=15*60*1000,
       EONET_HOSTS=['www.nhc.noaa.gov', 'www.metoc.navy.mil', 'www.gdacs.org'];   // EONET's fire links go to IRWIN's login, not for him
-  var ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/', GIBS='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';
-  function gibsDay(){ return new Date(Date.now()-864e5).toISOString().slice(0,10) }   // yesterday, UTC: a finished day of passes
-  var MAP_BASES=[
-    {k:'dark', name:'Dark', tiles:ESRI+'Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', max:16, hs:true, labels:'dark', attr:'Tiles &copy; Esri'},
-    {k:'sat', name:'Satellite', tiles:ESRI+'World_Imagery/MapServer/tile/{z}/{y}/{x}', max:19, labels:'places', attr:'Imagery &copy; Esri'},
-    {k:'night', name:'Night lights', tiles:GIBS+'VIIRS_Black_Marble/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png', max:8, labels:'dark', attr:'NASA GIBS Black Marble'},
-    {k:'pass', name:'Latest pass', get tiles(){ return GIBS+'VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/'+gibsDay()+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg' }, max:9, labels:'places', attr:'NASA GIBS VIIRS'}];
-  var MAP_LABELS={dark:ESRI+'Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', places:ESRI+'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'},
-      HS_URL=ESRI+'Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}';
-  var MAP_LAYERS=[{k:'radar', name:'Radar'}, {k:'alerts', name:'US alerts'}, {k:'fires', name:'Wildfires'}, {k:'storms', name:'Storms'}, {k:'wars', name:'Wars'}];
-  /* Hector 2026-09-15: "in their map they mark the zones that are at war". The countries in Wikipedia's list of ongoing
-     armed conflicts - Major wars (10,000+ deaths this year or last) and Minor wars (1,000-9,999) - shaded on the map.
-     The list is baked in by tools/build-wars.py (dated below; re-run it to catch up); the page fetches only the countries
-     GeoJSON (jsDelivr, CORS *), once a session, when the layer is on. 0 executions. */
-  var COUNTRIES_URL='https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json',
-      WARS_LINK='https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts',
-      GAZA_POLY=[[[34.2,31.2],[34.6,31.2],[34.6,31.62],[34.2,31.62],[34.2,31.2]]];   // the 110m countries file has no Gaza
-  /*WARS-BEGIN*/
-  var WARS_DATE="2026-09-15", WARS=[{"n":"Arab–Israeli conflict","t":"major","y":1948,"c":["ISR","PSE","LBN","SYR","IRN","IRQ","JOR","SAU","KWT","QAT","ARE","OMN","YEM","EGY"],"d":10997},{"n":"Myanmar conflict","t":"major","y":1948,"c":["MMR","IND","BGD","THA","CHN"],"d":7880},{"n":"Sudanese Civil War","t":"major","y":1955,"c":["SDN","SSD","EGY","LBY","TCD","ETH","CAF"],"d":9625},{"n":"Congolese conflicts","t":"major","y":1960,"c":["COD","CAF","SSD","RWA","BDI","UGA"],"d":3423},{"n":"Somali Civil War","t":"major","y":1978,"c":["SOM","KEN","ETH"],"d":5427},{"n":"Insurgency in the Maghreb","t":"major","y":2002,"c":["DZA","BEN","BFA","CMR","TCD","CIV","LBY","MLI","MRT","MAR","NER","NGA","TGO","TUN"],"d":17382},{"n":"Mexican drug war","t":"major","y":2006,"c":["MEX","BLZ","SLV","HND","GTM","NIC","USA"],"d":5235},{"n":"Russo-Ukrainian war","t":"major","y":2014,"c":["UKR","RUS","BLR"],"d":40178},{"n":"Terrorism in Iran","t":"minor","y":1918,"c":["IRN","IRQ","TUR"],"d":7045},{"n":"Ethiopian civil war","t":"minor","y":1961,"c":["ETH","ERI","SOM","SDN"],"d":4956},{"n":"Colombian conflict","t":"minor","y":1964,"c":["COL","VEN","ECU"],"d":1408},{"n":"Afghan conflict","t":"minor","y":1978,"c":["AFG","PAK","TJK"],"d":4741},{"n":"Terrorism in Ecuador","t":"minor","y":1993,"c":["ECU","COL"],"d":2743},{"n":"Communal conflicts in Nigeria","t":"minor","y":1998,"c":["NGA","NER","CMR","TCD"],"d":3400},{"n":"Crisis in Venezuela","t":"minor","y":2010,"c":["VEN","COL"],"d":336},{"n":"Yemeni civil war","t":"minor","y":2011,"c":["YEM","SAU","ARE","ISR"],"d":1850},{"n":"Aftermath of the Syrian civil war","t":"minor","y":2011,"c":["SYR","ISR","LBN","IRQ","TUR"],"d":1531},{"n":"Cameroonian Civil War","t":"minor","y":2012,"c":["CMR","NGA","NER","TCD"],"d":1361},{"n":"Central African Republic Civil War","t":"minor","y":2012,"c":["CAF","CMR","COD","SSD"],"d":468},{"n":"Haitian crisis","t":"minor","y":2018,"c":["HTI"],"d":2194}];
-  /*WARS-END*/
-  var K_MAP='esq_map', mapSet={base:'dark', lay:{}};   // his basemap and layers, remembered on this device
-  function mapLoadSaved(){   // only a known basemap, and layers saved as exactly true
-    mapSet={base:'dark', lay:{}}; MAP_LAYERS.forEach(function(l){ mapSet.lay[l.k]=false });
+  var ML_JS='https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.6.0/maplibre-gl.js',
+      ML_JS_SRI='sha512-BmEBFbeO0lgfo1PPX5M4B4zxlhZWhOP4Qb1Bn+NVtEI7W1ESwRrLPHpWYqw1WH3QgTqRDNsagD/Fj8mjFCXvSQ==',
+      ML_CSS='https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.6.0/maplibre-gl.css',
+      ML_CSS_SRI='sha512-DBNed2oEjOrfIRj8Czuzs7padWawLWbA64OoDekn8gs2a3J6WOaR5xXfnFgaxKGpxIuSn/rAo/PsgOgO6PZ/vA==';
+  var STYLE_URL='https://tiles.openfreemap.org/styles/dark',
+      IMG_TILES='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      DEM_TILES='https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+  var MAP_BASES=[{k:'dark', name:'Dark'}, {k:'sat', name:'Satellite'}], MAP_VIEWS=[{k:'3d', name:'3D'}, {k:'globe', name:'Globe'}],
+      MAP_LAYERS=[{k:'radar', name:'Radar'}, {k:'alerts', name:'US alerts'}, {k:'fires', name:'Wildfires'}, {k:'storms', name:'Storms'}];
+  var K_MAP='esq_map', mapSet={base:'dark', view:{}, lay:{}};   // his basemap, view and layers, remembered on this device
+  function mapLoadSaved(){   // only a known basemap, and switches saved as exactly true
+    mapSet={base:'dark', view:{}, lay:{}}; MAP_VIEWS.forEach(function(v){ mapSet.view[v.k]=false }); MAP_LAYERS.forEach(function(l){ mapSet.lay[l.k]=false });
     try{ var ms=JSON.parse(localStorage.getItem(K_MAP)||'null');
       if(ms && typeof ms==='object'){ if(MAP_BASES.some(function(b){ return b.k===ms.base })) mapSet.base=ms.base;
+        MAP_VIEWS.forEach(function(v){ if(ms.view && ms.view[v.k]===true) mapSet.view[v.k]=true });
         MAP_LAYERS.forEach(function(l){ if(ms.lay && ms.lay[l.k]===true) mapSet.lay[l.k]=true }) } }catch(e){}
+    if(mapSet.view['3d'] && mapSet.view.globe) mapSet.view.globe=false;   // terrain or globe, not both
   }
   mapLoadSaved();
   function mapSave(){ try{ localStorage.setItem(K_MAP, JSON.stringify(mapSet)) }catch(e){} }
-  var LEAF_JS='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-      LEAF_JS_SRI='sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==',
-      LEAF_CSS='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
-      LEAF_CSS_SRI='sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==';
-  var MAP=null, mapLayer=null, lastMap=0, lastEv=null, leaf=0, leafWait=[];   // leaf: 0 not asked, 1 loading, 2 ready, 3 failed
-  var baseTiles={base:null, labels:null}, passDay='', evNote='';
-  var radarTile=null, lastRadar=0, radarNote='', alertGroup=null, lastNws=0, lastAlerts=null, alertNote='',
-      fireGroup=null, stormGroup=null, lastEonet=0, lastEonetData=null, eonetNote={fires:'', storms:''},
-      warGroup=null, lastCountries=null, warNote='',
-      busyFetch={radar:false, nws:false, eonet:false, countries:false};   // one fetch in flight per source: Wildfires + Storms pressed together = one EONET call
+  var MAP=null, ml=0, mlWait=[], darkStyle=null, lastMap=0, lastEv=null, evNote='', evs={};   // ml: 0 not asked, 1 loading, 2 ready, 3 failed
+  var radarUrl='', lastRadar=0, radarNote='', lastNws=0, lastAlerts=null, alertNote='', lastEonet=0, lastEonetData=null, eonetNote={fires:'', storms:''},
+      busyFetch={style:false, radar:false, nws:false, eonet:false};   // one fetch in flight per source: Wildfires + Storms pressed together = one EONET call
   var GD_KIND={TC:'Cyclone', FL:'Flood', VO:'Volcano', DR:'Drought', WF:'Wildfire', EQ:'Earthquake'},
       GD_COLOR={Green:'#3FD07A', Orange:'#FF8A3D', Red:'#FF3B30'};
-  function loadLeaflet(done){
-    if(window.L){ leaf=2; done(true); return }
-    if(leaf===3){ done(false); return }
-    leafWait.push(done); if(leaf===1) return; leaf=1;
-    var css=document.createElement('link'); css.rel='stylesheet'; css.href=LEAF_CSS; css.integrity=LEAF_CSS_SRI; css.crossOrigin='anonymous';
+  function loadMapLib(done){
+    if(window.maplibregl){ ml=2; done(true); return }
+    if(ml===3){ done(false); return }
+    mlWait.push(done); if(ml===1) return; ml=1;
+    var css=document.createElement('link'); css.rel='stylesheet'; css.href=ML_CSS; css.integrity=ML_CSS_SRI; css.crossOrigin='anonymous';
     document.head.appendChild(css);
-    var js=document.createElement('script'); js.src=LEAF_JS; js.integrity=LEAF_JS_SRI; js.crossOrigin='anonymous';
-    function finish(){ leaf=window.L ? 2 : 3; var w=leafWait; leafWait=[]; w.forEach(function(f){ f(leaf===2) }) }
+    var js=document.createElement('script'); js.src=ML_JS; js.integrity=ML_JS_SRI; js.crossOrigin='anonymous';
+    function finish(){ ml=window.maplibregl ? 2 : 3; var w=mlWait; mlWait=[]; w.forEach(function(f){ f(ml===2) }) }
     js.onload=finish; js.onerror=finish;
     document.head.appendChild(js);
   }
   function mapShown(){ var b=$('map-box'); return !!b && b.offsetWidth>0 && b.offsetHeight>0 }
-  function startMap(){
-    if(!hubOn || !mapShown()) return;
-    if(MAP){ try{ MAP.invalidateSize() }catch(e){} return }
-    loadLeaflet(function(ok){
-      if(MAP || !mapShown()) return;
-      if(!ok){ $('map-note').textContent='The map could not load. Check your connection.'; return }
-      try{
-        MAP=L.map($('map-box'), {worldCopyJump:true, minZoom:1, maxZoom:10, zoomSnap:.5, scrollWheelZoom:false,
-          dragging:!(L.Browser && L.Browser.mobile)});   // on a phone one finger scrolls the hub, two move the map
-        MAP.setView([22, 10], 1);
-        try{ MAP.attributionControl.setPrefix(false) }catch(e){}
-        // panes, bottom to top: base tiles (Leaflet's 200), radar 260, labels 300, then Leaflet's overlay pane (400) for
-        // quakes, alerts and fires - so labels sit over the rain and events sit over everything
-        MAP.createPane('wx').style.zIndex=260;
-        MAP.createPane('lbl').style.zIndex=300;
-        mapLayer=L.layerGroup().addTo(MAP);   // events first: quakes and disaster alerts
-        alertGroup=L.layerGroup().addTo(MAP); fireGroup=L.layerGroup().addTo(MAP); stormGroup=L.layerGroup().addTo(MAP); warGroup=L.layerGroup().addTo(MAP);
-        mapBaseApply();
-      }catch(e){ MAP=null; $('map-note').textContent='The map could not load.'; return }
-      if(lastEv) paintEvents(lastEv[0], lastEv[1]);   // the events already came in at login: draw them
-      else if(!lastMap) loadEvents();                 // (if they are still on the way, they draw when they land)
-      MAP_LAYERS.forEach(function(l){ if(mapSet.lay[l.k]) mapLayerApply(l.k) });   // the layers he left on
-    });
-  }
-  function mapBaseApply(){
-    if(!MAP) return;
-    var b=MAP_BASES.filter(function(x){ return x.k===mapSet.base })[0] || MAP_BASES[0];
-    ['base','labels'].forEach(function(k){ if(baseTiles[k]){ try{ baseTiles[k].remove() }catch(e){} baseTiles[k]=null } });
-    passDay=gibsDay();
-    baseTiles.base=(b.hs ? darkReliefLayer(b) : L.tileLayer(b.tiles, {maxNativeZoom:b.max, maxZoom:10, attribution:b.attr})).addTo(MAP);
-    baseTiles.labels=L.tileLayer(MAP_LABELS[b.labels], {maxNativeZoom:b.labels==='dark' ? 16 : 19, maxZoom:10, pane:'lbl'}).addTo(MAP);
-  }
-  /* The dark basemap is drawn on a canvas per tile: Esri's dark canvas, then Esri's hillshade MULTIPLIED over it, so flat
-     land keeps its colour and slopes darken into real relief. A CSS mix-blend-mode on Leaflet's tile pane is IGNORED by
-     WebKit (measured 2026-09-15: the white hillshade painted over the base plainly and washed the whole map to light
-     grey), and a plain semi-transparent hillshade lifts the ocean as much as the land; the canvas blend is the one
-     mechanism that works in his Safari. Esri sends CORS *, so the canvas stays readable. */
-  var DarkRelief=null;
-  function darkReliefLayer(b){
-    if(!DarkRelief) DarkRelief=L.GridLayer.extend({
-      createTile:function(coords, done){
-        var tile=document.createElement('canvas'), size=this.getTileSize(), o=this.options, ctx=tile.getContext('2d'), left=2;
-        tile.width=size.x; tile.height=size.y;
-        var base=new Image(), hs=new Image(); base.crossOrigin='anonymous'; hs.crossOrigin='anonymous';
-        function finish(){
-          if(--left) return;
-          try{
-            if(base.naturalWidth) ctx.drawImage(base, 0, 0, size.x, size.y);
-            if(hs.naturalWidth){ ctx.globalCompositeOperation='multiply'; ctx.globalAlpha=.9; ctx.drawImage(hs, 0, 0, size.x, size.y) }
-          }catch(e){}
-          done(null, tile);
-        }
-        base.onload=base.onerror=finish; hs.onload=hs.onerror=finish;
-        base.src=L.Util.template(o.base, coords); hs.src=L.Util.template(o.hs, coords);
-        return tile;
-      }
-    });
-    return new DarkRelief({base:b.tiles, hs:HS_URL, maxNativeZoom:b.max, maxZoom:10, attribution:b.attr});
-  }
-  function mapChipsPaint(){
-    var bb=$('map-base'), lb=$('map-lay');
-    if(!bb.children.length) MAP_BASES.forEach(function(b){ var c=document.createElement('button'); c.type='button'; c.className='map-c'; c.textContent=b.name; c.setAttribute('data-base', b.k); bb.appendChild(c) });
-    if(!lb.children.length) MAP_LAYERS.forEach(function(l){ var c=document.createElement('button'); c.type='button'; c.className='map-c'; c.textContent=l.name; c.setAttribute('data-lay', l.k); lb.appendChild(c) });
-    [].forEach.call(bb.children, function(c){ c.setAttribute('aria-pressed', c.getAttribute('data-base')===mapSet.base ? 'true' : 'false') });
-    [].forEach.call(lb.children, function(c){ c.setAttribute('aria-pressed', mapSet.lay[c.getAttribute('data-lay')] ? 'true' : 'false') });
-    [].forEach.call(document.querySelectorAll('.map-key [data-key]'), function(k){ k.hidden=!mapSet.lay[k.getAttribute('data-key')] });
-  }
-  // a layer switched on draws from what it fetched in the last 15 minutes, else fetches; switched off it clears its group
-  function mapLayerApply(k){
-    if(!MAP) return;   // it draws when the map does
-    var on=mapSet.lay[k], now=Date.now();
-    if(k==='radar'){ if(on) radarLoad(); else { if(radarTile){ try{ radarTile.remove() }catch(e){} radarTile=null } radarNote='' } }
-    else if(k==='alerts'){ if(on){ if(lastAlerts && now-lastNws<NWS_MS) paintAlerts(lastAlerts); else nwsLoad() } else { try{ alertGroup.clearLayers() }catch(e){} alertNote='' } }
-    else if(k==='wars'){ if(on){ if(lastCountries) paintWars(lastCountries); else countriesLoad() } else { try{ warGroup.clearLayers() }catch(e){} warNote='' } }
-    else { if(on){ if(lastEonetData && now-lastEonet<EONET_MS) paintEonet(lastEonetData); else eonetLoad() } else { try{ (k==='fires' ? fireGroup : stormGroup).clearLayers() }catch(e){} eonetNote[k]='' } }
-    mapNote();
-  }
-  function countriesLoad(){
-    var p=fetchJson('countries', COUNTRIES_URL); if(!p) return;
-    p.then(function(d){ lastCountries=d; if(mapSet.lay.wars) paintWars(d) })
-      .catch(function(){ warNote='Wars unavailable'; mapNote() });
-  }
-  function paintWars(d){
-    var byCode={}, acc={}, drawn=0;
-    ((d && d.features) || []).forEach(function(f){ if(f && typeof f.id==='string' && f.geometry) byCode[f.id]=f });
-    WARS.forEach(function(w){
-      if(!w || !Array.isArray(w.c) || typeof w.n!=='string') return;
-      w.c.forEach(function(code){
-        var a=acc[code] || (acc[code]={major:false, wars:[]});
-        if(w.t==='major') a.major=true;
-        a.wars.push(w);
-      });
-    });
-    if(warGroup){ try{ warGroup.clearLayers() }catch(e){} }
-    Object.keys(acc).forEach(function(code){
-      var a=acc[code], f=code==='GAZA' ? {type:'Feature', properties:{name:'Gaza Strip'}, geometry:{type:'Polygon', coordinates:GAZA_POLY}} : byCode[code];
-      if(!f || !warGroup) return;
-      var name=String((f.properties && f.properties.name) || code).slice(0,60), color=a.major ? '#FF3B30' : '#FF8A3D';
-      var e={src:'Wikipedia', kind:a.wars.slice(0,3).map(function(w){ return w.n+(w.y ? ' (since '+w.y+')' : '') }).join('  ·  ').slice(0,200),
-        level:'', title:name+' · '+(a.major ? 'Major war' : 'Minor war'), t:null, link:WARS_LINK,
-        ask:'What is the latest on the war in '+name+' ('+a.wars[0].n+')?'};
-      try{ L.geoJSON(f, {style:{color:color, weight:1, opacity:.8, fillColor:color, fillOpacity:a.major ? .2 : .13}}).bindPopup(evPopup(e)).addTo(warGroup); drawn++ }catch(err){}
-    });
-    warNote=drawn+(drawn===1 ? ' country' : ' countries')+' at war (Wikipedia, list from '+WARS_DATE+')';
-    mapNote();
-  }
   function fetchJson(k, url){   // one request per source at a time; a second ask while it flies gets the same answer
     if(busyFetch[k]) return null;
     busyFetch[k]=true;
     return fetch(url).then(function(r){ if(!r.ok) throw new Error(k+' '+r.status); return r.json() })
       .then(function(d){ busyFetch[k]=false; return d }, function(err){ busyFetch[k]=false; throw err });
   }
+  // the satellite style is the dark style's labels and borders over Esri's imagery
+  function styleFor(base){
+    if(!darkStyle) return null;
+    if(base!=='sat') return darkStyle;
+    var s={version:8, name:'Satellite', glyphs:darkStyle.glyphs, sprite:darkStyle.sprite, sources:{}, layers:[]};
+    Object.keys(darkStyle.sources||{}).forEach(function(k){ s.sources[k]=darkStyle.sources[k] });
+    s.sources.esri={type:'raster', tiles:[IMG_TILES], tileSize:256, maxzoom:19, attribution:'Imagery &copy; Esri'};
+    s.layers=[{id:'esri-imagery', type:'raster', source:'esri'}].concat((darkStyle.layers||[]).filter(function(l){ return l && (l.type==='symbol' || /boundary/.test(l.id)) }));
+    return s;
+  }
+  function startMap(){
+    if(!hubOn || !mapShown()) return;
+    if(MAP){ try{ MAP.resize() }catch(e){} return }
+    var sp=darkStyle ? Promise.resolve(darkStyle) : fetchJson('style', STYLE_URL);
+    if(!sp) return;   // the style is already on its way
+    sp.then(function(st){
+      if(!st || !Array.isArray(st.layers)) throw new Error('style shape');
+      darkStyle=st;
+      loadMapLib(function(ok){ if(!ok){ $('map-note').textContent='The map could not load. Check your connection.'; return } mapMake() });
+    }).catch(function(){ $('map-note').textContent='The map could not load. Check your connection.' });
+  }
+  function mapMake(){
+    if(MAP || !mapShown() || !window.maplibregl) return;
+    try{
+      MAP=new maplibregl.Map({container:$('map-box'), style:styleFor(mapSet.base), center:[10,22], zoom:.6, minZoom:0, maxZoom:12, maxPitch:70,
+        attributionControl:{compact:true}, cooperativeGestures:true, dragRotate:false, pitchWithRotate:false, touchPitch:false});
+      MAP.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
+      MAP.on('style.load', mapStyled);   // the first style, and every basemap change (which wipes the sources)
+      ['events-c','alerts-f','fires-c','storms-c','storms-l'].forEach(function(id){
+        MAP.on('click', id, function(e){
+          var f=e.features && e.features[0], ev=f && f.properties && evs[f.properties.id]; if(!ev) return;
+          new maplibregl.Popup({maxWidth:'300px'}).setLngLat(e.lngLat).setDOMContent(evPopup(ev)).addTo(MAP);
+        });
+        MAP.on('mouseenter', id, function(){ try{ MAP.getCanvas().style.cursor='pointer' }catch(err){} });
+        MAP.on('mouseleave', id, function(){ try{ MAP.getCanvas().style.cursor='' }catch(err){} });
+      });
+    }catch(e){ MAP=null; $('map-note').textContent='The map could not load.'; return }
+    if(!lastEv && !lastMap) loadEvents();   // (if the events are still on the way, they draw when they land)
+  }
+  function labelLayer(){ try{ var ls=MAP.getStyle().layers||[]; for(var i=0;i<ls.length;i++) if(ls[i].type==='symbol') return ls[i].id }catch(e){} return undefined }
+  // every style load: the data sources and layers (labels stay on top), then whatever he had on
+  function mapStyled(){
+    if(!MAP) return;
+    var before=labelLayer();
+    try{
+      ['events','alerts','fires','storms'].forEach(function(id){ if(!MAP.getSource(id)) MAP.addSource(id, {type:'geojson', data:{type:'FeatureCollection', features:[]}}) });
+      if(!MAP.getSource('dem')) MAP.addSource('dem', {type:'raster-dem', tiles:[DEM_TILES], encoding:'terrarium', tileSize:256, maxzoom:15});
+      if(!MAP.getLayer('events-c')){
+        MAP.addLayer({id:'alerts-f', type:'fill', source:'alerts', paint:{'fill-color':['get','color'], 'fill-opacity':.22}}, before);
+        MAP.addLayer({id:'alerts-l', type:'line', source:'alerts', paint:{'line-color':['get','color'], 'line-width':1.5, 'line-opacity':.9}}, before);
+        MAP.addLayer({id:'storms-l', type:'line', source:'storms', filter:['==', ['geometry-type'], 'LineString'], paint:{'line-color':'#6FB7FF', 'line-width':2, 'line-opacity':.8}});
+        MAP.addLayer({id:'storms-c', type:'circle', source:'storms', filter:['==', ['geometry-type'], 'Point'], paint:{'circle-radius':6, 'circle-color':'#6FB7FF', 'circle-opacity':.5, 'circle-stroke-color':'#6FB7FF', 'circle-stroke-width':1.5}});
+        MAP.addLayer({id:'fires-c', type:'circle', source:'fires', paint:{'circle-radius':3.5, 'circle-color':'#FF5A1F', 'circle-opacity':.8, 'circle-stroke-color':'#FF5A1F', 'circle-stroke-width':1}});
+        MAP.addLayer({id:'events-c', type:'circle', source:'events', paint:{'circle-radius':['get','r'], 'circle-color':['get','color'], 'circle-opacity':['case', ['get','ring'], .15, .6],
+          'circle-stroke-color':['get','color'], 'circle-stroke-width':1.2, 'circle-stroke-opacity':.95}});
+      }
+    }catch(e){}
+    if(lastEv) paintEvents(lastEv[0], lastEv[1]);
+    if(mapSet.lay.radar && radarUrl) radarShow(radarUrl);
+    if(mapSet.lay.alerts && lastAlerts) paintAlerts(lastAlerts);
+    if((mapSet.lay.fires || mapSet.lay.storms) && lastEonetData) paintEonet(lastEonetData);
+    applyView();
+  }
+  function mapBaseApply(){ if(!MAP || !darkStyle) return; try{ MAP.setStyle(styleFor(mapSet.base), {diff:false}) }catch(e){} }   // style.load redraws everything
+  function applyView(){
+    if(!MAP) return;
+    var td=mapSet.view['3d'], gl=mapSet.view.globe, before=labelLayer();
+    try{
+      if(td){
+        MAP.setTerrain({source:'dem', exaggeration:1.4});
+        if(!MAP.getLayer('hills')) MAP.addLayer({id:'hills', type:'hillshade', source:'dem', paint:{'hillshade-exaggeration':.4, 'hillshade-shadow-color':'#000000', 'hillshade-highlight-color':'#8a8a8a'}}, before);
+        MAP.dragRotate.enable(); MAP.touchPitch.enable();
+        if(MAP.getPitch()<20) MAP.easeTo({pitch:58, duration:900});
+      } else {
+        MAP.setTerrain(null); if(MAP.getLayer('hills')) MAP.removeLayer('hills');
+        MAP.dragRotate.disable(); MAP.touchPitch.disable();
+        if(MAP.getPitch()>0) MAP.easeTo({pitch:0, bearing:0, duration:600});
+      }
+      MAP.setProjection({type:gl ? 'globe' : 'mercator'});
+      if(gl && MAP.getZoom()<1.1) MAP.easeTo({zoom:1.25, duration:700});   // the globe fills the box instead of floating small in it
+    }catch(e){}
+  }
+  function mapChipsPaint(){
+    function fill(box, list, attr){ if(!box.children.length) list.forEach(function(x){ var c=document.createElement('button'); c.type='button'; c.className='map-c'; c.textContent=x.name; c.setAttribute(attr, x.k); box.appendChild(c) }) }
+    var bb=$('map-base'), vb=$('map-view'), lb=$('map-lay');
+    fill(bb, MAP_BASES, 'data-base'); fill(vb, MAP_VIEWS, 'data-view'); fill(lb, MAP_LAYERS, 'data-lay');
+    [].forEach.call(bb.children, function(c){ c.setAttribute('aria-pressed', c.getAttribute('data-base')===mapSet.base ? 'true' : 'false') });
+    [].forEach.call(vb.children, function(c){ c.setAttribute('aria-pressed', mapSet.view[c.getAttribute('data-view')] ? 'true' : 'false') });
+    [].forEach.call(lb.children, function(c){ c.setAttribute('aria-pressed', mapSet.lay[c.getAttribute('data-lay')] ? 'true' : 'false') });
+    [].forEach.call(document.querySelectorAll('.map-key [data-key]'), function(k){ k.hidden=!mapSet.lay[k.getAttribute('data-key')] });
+  }
+  // a layer switched on draws from what it fetched in the last 15 minutes, else fetches; switched off it empties its source
+  function mapLayerApply(k){
+    if(!MAP) return;   // it draws when the map does
+    var on=mapSet.lay[k], now=Date.now();
+    if(k==='radar'){ if(on) radarLoad(); else { radarHide(); radarNote='' } }
+    else if(k==='alerts'){ if(on){ if(lastAlerts && now-lastNws<NWS_MS) paintAlerts(lastAlerts); else nwsLoad() } else { setSrc('alerts', []); alertNote='' } }
+    else { if(on){ if(lastEonetData && now-lastEonet<EONET_MS) paintEonet(lastEonetData); else eonetLoad() } else { setSrc(k, []); eonetNote[k]='' } }
+    mapNote();
+  }
   function mapNote(){
-    var parts=[evNote, radarNote, alertNote, eonetNote.fires, eonetNote.storms, warNote].filter(Boolean);
+    var parts=[evNote, radarNote, alertNote, eonetNote.fires, eonetNote.storms].filter(Boolean);
     $('map-note').textContent=parts.length ? parts.join('  ·  ') : (lastMap ? 'Loading events…' : 'The map loads when the hub is on screen.');
   }
+  function setSrc(id, feats){ if(!MAP) return false; try{ var s=MAP.getSource(id); if(!s) return false; s.setData({type:'FeatureCollection', features:feats}); return true }catch(e){ return false } }
+  function clearEvs(prefix){ Object.keys(evs).forEach(function(k){ if(k.indexOf(prefix)===0) delete evs[k] }) }
   function radarLoad(){
     var p=fetchJson('radar', RADAR_URL); if(!p) return;
     lastRadar=Date.now();
@@ -1962,11 +2046,21 @@ body.carrying{user-select:none;-webkit-user-select:none}
       var past=(d && d.radar && d.radar.past) || [], f=past[past.length-1];
       if(!f || typeof f.path!=='string' || !/^\/v2\/radar\/[\w-]+$/.test(f.path) || !num(f.time)) throw new Error('radar shape');
       if(!mapSet.lay.radar || !MAP) return;
-      var u='https://tilecache.rainviewer.com'+f.path+'/256/{z}/{x}/{y}/2/1_1.png';   // colour scheme 2, smoothed, snow shown
-      if(radarTile) radarTile.setUrl(u); else radarTile=L.tileLayer(u, {maxNativeZoom:10, maxZoom:10, pane:'wx', opacity:.72, attribution:'RainViewer'}).addTo(MAP);
+      radarUrl='https://tilecache.rainviewer.com'+f.path+'/256/{z}/{x}/{y}/2/1_1.png';   // colour scheme 2, smoothed, snow shown
+      radarShow(radarUrl);
       radarNote='Radar '+clockText(new Date(f.time*1000)); mapNote();
     }).catch(function(){ radarNote='Radar unavailable'; mapNote() });
   }
+  function radarShow(u){
+    if(!MAP) return;
+    try{
+      var s=MAP.getSource('radar');
+      if(s && typeof s.setTiles==='function') s.setTiles([u]);
+      else { radarHide(); MAP.addSource('radar', {type:'raster', tiles:[u], tileSize:256, attribution:'RainViewer'});
+        MAP.addLayer({id:'radar-r', type:'raster', source:'radar', paint:{'raster-opacity':.72}}, labelLayer()) }
+    }catch(e){}
+  }
+  function radarHide(){ if(!MAP) return; try{ if(MAP.getLayer('radar-r')) MAP.removeLayer('radar-r'); if(MAP.getSource('radar')) MAP.removeSource('radar') }catch(e){} }
   function nwsLoad(){
     var p=fetchJson('nws', NWS_URL); if(!p) return;
     lastNws=Date.now();
@@ -1974,17 +2068,17 @@ body.carrying{user-select:none;-webkit-user-select:none}
       .catch(function(){ alertNote='US alerts unavailable'; mapNote() });
   }
   function paintAlerts(d){
-    var drawn=0, noShape=0;
-    if(alertGroup){ try{ alertGroup.clearLayers() }catch(e){} }
-    ((d && d.features) || []).forEach(function(f){
+    var feats=[], noShape=0;
+    clearEvs('a');
+    ((d && d.features) || []).forEach(function(f, i){
       var p=(f && f.properties) || {}, g=f && f.geometry;
       if(typeof p.event!=='string') return;
       if(!g || g.type!=='Polygon' || !Array.isArray(g.coordinates)){ noShape++; return }   // a zone name is not a shape
-      var hot=p.severity==='Extreme' || /tornado/i.test(p.event), color=hot ? '#FF3B30' : '#FF8A3D', when=Date.parse(p.onset || p.sent);
-      var e={src:'NWS', kind:String(p.areaDesc || '').split(';')[0].slice(0,80), level:p.severity, title:p.event.slice(0,120), t:isFinite(when) ? new Date(when).toISOString() : null, link:''};
-      if(!alertGroup) return;
-      try{ L.geoJSON(f, {style:{color:color, weight:1.5, opacity:.9, fillColor:color, fillOpacity:.22}}).bindPopup(evPopup(e)).addTo(alertGroup); drawn++ }catch(err){}
+      var hot=p.severity==='Extreme' || /tornado/i.test(p.event), color=hot ? '#FF3B30' : '#FF8A3D', when=Date.parse(p.onset || p.sent), id='a'+i;
+      evs[id]={src:'NWS', kind:String(p.areaDesc || '').split(';')[0].slice(0,80), level:p.severity, title:p.event.slice(0,120), t:isFinite(when) ? new Date(when).toISOString() : null, link:''};
+      feats.push({type:'Feature', properties:{id:id, color:color}, geometry:{type:'Polygon', coordinates:g.coordinates}});
     });
+    var drawn=setSrc('alerts', feats) ? feats.length : 0;
     alertNote=drawn+' severe weather alert'+(drawn===1 ? '' : 's')+(noShape ? ' (+'+noShape+' with no map shape)' : '');
     mapNote();
   }
@@ -2007,19 +2101,22 @@ body.carrying{user-select:none;-webkit-user-select:none}
       if(!pts.length) return;
       var last=pts[pts.length-1], when=Date.parse(last.date), t=isFinite(when) ? new Date(when).toISOString() : null;
       if(cats.indexOf('wildfires')>-1) fires.push({src:'NASA EONET', kind:'Wildfire', lat:last.coordinates[1], lon:last.coordinates[0], title:ev.title.replace(/^Wildfire\s+/i,'').slice(0,120), t:t, link:eonetLink(ev)});
-      else if(cats.indexOf('severeStorms')>-1) storms.push({src:'NASA EONET', kind:'Storm', title:ev.title.slice(0,120), t:t, link:eonetLink(ev), track:pts.map(function(g){ return [g.coordinates[1], g.coordinates[0]] })});
+      else if(cats.indexOf('severeStorms')>-1) storms.push({src:'NASA EONET', kind:'Storm', title:ev.title.slice(0,120), t:t, link:eonetLink(ev), track:pts.map(function(g){ return [g.coordinates[0], g.coordinates[1]] })});
     });
-    if(mapSet.lay.fires && fireGroup){
-      try{ fireGroup.clearLayers() }catch(e){}
-      fires.forEach(function(e){ L.circleMarker([e.lat, e.lon], {radius:3.5, color:'#FF5A1F', weight:1, opacity:.95, fillColor:'#FF5A1F', fillOpacity:.8}).bindPopup(evPopup(e)).addTo(fireGroup) });
+    if(mapSet.lay.fires){
+      clearEvs('f');
+      var ff=fires.map(function(e, i){ evs['f'+i]=e; return {type:'Feature', properties:{id:'f'+i}, geometry:{type:'Point', coordinates:[e.lon, e.lat]}} });
+      setSrc('fires', ff);
       eonetNote.fires=fires.length+' wildfire'+(fires.length===1 ? '' : 's');
     }
-    if(mapSet.lay.storms && stormGroup){
-      try{ stormGroup.clearLayers() }catch(e){}
-      storms.forEach(function(e){
-        L.polyline(e.track, {color:'#6FB7FF', weight:2, opacity:.8}).addTo(stormGroup);
-        L.circleMarker(e.track[e.track.length-1], {radius:6, color:'#6FB7FF', weight:1.5, opacity:.95, fillColor:'#6FB7FF', fillOpacity:.5}).bindPopup(evPopup(e)).addTo(stormGroup);
+    if(mapSet.lay.storms){
+      clearEvs('s');
+      var sf=[];
+      storms.forEach(function(e, i){ evs['s'+i]=e;
+        sf.push({type:'Feature', properties:{id:'s'+i}, geometry:{type:'LineString', coordinates:e.track}});
+        sf.push({type:'Feature', properties:{id:'s'+i}, geometry:{type:'Point', coordinates:e.track[e.track.length-1]}});
       });
+      setSrc('storms', sf);
       eonetNote.storms=storms.length+' storm'+(storms.length===1 ? '' : 's');
     }
     mapNote();
@@ -2053,24 +2150,20 @@ body.carrying{user-select:none;-webkit-user-select:none}
         link:evLink(p.url && p.url.report, 'www.gdacs.org')});
     });
     ng=ev.length-nq;
-    if(mapLayer){
-      try{ mapLayer.clearLayers() }catch(e){}
-      ev.forEach(function(e){
-        L.circleMarker([e.lat, e.lon], {radius:e.r, color:e.color, weight:1.2, opacity:.95, fillColor:e.color, fillOpacity:e.ring ? .15 : .6})
-          .bindPopup(evPopup(e)).addTo(mapLayer);
-      });
-    }
+    clearEvs('e');
+    setSrc('events', ev.map(function(e, i){ evs['e'+i]=e; return {type:'Feature', properties:{id:'e'+i, color:e.color, r:e.r, ring:!!e.ring}, geometry:{type:'Point', coordinates:[e.lon, e.lat]}} }));
     evNote = (!q && !g) ? 'The event feeds are unavailable right now.'
       : nq+' earthquake'+(nq===1 ? '' : 's')+' M4.5+ today  ·  '+ng+' disaster alert'+(ng===1 ? '' : 's')+'  ·  '+((q && g) ? 'Updated ' : 'Partly updated ')+clockText(new Date());
     mapNote();
   }
+  function popupFor(id){ var e=evs[id]; return e ? evPopup(e) : null }   // the popup a tap on that feature would open (tests read it)
   function evPopup(e){
     var d=document.createElement('div'); d.className='ev';
     var h=document.createElement('div'); h.className='ev-t'; h.textContent=e.title; d.appendChild(h);
     var m=document.createElement('div'); m.className='ev-m';
     m.textContent=[e.kind, e.level ? e.level+' alert' : '', ago(e.t), e.src].filter(Boolean).join('  ·  '); d.appendChild(m);
     var row=document.createElement('div'); row.className='ev-r';
-    if(e.link){ var a=document.createElement('a'); a.href=e.link; a.target='_blank'; a.rel='noopener'; a.textContent=e.src==='Wikipedia' ? 'The list' : 'Details'; row.appendChild(a) }
+    if(e.link){ var a=document.createElement('a'); a.href=e.link; a.target='_blank'; a.rel='noopener'; a.textContent='Details'; row.appendChild(a) }
     var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask';
     b.addEventListener('click', function(){ if(busy) return; box.value=e.ask || ('Tell me more about this event from '+e.src+': "'+e.title+'" ('+e.kind+')'); send() });
     row.appendChild(b); d.appendChild(row);
@@ -2246,8 +2339,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
   });
   scPaint();
   $('map-ch').addEventListener('click', function(e){
-    var c=e.target.closest ? e.target.closest('button[data-base],button[data-lay]') : null; if(!c) return;
+    var c=e.target.closest ? e.target.closest('button[data-base],button[data-view],button[data-lay]') : null; if(!c) return;
     if(c.hasAttribute('data-base')){ mapSet.base=c.getAttribute('data-base'); mapSave(); mapBaseApply() }
+    else if(c.hasAttribute('data-view')){ var v=c.getAttribute('data-view'); mapSet.view[v]=!mapSet.view[v]; if(mapSet.view[v]) mapSet.view[v==='3d' ? 'globe' : '3d']=false; mapSave(); applyView() }   // terrain or globe, not both
     else { var k=c.getAttribute('data-lay'); mapSet.lay[k]=!mapSet.lay[k]; mapSave(); mapLayerApply(k) }
     mapChipsPaint();
   });
@@ -2326,7 +2420,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
   // sizeTape adds copies, which resizes the observed box: do it just after the notification, not inside it (WebKit reports a 'ResizeObserver loop' otherwise)
   if(window.ResizeObserver && $('tape')) try{ new ResizeObserver(function(){ setTimeout(sizeTape, 0) }).observe($('tape').firstElementChild) }catch(e){}
   window.addEventListener('resize', function(){
-    fitMark(); placePet(); sizeTape(); $('talk-fold').hidden=!isWide() || $('scr-lock').classList.contains('on'); applyTalk(); if(hub) applyHub(); else startMap();
+    fitMark(); placePet(); sizeTape(); $('talk-fold').hidden=!isWide() || $('scr-lock').classList.contains('on'); $('full').hidden=$('talk-fold').hidden; applyTalk(); if(hub) applyHub(); else startMap();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape() });
@@ -2340,7 +2434,24 @@ body.carrying{user-select:none;-webkit-user-select:none}
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, get wars(){ return WARS }, feedPlatforms:feedPlatforms };
+  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
+    popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText };
+  /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's own Fullscreen API, and while it is on
+     the page drops its frame too (body.full) so the hub gets the whole screen. Safari fires webkitfullscreenchange. */
+  function fullOn(){ return !!(document.fullscreenElement || document.webkitFullscreenElement) }
+  function fullPaint(){
+    var on=fullOn(), b=$('full');
+    document.body.classList.toggle('full', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.textContent=on ? 'Exit full screen' : 'Full screen';
+    setTimeout(function(){ if(hub) applyHub(); startMap(); placePet(); sizeTape() }, 0);   // the new size lands a tick later
+  }
+  $('full').addEventListener('click', function(){
+    var el=document.documentElement;
+    try{
+      if(fullOn()){ var x=document.exitFullscreen || document.webkitExitFullscreen; if(x){ var q=x.call(document); if(q && q.catch) q.catch(function(){}) } }
+      else { var f=el.requestFullscreen || el.webkitRequestFullscreen; if(f){ var p=f.call(el); if(p && p.catch) p.catch(function(){}) } }
+    }catch(e){}
+  });
+  document.addEventListener('fullscreenchange', fullPaint); document.addEventListener('webkitfullscreenchange', fullPaint);
 })();
 </script>
 <script>
