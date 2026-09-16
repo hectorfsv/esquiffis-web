@@ -26,9 +26,9 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams'); localStorage.removeItem('esq_map') }catch(e){}
-  // a map setting saved on the device, with junk in it: an unknown layer, a layer that is not exactly true
-  if(mode==='arrange') localStorage.setItem('esq_map', JSON.stringify({base:'night', lay:{radar:true, bogus:true, alerts:'yes'}}));
+  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams'); localStorage.removeItem('esq_map'); localStorage.removeItem('esq_scores'); localStorage.removeItem('esq_grab') }catch(e){}
+  // a map setting saved on the device, with junk in it: an unknown layer, a layer that is not exactly true; a saved league
+  if(mode==='arrange'){ localStorage.setItem('esq_map', JSON.stringify({base:'night', lay:{radar:true, bogus:true, alerts:'yes'}})); localStorage.setItem('esq_scores', 'mx') }
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
@@ -116,6 +116,12 @@
   var MLB={dates:[{games:[
     {gameDate:new Date(Date.now()-864e5).toISOString(),status:{abstractGameState:'Final'},teams:{home:{team:{id:119,name:'Los Angeles Dodgers'},score:5},away:{team:{id:135,name:'San Diego Padres'},score:2}}},
     {gameDate:new Date(Date.now()+864e5).toISOString(),status:{abstractGameState:'Preview'},teams:{home:{team:{id:137,name:'San Francisco Giants'}},away:{team:{id:119,name:'Los Angeles Dodgers'}}}}]}]};
+  // ESPN's scoreboard for whatever league is asked: one live game, one final, one still to come, one malformed
+  var ESPN={events:[
+    {date:new Date(Date.now()+3*3600000).toISOString(), status:{type:{state:'pre', shortDetail:'9/17 - 8:15 PM EDT'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'BUF'}, score:'0'}, {homeAway:'home', team:{abbreviation:'DET'}, score:'0'}]}]},
+    {date:new Date(Date.now()-3*3600000).toISOString(), status:{type:{state:'post', completed:true, shortDetail:'Final'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'TB'}, score:'2', winner:true}, {homeAway:'home', team:{abbreviation:'ATH'}, score:'1', winner:false}]}]},
+    {date:new Date(Date.now()-1*3600000).toISOString(), status:{type:{state:'in', shortDetail:'Top 7th'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'LAD'}, score:'3'}, {homeAway:'home', team:{abbreviation:'SD'}, score:'1'}]}]},
+    {date:new Date().toISOString(), status:{type:{state:'pre'}}, competitions:[]}]};
   function res(status, body){ return Promise.resolve({ok:status>=200&&status<300, status:status,
     json:function(){return Promise.resolve(body)}, text:function(){return Promise.resolve(typeof body==='string'?body:JSON.stringify(body))}}) }
   window.fetch=function(u,o){
@@ -128,6 +134,7 @@
     if(/rss\.dw\.com/.test(url)){ hubCalls.push('dw'); return FAIL_HUB ? res(503,'') : res(200,DW) }
     if(/israelnationalnews/.test(url)){ hubCalls.push('arutz'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,ARUTZ) }
     if(/statsapi/.test(url)){ hubCalls.push('mlb'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,MLB) }
+    if(/site\.api\.espn\.com/.test(url)){ hubCalls.push('espn:'+url.replace(/^.*\/sports\//,'').replace(/\/scoreboard.*$/,'')); return FAIL_HUB ? res(503,'') : res(200,ESPN) }
     if(/earthquake\.usgs\.gov/.test(url)){ hubCalls.push('quakes'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,QUAKES) }
     if(/gdacs\.org/.test(url)){ hubCalls.push('gdacs'); return FAIL_HUB ? res(503,'') : res(200,GDACS) }
     if(/api\.rainviewer\.com/.test(url)){ hubCalls.push('radar'); return FAIL_HUB ? res(503,'') : res(200,RADAR) }
@@ -314,7 +321,8 @@
     if(FAIL_HUB){
       T(/unavailable/i.test($('h-cond').textContent) && $('h-temp').textContent==='--', 'weather down: it says so');
       T($('h-list').children.length===0 && /Refresh/.test($('h-note').textContent), 'no headlines: it says to tap Refresh');
-      T($('h-mlb').hidden, 'no Dodgers data: the tile stays hidden');
+      T(!$('h-mlb').hidden && !!$('h-dod') && $('h-dod').hidden && /unavailable/.test(tx('h-dod-note')) && /MLB scores are unavailable/.test(tx('sc-note')) && qa('sc-list').length===0,
+        'no Dodgers data and no ESPN: the Dodgers lines hide, the scores say so ('+tx('sc-note')+')');
       T(!!$('mk-metals') && qa('mk-metals').length===0 && qa('mk-fx').length===0 && /unavailable/.test(tx('mk-note')), 'markets down: it says so');
       T(briefCalls.length===0 && /No headlines to summarize yet/.test(tx('brief-meta')), 'news: with no headlines at all, no brief is spent and it says why ('+tx('brief-meta')+')');
       T($('ib-list').children.length===0 && /Refresh/.test($('ib-note').textContent) && $('ib-count').textContent==='', 'no inbox from an older workflow: it says to tap Refresh ('+$('ib-note').textContent+')');
@@ -336,7 +344,8 @@
       T(lis.length && ages.every(function(v){ return isFinite(v) }) && sorted, 'newest first, every headline carrying its age ('+ages.join('<=')+')');
       T(lis.length && /10m/.test(lis[0].textContent), 'the newest story leads ('+lis[0].textContent.replace(/\s+/g,' ').slice(0,70)+')');
       T([].every.call($('h-list').querySelectorAll('a'), function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'every headline opens safely in a new tab');
-      T(!$('h-mlb').hidden && /Dodgers 5, Padres 2/.test($('h-last').textContent) && /at Giants/.test($('h-next').textContent), 'the Dodgers tile ('+$('h-last').textContent+' / '+$('h-next').textContent+')');
+      T(!$('h-mlb').hidden && !!$('h-dod') && !$('h-dod').hidden && /Dodgers 5, Padres 2/.test($('h-last').textContent) && /at Giants/.test($('h-next').textContent), 'the Dodgers lines ('+$('h-last').textContent+' / '+$('h-next').textContent+')');
+      scoresOK();
       // Hector 2026-09-15: "the price of rare metals, the price of change of different coins (dollar, mexican peso, British pound)"
       var mls=qa('mk-metals'), fls=qa('mk-fx');
       T(mls.length===5 && /Gold/.test(mls[0].textContent) && /\$4,310\.80/.test(mls[0].textContent) && /\u22120\.44%/.test(mls[0].textContent) && mls[0].querySelector('.mk-c.down'),
@@ -427,7 +436,9 @@
     $('hub-arrange').click();
     T($('hub-arrange').getAttribute('aria-pressed')==='true' && /Done/.test($('hub-arrange').textContent) && vis(tools) && vis($('hub-reset')), 'Arrange shows the tools on every widget');
     var add=$('hub-add').querySelectorAll('button');
-    T(add.length===1 && /Dodgers/.test(add[0].textContent), 'a hidden widget waits under Arrange ('+(add[0]&&add[0].textContent)+')');
+    T(add.length===1 && /Scores/.test(add[0].textContent), 'a hidden widget waits under Arrange ('+(add[0]&&add[0].textContent)+')');
+    var espn=hubCalls.filter(function(k){ return /^espn:/.test(k) });   // scoresOK has already switched to NFL by now: judge by the FIRST fetch
+    T(!!$('sc-ch') && espn[0]==='espn:soccer/mex.1' && hubCalls.indexOf('espn:baseball/mlb')<0, 'the saved league comes back: Liga MX fetched first, MLB never ('+espn.join(',')+')');
     // the TV keeps playing while it moves: the very same player, never re-created or moved in the page
     $('tv-play').click();
     var f=$('tv-screen').querySelector('iframe'), src=f && f.src;
@@ -565,6 +576,11 @@
     lib.querySelector('[data-k="zocalo"]').click();
     T(city(1)==='Mexico City' && /Zócalo/.test(place(1)) && !vis(lib) && pickBtn(1).getAttribute('aria-expanded')==='false', 'cameras: a tap on Zócalo puts it in frame 2 and closes the list');
     pickBtn(0).click(); T(vis(lib) && /frame 1/.test(tx('cams-lib-t')), 'cameras: the list follows the frame you tap');
+    // Hector 2026-09-15: "blur or uncheck the ones already selected on other camera spot"
+    var zc=lib.querySelector('[data-k="zocalo"]'), wall=lib.querySelector('[data-k="wall"]');
+    T(!!zc && zc.classList.contains('taken') && zc.getAttribute('aria-disabled')==='true' && /In frame 2/.test(zc.textContent) && !!wall && !wall.classList.contains('taken') && wall.getAttribute('aria-pressed')==='true' && lib.querySelectorAll('.lib-c.taken').length===1,
+      'cameras: the camera already in frame 2 is dimmed in frame 1\'s list and says which frame');
+    if(zc) zc.click(); T(city(0)==='Jerusalem' && vis(lib), 'cameras: tapping a taken camera changes nothing');
     tap('cams-lib-x'); T(!vis(lib), 'cameras: Done closes the list');
     $('cams-play').click();
     var ifr=g.querySelectorAll('iframe');
@@ -594,6 +610,45 @@
     T(stick.length===0, 'cameras: every frame label fits inside its button'+(stick.length?' ('+stick.join(', ')+')':''));
     var p0=frames[0].querySelector('.cam-place');
     T(vis(p0) && p0.textContent.length>0 && (p0.scrollWidth<=p0.clientWidth+1 || R(p0).r-R(p0).l>=60), 'cameras: the spot stays readable, not cut to a letter ('+Math.round(R(p0).r-R(p0).l)+'px)');
+  }
+  // the day's scores under the Dodgers lines (Hector 2026-09-15: "more teams, maybe the result of the day")
+  function scoresOK(){
+    var ch=$('sc-ch'), ul=$('sc-list'); if(!ch || !ul){ T(false, 'scores: the league chips and the list exist'); return }
+    function pressed(){ return [].filter.call(ch.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }).join() }
+    var rows=ul.querySelectorAll('li'), expName=mode==='arrange' ? 'Liga MX' : 'MLB', expKey=mode==='arrange' ? 'espn:soccer/mex.1' : 'espn:baseball/mlb';   // arrange mode saved Liga MX
+    T(ch.children.length===5 && pressed()===expName && hubCalls.indexOf(expKey)>-1, 'scores: five leagues, '+expName+' pressed, fetched from ESPN by the browser ('+pressed()+')');
+    T(rows.length===3 && rows[0].classList.contains('live') && rows[1].classList.contains('final') && rows[2].classList.contains('pre'), 'scores: live first, then finals, then what is coming; a malformed game dropped ('+rows.length+')');
+    T(rows.length===3 && /LAD/.test(rows[0].textContent) && /3 – 1/.test(rows[0].textContent) && /Top 7th/.test(rows[0].querySelector('.sc-m').textContent), 'scores: the live game shows its score and inning ('+rows[0].textContent.replace(/\s+/g,' ')+')');
+    T(rows.length===3 && /TB/.test(rows[1].textContent) && rows[1].querySelector('.sc-t.w').textContent==='TB' && rows[1].querySelectorAll('.sc-t.w').length===1 && /Final/.test(rows[1].textContent), 'scores: the final lights the winner');
+    T(rows.length===3 && /BUF/.test(rows[2].textContent) && /\bat\b/.test(rows[2].querySelector('.sc-s').textContent) && /\d:\d\d/.test(rows[2].querySelector('.sc-m').textContent), 'scores: a game to come shows its time ('+(rows[2].querySelector('.sc-m')||{}).textContent+')');
+    T(/1 live/.test(tx('sc-note')) && /1 final/.test(tx('sc-note')) && /1 coming/.test(tx('sc-note')) && /ESPN/.test(tx('sc-note')), 'scores: the note counts ('+tx('sc-note')+')');
+    var n0=hubCalls.length; [].filter.call(ch.children, function(c){ return c.textContent==='NFL' })[0].click();
+    T(hubCalls[n0]==='espn:football/nfl' && pressed()==='NFL' && localStorage.getItem('esq_scores')==='nfl', 'scores: NFL fetches the NFL board and is remembered');
+    var tick=window.__esq && window.__esq.hubTick, n1=hubCalls.length; if(tick) tick(Date.now()+6*60000);
+    T(!!tick && hubCalls.slice(n1).some(function(k){ return /^espn:/.test(k) }), 'scores: with a game on, 6 minutes later the board refreshes by itself (0 n8n calls)');
+    var n2=hubCalls.length; if(tick) tick(Date.now()+60000); T(!hubCalls.slice(n2).some(function(k){ return /^espn:/.test(k) }), 'scores: not again a minute later');
+  }
+  // the switch that lets him pick VaderClawd up (Hector 2026-09-15: "grabbed and moved around, maybe a switch")
+  function grabOK(){
+    var b=$('hub-grab'); if(!b || !window.__esq || !('petBox' in window.__esq)){ T(false, 'grab: the switch exists'); return }
+    T(b.getAttribute('aria-pressed')==='false' && /Grab VaderClawd/.test(b.textContent) && !document.body.classList.contains('petgrab'), 'grab: off by default');
+    var box=window.__esq.petBox, cv=$('vc-stage') && $('vc-stage').querySelector('canvas');
+    if(!box || !cv){ T(false, 'grab: he reports where he is (box '+JSON.stringify(box)+')'); return }
+    var r=cv.getBoundingClientRect(), cx=r.left+box.x+box.w/2, cy=r.top+box.y+box.h/2;
+    function pev(type, x, y){ var e=new PointerEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, pointerId:7, isPrimary:true, pointerType:'mouse', button:0}); (document.elementFromPoint(x,y)||document.body).dispatchEvent(e); return e }
+    var e0=pev('pointerdown', cx, cy);
+    T(!e0.defaultPrevented && window.pet.state().mode!=='held' && !window.__esq.carrying, 'grab: with the switch off a press on him does nothing');
+    pev('pointerup', cx, cy);
+    b.click(); T(b.getAttribute('aria-pressed')==='true' && /on/.test(b.textContent) && localStorage.getItem('esq_grab')==='1' && document.body.classList.contains('petgrab'), 'grab: the switch turns on and is remembered');
+    var e1=pev('pointerdown', cx, cy), st=window.pet.state();
+    T(e1.defaultPrevented && st.mode==='held' && window.__esq.carrying && document.body.classList.contains('carrying'), 'grab: a press on him picks him up ('+st.mode+')');
+    pev('pointermove', cx-160, cy-60); var st2=window.pet.state();
+    T(st2.mode==='held' && Math.abs(st2.x-(box.x+box.w/2-160-18*st2.S))<6 && st2.lift>0, 'grab: he follows the pointer (x '+st2.x+', lift '+st2.lift+')');
+    pev('pointermove', cx, cy-60); pev('pointerup', cx, cy-60); var st3=window.pet.state();
+    T(st3.mode==='falling' && !window.__esq.carrying && !document.body.classList.contains('carrying'), 'grab: let go, he falls back to his floor ('+st3.mode+')');
+    var tr=R(tile('time')), e2=pev('pointerdown', tr.l+20, tr.t+20);
+    T(!e2.defaultPrevented && !window.__esq.carrying, 'grab: a press anywhere else is left alone'); pev('pointerup', tr.l+20, tr.t+20);
+    b.click(); T(b.getAttribute('aria-pressed')==='false' && localStorage.getItem('esq_grab')==='0', 'grab: and the switch turns off');
   }
   // the basemaps and the layers he can switch on (Hector 2026-09-15: "better quality map", "earthquakes and that stuff")
   function mapLayersOK(allowAsk){
@@ -756,6 +811,7 @@
         tvOK();
         mapOK(false); mapLayersOK(false);
         camsOK();
+        if(WIDE) grabOK();
         // "the stuff than can be refresh auto without execution from N8N, do it": 16 minutes on, the browser refreshes by itself
         var nN8n=calls.length, h0=hubCalls.length, tick=window.__esq && window.__esq.hubTick;
         if(typeof tick==='function') tick(Date.now()+16*60000);

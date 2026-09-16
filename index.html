@@ -223,6 +223,17 @@ button{cursor:pointer}
 .h-game b.w{color:var(--go)}
 .h-game b.l{color:var(--red-hot)}
 .h-next{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:6px}
+/* the day's scores for the league he picks (ESPN), under the Dodgers lines */
+.sc-ch{margin-top:12px}
+.sc-list{list-style:none;display:flex;flex-direction:column;gap:6px;font-variant-numeric:tabular-nums}
+.sc{display:grid;grid-template-columns:3.4em 4.8em 3.4em minmax(0,1fr);align-items:baseline;gap:8px;font-size:14px;line-height:1.3}
+.sc-t{font-weight:600;color:var(--ink-dim);white-space:nowrap}
+.sc-t.w{color:var(--ink)}
+.sc-s{font-family:var(--mono);font-size:13px;color:var(--ink);text-align:center;white-space:nowrap}
+.sc.pre .sc-s{color:var(--ink-faint);font-size:11px}
+.sc-m{font-family:var(--mono);font-size:11px;color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc.live .sc-m{color:var(--red)}
+#h-dod-note{margin-top:0}
 /* the inbox: newest first, unread marked by a lit dot and brighter type */
 .ib-count{color:var(--red);margin-left:10px}
 .ib-list{list-style:none;display:flex;flex-direction:column;gap:13px}
@@ -290,6 +301,9 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
    show while arranging. Folded widgets keep a short summary. */
 .hub-bar{order:0;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;padding:10px max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left))}
 .hub-add{display:flex;flex-wrap:wrap;gap:6px}
+#hub-grab[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
+body.carrying,body.carrying *{cursor:grabbing!important}
+body.carrying{user-select:none;-webkit-user-select:none}
 .hb{position:relative}
 .hb.off{display:none!important}
 .hb-fold{display:inline-flex;align-items:center;gap:8px;padding:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;text-align:left}
@@ -396,6 +410,9 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .lib-c span{font-size:12.5px;color:var(--ink-dim)}
 .lib-c:hover{border-color:var(--rule-hot)}
 .lib-c[aria-pressed="true"]{border-color:var(--red);background:rgba(224,27,27,.18)}
+.lib-c.taken{opacity:.38;cursor:default}
+.lib-c.taken:hover{border-color:var(--rule)}
+.lib-in{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red)}
 .cam-screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--rule);overflow:hidden}
 .cam-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
 .hb-cams.playing .cam-screen{border-color:var(--red)}
@@ -493,6 +510,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:14px 16px}
   .hub .hub-bar{padding:0}
   .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--petband)}   /* his feet; the rest of his canvas rises behind the hub */
+  body.carrying .hub-floor{z-index:3}   /* while he is carried he passes in front of the widgets */
   .hub-floor .petbar::after{display:none}
   .chat .talk,.chat.hubview .talk{flex:0 0 clamp(400px,25%,640px);min-width:0;background:linear-gradient(180deg,rgba(6,4,5,.6),rgba(6,4,5,.76))}   /* Gargantua shows through */
   /* folded away (Hector 2026-09-15): the conversation gives up its column, the hub takes the whole window and
@@ -575,7 +593,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
         <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
         <div class="side">
           <aside id="hub" class="hub" aria-label="Hub">
-            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
+            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-grab" class="hb-btn" type="button" aria-pressed="false" title="Pick VaderClawd up with the pointer and put him down somewhere else">Grab VaderClawd</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button><button id="hub-arrange" class="hb-btn" type="button" aria-pressed="false">Arrange</button></div>
             <section class="hb" data-w="time" aria-label="Clock">
               <div id="h-time" class="h-time">--:--</div>
               <div id="h-date" class="h-date"></div>
@@ -587,10 +605,13 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
                 <div><div id="h-cond" class="h-cond">Checking the sky</div><div id="h-range" class="h-range"></div></div>
               </div>
             </section>
-            <section id="h-mlb" class="hb" data-w="dodgers" aria-label="Dodgers" hidden>
+            <section id="h-mlb" class="hb hb-scores" data-w="dodgers" aria-label="Scores">
               <div class="hb-h">Dodgers</div>
-              <div id="h-last" class="h-game"></div>
-              <div id="h-next" class="h-next"></div>
+              <div id="h-dod" hidden><div id="h-last" class="h-game"></div><div id="h-next" class="h-next"></div></div>
+              <p id="h-dod-note" class="h-note" hidden></p>
+              <div id="sc-ch" class="tv-ch sc-ch" role="group" aria-label="League"></div>
+              <ul id="sc-list" class="sc-list"></ul>
+              <p id="sc-note" class="h-note">Loading scores…</p>
             </section>
             <section class="hb hb-inbox" data-w="inbox" aria-labelledby="ib-h">
               <div class="hb-h"><button id="ib-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="ib-list">Inbox<span id="ib-count" class="ib-count"></span></button><button id="ib-refresh" class="hb-btn" type="button">Refresh</button></div>
@@ -1061,7 +1082,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
         ((d&&d.dates)||[]).forEach(function(x){ (x.games||[]).forEach(function(g){ games.push(g) }) });
         games.sort(function(a,b){ return Date.parse(a.gameDate)-Date.parse(b.gameDate) });
         games.forEach(function(g){ var st=(g.status||{}).abstractGameState; if(st==='Final') last=g; else if(!next && (st==='Live'||st==='Preview')) next=g });
-        if(!last && !next){ $('h-mlb').hidden=true; return }
+        if(!last && !next){ dodShow(false, 'No Dodgers game in the last few days.'); return }
         function side(g){ var home=g.teams.home.team.id===119; return {us:home?g.teams.home:g.teams.away, them:home?g.teams.away:g.teams.home, home:home} }
         var L=$('h-last'); L.textContent='';
         if(last){
@@ -1074,15 +1095,66 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
           $('h-next').textContent=(live?'Live now ':'Next: ')+(n.home?'vs ':'at ')+shortTeam(n.them.team.name)
             +(live?'':'  ·  '+dt.toLocaleDateString('en-US',{weekday:'short'})+' '+clockText(dt));
         } else $('h-next').textContent='';
-        $('h-mlb').hidden=false;
-      }).catch(function(){ $('h-mlb').hidden=true });
+        dodShow(true);
+      }).catch(function(){ dodShow(false, 'The Dodgers feed is unavailable right now.') });
+  }
+  function dodShow(ok, note){ $('h-dod').hidden=!ok; $('h-dod-note').hidden=ok; $('h-dod-note').textContent=ok ? '' : note }
+  /* Hector 2026-09-15: "can we add more teams there, maybe the result of the day?" ESPN's public scoreboards (measured
+     CORS *, no key, 0 executions) give the day's games for the league he picks: live first, then finals, then what is
+     still to come. Refreshed every 15 minutes, every 5 while a game is on. The league is remembered. */
+  var LEAGUES=[{k:'mlb', name:'MLB', path:'baseball/mlb'}, {k:'nfl', name:'NFL', path:'football/nfl'}, {k:'nba', name:'NBA', path:'basketball/nba'},
+    {k:'nhl', name:'NHL', path:'hockey/nhl'}, {k:'mx', name:'Liga MX', path:'soccer/mex.1'}];
+  var K_SC='esq_scores', scPick=LEAGUES[0], lastSc=0, scLive=false;
+  function scLoadSaved(){ scPick=LEAGUES[0]; try{ var sck=localStorage.getItem(K_SC); LEAGUES.forEach(function(l){ if(l.k===sck) scPick=l }) }catch(e){} }   // read at unlock, like the layout
+  scLoadSaved();
+  function scMs(){ return (scLive ? 5 : 15)*60*1000 }
+  function scPaint(){
+    var bar=$('sc-ch');
+    if(!bar.children.length) LEAGUES.forEach(function(l){ var b=document.createElement('button'); b.type='button'; b.className='tv-c'; b.textContent=l.name; b.setAttribute('data-k', l.k); bar.appendChild(b) });
+    [].forEach.call(bar.children, function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===scPick.k ? 'true' : 'false') });
+  }
+  function loadScores(){
+    lastSc=Date.now();
+    var pick=scPick;
+    fetch('https://site.api.espn.com/apis/site/v2/sports/'+pick.path+'/scoreboard').then(function(r){ if(!r.ok) throw new Error('espn '+r.status); return r.json() })
+      .then(function(d){ if(pick===scPick) paintScores(d, pick) })
+      .catch(function(){ if(pick!==scPick) return; $('sc-list').textContent=''; $('sc-note').textContent=pick.name+' scores are unavailable right now.' });
+  }
+  function paintScores(d, pick){
+    var rows=[], today=new Date().toDateString();
+    ((d && d.events) || []).forEach(function(ev){
+      var c=ev && ev.competitions && ev.competitions[0], st=(ev && ev.status && ev.status.type) || {};
+      if(!c || !Array.isArray(c.competitors) || c.competitors.length<2) return;
+      var home=c.competitors.filter(function(x){ return x && x.homeAway==='home' })[0] || c.competitors[0],
+          away=c.competitors.filter(function(x){ return x && x.homeAway==='away' })[0] || c.competitors[1];
+      function nm(x){ return String((x.team && (x.team.abbreviation || x.team.shortDisplayName)) || '?').slice(0,6) }
+      var state=st.state==='in' ? 'live' : (st.state==='post' || st.completed===true) ? 'final' : 'pre', when=Date.parse(ev.date);
+      rows.push({state:state, order:state==='live' ? 0 : state==='final' ? 1 : 2, when:isFinite(when) ? when : 0, away:nm(away), home:nm(home),
+        as:state==='pre' ? '' : String(away.score==null ? '' : away.score), hs:state==='pre' ? '' : String(home.score==null ? '' : home.score),
+        aw:away.winner===true, hw:home.winner===true, detail:String(st.shortDetail || st.detail || '').slice(0,40)});
+    });
+    rows.sort(function(a,b){ return a.order-b.order || a.when-b.when });
+    var ul=$('sc-list'); ul.textContent='';
+    rows.slice(0,20).forEach(function(r){
+      var li=document.createElement('li'); li.className='sc '+r.state;
+      var a=document.createElement('span'); a.className='sc-t'+(r.aw ? ' w' : ''); a.textContent=r.away;
+      var s=document.createElement('span'); s.className='sc-s'; s.textContent=r.state==='pre' ? 'at' : r.as+' – '+r.hs;
+      var h=document.createElement('span'); h.className='sc-t'+(r.hw ? ' w' : ''); h.textContent=r.home;
+      var m=document.createElement('span'); m.className='sc-m';
+      var d=r.when ? new Date(r.when) : null;
+      m.textContent=r.state==='pre' ? (d ? (d.toDateString()===today ? '' : d.toLocaleDateString('en-US',{weekday:'short'})+' ')+clockText(d) : r.detail) : r.detail;
+      li.appendChild(a); li.appendChild(s); li.appendChild(h); li.appendChild(m); ul.appendChild(li);
+    });
+    var live=rows.filter(function(r){ return r.state==='live' }).length, fin=rows.filter(function(r){ return r.state==='final' }).length;
+    scLive=live>0;
+    $('sc-note').textContent=rows.length ? (live ? live+' live  ·  ' : '')+fin+' final  ·  '+(rows.length-live-fin)+' coming  ·  ESPN, '+clockText(new Date()) : 'No '+pick.name+' games today.';
   }
   function startHub(fresh){
     hubInit(); applyTalk(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
-    mapLoadSaved(); mapChipsPaint();   // his basemap and layers, read at unlock like the hub layout
+    mapLoadSaved(); mapChipsPaint(); scLoadSaved(); scPaint();   // his basemap, layers and league, read at unlock like the hub layout
     if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
-    loadWeather(); var feeds=loadFeeds(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
+    loadWeather(); var feeds=loadFeeds(); loadMlb(); loadScores(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
     if(fresh){
       lastServerTry=Date.now();   // the login call that just happened is the inbox and headlines refresh
       // the login just brought BBC and Jerusalem Post; let Fox land (or 4 s pass), then one brief for everything
@@ -1106,6 +1178,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     if(now-lastWx>=REFRESH_MS) loadWeather();
     if(now-lastFeeds>=REFRESH_MS) loadFeeds();
     if(now-lastMlb>=MLB_MS) loadMlb();
+    if(now-lastSc>=scMs()) loadScores();   // the league's scores: 15 minutes, 5 while a game is on
     if(now-lastMap>=MAP_MS) loadEvents();
     if(now-lastMk>=MK_MS) loadMarkets();
     // the map layers he switched on, while the map exists: radar every 10 minutes, alerts and EONET every 15 - 0 executions
@@ -1217,7 +1290,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      corner to fit the height again. Inbox, headlines, the TV and the map fold from their title. The layout is
      remembered on this device (localStorage: widget names and sizes, never mail). Order is CSS order and never a DOM
      move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
-  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:90}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Dodgers', span:3, minH:90},
+  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:90}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Scores', span:3, minH:120},
     {w:'inbox', name:'Inbox', span:3, minH:110, shut:true}, {w:'tv', name:'Live news', span:6, minH:200}, {w:'map', name:'World events', span:6, minH:180},
     {w:'markets', name:'Markets', span:12, minH:90}, {w:'cams', name:'Live cameras', span:6, minH:200}, {w:'news', name:'News', span:6, minH:110, shut:true}];
   var K_HUB='esq_hub', SPANS=[3,6,9,12], SPAN_WORD={3:'a quarter', 6:'half', 9:'three quarters', 12:'the full width'},
@@ -1641,7 +1714,16 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     $('cams-lib').hidden=camsLibFor<0;
     if(camsLibFor>=0){
       $('cams-lib-t').textContent='Choose the camera for frame '+(camsLibFor+1);
-      [].forEach.call($('cams-lib-list').querySelectorAll('.lib-c'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===cams.picks[camsLibFor] ? 'true' : 'false') });
+      // Hector 2026-09-15: a camera already in another frame is dimmed and says which frame, and cannot be picked twice
+      [].forEach.call($('cams-lib-list').querySelectorAll('.lib-c'), function(b){
+        var k=b.getAttribute('data-k'), other=-1;
+        for(var j=0;j<cams.n;j++) if(j!==camsLibFor && cams.picks[j]===k) other=j;
+        b.setAttribute('aria-pressed', k===cams.picks[camsLibFor] ? 'true' : 'false');
+        b.classList.toggle('taken', other>=0); b.setAttribute('aria-disabled', other>=0 ? 'true' : 'false');
+        var tag=b.querySelector('.lib-in');
+        if(other>=0){ if(!tag){ tag=document.createElement('i'); tag.className='lib-in'; b.appendChild(tag) } tag.textContent='In frame '+(other+1) }
+        else if(tag) tag.remove();
+      });
     }
     $('cams-play').hidden=camsOn; $('cams-stop').hidden=!camsOn;
     var t=tile('cams'); if(t) t.classList.toggle('playing', camsOn);
@@ -2068,7 +2150,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   $('cams-lib').addEventListener('click', function(e){
     if(!e.target.closest) return;
     if(e.target.closest('#cams-lib-x')){ camsLibFor=-1; camsPaint(); return }
-    var c=e.target.closest('.lib-c'); if(!c || camsLibFor<0) return;
+    var c=e.target.closest('.lib-c'); if(!c || camsLibFor<0 || c.classList.contains('taken')) return;   // a taken camera stays where it is
     if(camBy(c.getAttribute('data-k'))){ cams.picks[camsLibFor]=c.getAttribute('data-k'); camsSave() }
     camsLibFor=-1; camsPaint();
   });
@@ -2082,6 +2164,13 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     tvPaint(); if(playing) tvPlay();
   });
   tvPaint();
+  $('sc-ch').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('button[data-k]') : null; if(!b) return;
+    LEAGUES.forEach(function(l){ if(l.k===b.getAttribute('data-k')) scPick=l });
+    try{ localStorage.setItem(K_SC, scPick.k) }catch(err){}
+    scPaint(); $('sc-list').textContent=''; $('sc-note').textContent='Loading '+scPick.name+'…'; loadScores();
+  });
+  scPaint();
   $('map-ch').addEventListener('click', function(e){
     var c=e.target.closest ? e.target.closest('button[data-base],button[data-lay]') : null; if(!c) return;
     if(c.hasAttribute('data-base')){ mapSet.base=c.getAttribute('data-base'); mapSave(); mapBaseApply() }
@@ -2089,6 +2178,42 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     mapChipsPaint();
   });
   mapChipsPaint();
+  /* Hector 2026-09-15: "make vaderclawd able to be grabbed and moved around, maybe a switch to get it on or off".
+     The engine already knows how to be carried (the desktop pet is picked up the same way: grab, hold, drop) and it
+     reports his box through PET_POST. With the switch on, a press that lands on him lifts him, he follows the pointer
+     and falls to his floor where he is let go. Presses anywhere else are untouched. Off by default, remembered. */
+  var K_GRAB='esq_grab', grabOn=false, petBox=null, carrying=null;
+  try{ grabOn=localStorage.getItem(K_GRAB)==='1' }catch(e){}
+  window.PET_POST=function(o){ if(o && o.type==='hit') petBox=o.w ? o : null };
+  function petCanvas(){ var st=$('vc-stage'); return st ? st.querySelector('canvas') : null }
+  function petHitAt(cx, cy){   // the point on his canvas if this client point is on him, else null
+    var cv=petCanvas(); if(!cv || !petBox || !grabOn) return null;
+    var r=cv.getBoundingClientRect(), x=cx-r.left, y=cy-r.top;
+    return (x>=petBox.x-6 && x<=petBox.x+petBox.w+6 && y>=petBox.y-8 && y<=petBox.y+petBox.h+6) ? {x:x, y:y} : null;
+  }
+  function grabPaint(){ var b=$('hub-grab'); b.setAttribute('aria-pressed', grabOn ? 'true' : 'false'); b.textContent=grabOn ? 'Grab: on' : 'Grab VaderClawd'; document.body.classList.toggle('petgrab', grabOn) }
+  function petLetGo(e){
+    if(!carrying || (e && e.pointerId!==undefined && e.pointerId!==carrying.id)) return;
+    carrying=null; document.body.classList.remove('carrying'); try{ window.pet.drop() }catch(err){}
+  }
+  $('hub-grab').addEventListener('click', function(){ grabOn=!grabOn; if(!grabOn) petLetGo(); try{ localStorage.setItem(K_GRAB, grabOn ? '1' : '0') }catch(e){} grabPaint() });
+  document.addEventListener('pointerdown', function(e){
+    if(!grabOn || carrying || e.isPrimary===false) return;
+    var h=petHitAt(e.clientX, e.clientY); if(!h || !window.pet || !window.pet.grab) return;
+    e.preventDefault(); e.stopPropagation();
+    carrying={id:e.pointerId}; document.body.classList.add('carrying');
+    try{ window.pet.grab(); window.pet.hold(h.x, h.y) }catch(err){}
+  }, true);
+  document.addEventListener('pointermove', function(e){
+    if(!carrying || e.pointerId!==carrying.id) return;
+    var cv=petCanvas(); if(!cv) return; var r=cv.getBoundingClientRect();
+    try{ window.pet.hold(e.clientX-r.left, e.clientY-r.top) }catch(err){}
+  }, true);
+  document.addEventListener('pointerup', petLetGo, true); document.addEventListener('pointercancel', petLetGo, true);
+  // a finger on him must carry him, not scroll the hub
+  document.addEventListener('touchstart', function(e){ if(grabOn && e.touches.length===1 && petHitAt(e.touches[0].clientX, e.touches[0].clientY)) e.preventDefault() }, {passive:false, capture:true});
+  document.addEventListener('touchmove', function(e){ if(carrying) e.preventDefault() }, {passive:false, capture:true});
+  grabPaint();
   /* iOS Safari shrinks the VISUAL viewport for the keyboard and leaves the layout
      viewport alone, so a 100dvh column would sit under the keys. Size the app to
      what is actually visible and pin it to the top of it. Nothing is fixed. */
@@ -2135,7 +2260,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick };
+  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying } };
 })();
 </script>
 <script>
@@ -2653,7 +2778,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
      VADERCLAWD - everything below lives only in the desktop pet
      ===================================================================== */
   host=document.getElementById('vc-stage'); kind='pet';
-  function post(o){ try{ window.webkit.messageHandlers.pet.postMessage(o) }catch(e){} }
+  function post(o){ try{ if(window.PET_POST) window.PET_POST(o) }catch(e){} try{ window.webkit.messageHandlers.pet.postMessage(o) }catch(e){} }   // WEB: the page listens too
   function pickOne(a){ return a[Math.floor(Math.random()*a.length)]; }
 
   // glow: 'pixel' rings or the old 'shadow' blur; sched: 'raf' (60 Hz callbacks, most skipped) or 'timer'

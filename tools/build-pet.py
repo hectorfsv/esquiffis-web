@@ -113,6 +113,10 @@ js = once(js, "  window.pet={\n",
 js = once(js, "running=true; last=lastDraw=performance.now(); requestAnimationFrame(frame);",
               "running=true; last=lastDraw=performance.now(); if(opts.sched==='timer') setTimeout(tick,16); else requestAnimationFrame(frame);")
 
+# the page hears what the desktop app hears (his hit box, so a press on him can pick him up - Hector 2026-09-15)
+js = once(js, "function post(o){ try{ window.webkit.messageHandlers.pet.postMessage(o) }catch(e){} }",
+              "function post(o){ try{ if(window.PET_POST) window.PET_POST(o) }catch(e){} try{ window.webkit.messageHandlers.pet.postMessage(o) }catch(e){} }   // WEB: the page listens too")
+
 assert '</script' not in js.lower()
 pet = '(function(){\n' if False else ''
 page_path = HERE / 'index.html'
