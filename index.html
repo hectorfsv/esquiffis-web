@@ -489,6 +489,10 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--petband)}   /* his feet; the rest of his canvas rises behind the hub */
   .hub-floor .petbar::after{display:none}
   .chat .talk,.chat.hubview .talk{flex:0 0 clamp(400px,25%,640px);min-width:0;background:linear-gradient(180deg,rgba(6,4,5,.6),rgba(6,4,5,.76))}   /* Gargantua shows through */
+  /* folded away (Hector 2026-09-15): the conversation gives up its column, the hub takes the whole window and
+     VaderClawd's floor runs the full width with it. The hub is measured in columns, so his layout still fits. */
+  .chat.talkshut .talk,.chat.hubview.talkshut .talk{flex:0 0 0;width:0;overflow:hidden;border-left:0}
+  .chat.talkshut .side{border-right:0}
   .chat.hubview .log{display:block}
   .chat-art{left:0;right:0;width:auto;opacity:.14;
     -webkit-mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
@@ -539,6 +543,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
         <div class="head-r">
           <button id="now" class="now" type="button" aria-controls="hub" aria-expanded="false" hidden><span id="now-time">--:--</span><span id="now-temp" class="nt"></span></button>
           <span id="status" class="chip" aria-live="polite">Locked</span>
+          <button id="talk-fold" class="gbtn" type="button" aria-controls="scr-chat" aria-expanded="true" hidden>Chat</button>
           <button id="clear" class="gbtn" type="button" hidden>Clear<span class="more"> screen</span></button>
         </div>
         <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
@@ -785,6 +790,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     ['scr-lock','scr-chat'].forEach(function(s){ $(s).classList.toggle('on', s===id) });
     var locked=id==='scr-lock';
     $('clear').hidden=locked; $('now').hidden=locked;
+    $('talk-fold').hidden=locked || !isWide();
     app.classList.toggle('chatting', !locked);
     if(locked){ hubView(false); setStatus('Locked'); fitMark(); }
     placePet();
@@ -1065,7 +1071,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       }).catch(function(){ $('h-mlb').hidden=true });
   }
   function startHub(fresh){
-    hubInit(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
+    hubInit(); applyTalk(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
     if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
     loadWeather(); var feeds=loadFeeds(); loadMlb(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
@@ -1099,6 +1105,25 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     else if(briefDue) runBrief();               // the brief: 1 execution every 2 hours while the hub is open
   }
   // on a phone the hub folds away behind the time in the header
+  /* Hector 2026-09-15: the chat folds away so the hub (and VaderClawd) get the whole window, and comes back
+     the same shape it had. Remembered like the rest of his layout. */
+  var K_TALK='esq_talk', talkShut=false;
+  try{ talkShut=localStorage.getItem(K_TALK)==='1' }catch(e){}
+  function applyTalk(){
+    var on=talkShut && isWide();
+    $('scr-chat').classList.toggle('talkshut', on);
+    var b=$('talk-fold');
+    b.setAttribute('aria-expanded', on ? 'false' : 'true');
+    b.textContent=on ? 'Chat' : 'Hide chat';
+    b.title=on ? 'Bring the conversation back' : 'Fold the conversation away and give the hub the whole window';
+    // the hub's column count comes from a container query on .side, so it is not true until the new width lands:
+    // measuring in the same tick read the OLD count and laid 12-column cells into a 6-column grid
+    setTimeout(function(){
+      if(hub) applyHub();          // wider columns: the grid and the widgets it holds re-measure
+      startMap();                  // the map redraws into its new box
+      placePet();                  // his floor is as wide as the hub now
+    }, 0);
+  }
   function hubView(on){
     var c=$('scr-chat'); c.classList.toggle('hubview', !!on);
     $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
@@ -1742,6 +1767,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     log=[]; saveLog(); render();   // the screen only: Esquiffis's memory is his, on the server
   });
   $('now').addEventListener('click', function(){ if(!isWide()) hubView(!$('scr-chat').classList.contains('hubview')) });
+  $('talk-fold').addEventListener('click', function(){
+    talkShut=!talkShut;
+    try{ localStorage.setItem(K_TALK, talkShut ? '1' : '0') }catch(e){}
+    applyTalk();
+    if(!talkShut) toBottom();      // coming back, the newest message is what he wants to see
+  });
   $('h-list').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
     if(!b || busy) return;
@@ -1898,7 +1929,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   // sizeTape adds copies, which resizes the observed box: do it just after the notification, not inside it (WebKit reports a 'ResizeObserver loop' otherwise)
   if(window.ResizeObserver && $('tape')) try{ new ResizeObserver(function(){ setTimeout(sizeTape, 0) }).observe($('tape').firstElementChild) }catch(e){}
   window.addEventListener('resize', function(){
-    fitMark(); placePet(); sizeTape(); if(hub) applyHub(); else startMap();
+    fitMark(); placePet(); sizeTape(); $('talk-fold').hidden=!isWide() || $('scr-lock').classList.contains('on'); applyTalk(); if(hub) applyHub(); else startMap();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape() });

@@ -357,6 +357,26 @@
           'news starts folded: the login brief on top, every source behind "Show all" ('+tx('h-more')+')');
       }
     }
+    // Hector 2026-09-15: "can we make it deployable, that way it colapses all the way down and vaderclawd can be there"
+    if(WIDE){
+      var sideW0=R(document.querySelector('.side')).r-R(document.querySelector('.side')).l;
+      var talkW0=R(document.querySelector('.talk')).r-R(document.querySelector('.talk')).l;
+      T(vis($('talk-fold')) && /Hide chat/.test(tx('talk-fold')), 'the chat has a fold-away button, on screen ('+tx('talk-fold')+')');
+      tap('talk-fold');
+      var sideW1=R(document.querySelector('.side')).r-R(document.querySelector('.side')).l;
+      var talkW1=R(document.querySelector('.talk')).r-R(document.querySelector('.talk')).l;
+      var floor=R($('vc-stage')), scr=R($('scr-chat'));
+      T(talkW1<=1 && talkW0>300, 'folded: the conversation gives up its column ('+Math.round(talkW0)+' -> '+Math.round(talkW1)+')');
+      T(sideW1>sideW0+300 && Math.abs(sideW1-(scr.r-scr.l))<=2, 'folded: the hub takes the empty space ('+Math.round(sideW0)+' -> '+Math.round(sideW1)+' of '+Math.round(scr.r-scr.l)+')');
+      T(Math.abs((floor.r-floor.l)-sideW1)<=2, 'folded: VaderClawd walks the whole window ('+Math.round(floor.r-floor.l)+')');
+      T(/Chat/.test(tx('talk-fold')) && attr('talk-fold','aria-expanded')==='false', 'folded: the button offers the chat back');
+      T((localStorage.getItem('esq_talk')||'')==='1', 'folded: remembered on this device');
+      tap('talk-fold');
+      var talkW2=R(document.querySelector('.talk')).r-R(document.querySelector('.talk')).l;
+      T(Math.abs(talkW2-talkW0)<=2 && Math.abs((R(document.querySelector('.side')).r-R(document.querySelector('.side')).l)-sideW0)<=2,
+        'open again: the chat is exactly the shape it was ('+Math.round(talkW2)+' vs '+Math.round(talkW0)+')');
+      T(vis($('log')) && vis($('composer')), 'open again: the conversation and its box are back');
+    }
     T(hubCalls.indexOf('wx')>-1 && hubCalls.indexOf('mlb')>-1 && ['fox','foxus','foxpol','dw','arutz'].every(function(k){ return hubCalls.indexOf(k)>-1 }),
       'weather, all five free feeds and the Dodgers came from the browser, not n8n');
     if(!WIDE){ $('now').click(); T(!vis($('hub')) && vis($('log')), 'tapping the time again returns to the conversation'); }
