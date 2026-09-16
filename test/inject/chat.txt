@@ -26,7 +26,9 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams') }catch(e){}
+  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams'); localStorage.removeItem('esq_map') }catch(e){}
+  // a map setting saved on the device, with junk in it: an unknown layer, a layer that is not exactly true
+  if(mode==='arrange') localStorage.setItem('esq_map', JSON.stringify({base:'night', lay:{radar:true, bogus:true, alerts:'yes'}}));
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
@@ -68,14 +70,35 @@
     {properties:{eventtype:'DR',alertlevel:'Purple',iscurrent:'true',name:'unknown level'},geometry:{coordinates:[2,2]}}]};
   // a stand-in for exactly the Leaflet surface the page uses, recording what it is asked to draw (the harness runs
   // offline; real Leaflet is checked in WebKit, which loads this file WITHOUT ?t=)
-  var mapCalls={markers:[], tiles:0, tileUrl:'', views:0, invalidate:0};
+  // groups[0] is the events group (quakes + disaster alerts), then weather alerts, wildfires, storms; tileLayers records
+  // every basemap, hillshade, label and radar layer with whether it is on the map right now
+  var mapCalls={groups:[], tileLayers:[], panes:{}, tiles:0, tileUrl:'', views:0, invalidate:0, get markers(){ return mapCalls.groups[0] ? mapCalls.groups[0].layers : [] }};
   window.__mapCalls=mapCalls;
   if(q.has('t')) window.L={
-    map:function(el,o){ mapCalls.el=el; mapCalls.opts=o; var m={setView:function(){ mapCalls.views++; return m }, invalidateSize:function(){ mapCalls.invalidate++; return m }, attributionControl:{setPrefix:function(){}}}; return m },
-    tileLayer:function(u){ mapCalls.tiles++; mapCalls.tileUrl=u; return {addTo:function(){ return this }} },
-    layerGroup:function(){ var g={addTo:function(){ return g }, clearLayers:function(){ mapCalls.markers=[]; return g }, addLayer:function(x){ mapCalls.markers.push(x); return g }}; return g },
-    circleMarker:function(ll,o){ var mk={ll:ll, o:o, bindPopup:function(n){ mk.popup=n; return mk }, addTo:function(g){ g.addLayer(mk); return mk }}; return mk }
+    map:function(el,o){ mapCalls.el=el; mapCalls.opts=o; var m={setView:function(){ mapCalls.views++; return m }, invalidateSize:function(){ mapCalls.invalidate++; return m }, attributionControl:{setPrefix:function(){}},
+      createPane:function(n){ var p={style:{}, classList:{add:function(c){ p.cls=c }}}; mapCalls.panes[n]=p; return p }, getPane:function(n){ return mapCalls.panes[n] }}; return m },
+    tileLayer:function(u,o){ var t={url:u, o:o||{}, on:false, addTo:function(){ t.on=true; return t }, remove:function(){ t.on=false; return t }, setUrl:function(nu){ t.url=nu; return t }}; mapCalls.tileLayers.push(t); mapCalls.tiles++; mapCalls.tileUrl=u; return t },
+    // the dark basemap is a canvas GridLayer (base + hillshade multiplied); the stand-in records both templates
+    GridLayer:{extend:function(proto){ return function(o){ var t={url:(o&&o.base)||'', hs:(o&&o.hs)||'', canvas:typeof proto.createTile==='function', o:o||{}, on:false, addTo:function(){ t.on=true; return t }, remove:function(){ t.on=false; return t }}; mapCalls.tileLayers.push(t); mapCalls.tiles++; mapCalls.tileUrl=t.url; return t } }},
+    layerGroup:function(){ var g={layers:[], addTo:function(){ return g }, clearLayers:function(){ g.layers=[]; return g }, addLayer:function(x){ g.layers.push(x); return g }}; mapCalls.groups.push(g); return g },
+    circleMarker:function(ll,o){ var mk={ll:ll, o:o, bindPopup:function(n){ mk.popup=n; return mk }, addTo:function(g){ g.addLayer(mk); return mk }}; return mk },
+    polyline:function(ll,o){ var pl={ll:ll, o:o, bindPopup:function(n){ pl.popup=n; return pl }, addTo:function(g){ g.addLayer(pl); return pl }}; return pl },
+    geoJSON:function(f,o){ if(!f || f.type!=='Feature' || !f.geometry || !f.geometry.type) throw new Error('Invalid GeoJSON object.');   // as strict as Leaflet
+      var gj={f:f, o:o||{}, bindPopup:function(n){ gj.popup=n; return gj }, addTo:function(g){ g.addLayer(gj); return gj }}; return gj }
   };
+  // the map layers: RainViewer's frame index, NWS alerts (2 outlined, 1 zone-only, 1 nameless), EONET (2 fires, 1 bad, 1 storm track, sea ice)
+  var RADAR={version:'2.0', host:'https://tilecache.rainviewer.com', radar:{past:[{time:1789532400, path:'/v2/radar/old1'},{time:1789533000, path:'/v2/radar/a6ee65c34d73'}], nowcast:[]}};
+  var NWS={type:'FeatureCollection', features:[   // real NWS features carry type:'Feature'; Leaflet refuses a feature without it (caught in WebKit)
+    {type:'Feature', properties:{event:'Tornado Warning', severity:'Extreme', areaDesc:'Comanche, OK; Stephens, OK', onset:ago(8)}, geometry:{type:'Polygon', coordinates:[[[-98.7,34.5],[-98.2,34.5],[-98.2,34.9],[-98.7,34.9],[-98.7,34.5]]]}},
+    {type:'Feature', properties:{event:'Flood Warning <img src=x onerror="window.__pwned=4">', severity:'Severe', areaDesc:'Maumee Bay to Reno Beach OH', onset:ago(40)}, geometry:{type:'Polygon', coordinates:[[[-83.5,41.7],[-83.0,41.7],[-83.0,42.0],[-83.5,41.7]]]}},
+    {type:'Feature', properties:{event:'Flood Watch', severity:'Severe', areaDesc:'zones only', onset:ago(90)}, geometry:null},
+    {type:'Feature', properties:{severity:'Severe'}, geometry:{type:'Polygon', coordinates:[[[0,0],[1,0],[1,1],[0,0]]]}}]};
+  var EONET={title:'EONET Events', events:[
+    {id:'EONET_1', title:'Wildfire MEERS, Comanche, Oklahoma', categories:[{id:'wildfires'}], sources:[{id:'IRWIN', url:'https://irwin.doi.gov/observer/'}], geometry:[{date:ago(300), type:'Point', coordinates:[-98.67792, 34.840579]}]},
+    {id:'EONET_2', title:'Wildfire <img src=x onerror="window.__pwned=5">', categories:[{id:'wildfires'}], sources:[{id:'X', url:'https://evil.example/fire'}], geometry:[{date:ago(60), type:'Point', coordinates:[-118.5, 34.4]}]},
+    {id:'EONET_3', title:'Wildfire no coordinates', categories:[{id:'wildfires'}], sources:[], geometry:[{date:ago(10), type:'Point', coordinates:['x']}]},
+    {id:'EONET_4', title:'Cyclone Norbert', categories:[{id:'severeStorms'}], sources:[{id:'NOAA_NHC', url:'https://www.nhc.noaa.gov/text/refresh/MIATCPEP1.shtml'}], geometry:[{date:ago(2880), coordinates:[-130,15]},{date:ago(1440), coordinates:[-136,18]},{date:ago(120), coordinates:[-142.4,20.4]}]},
+    {id:'EONET_5', title:'Sea ice', categories:[{id:'seaLakeIce'}], sources:[], geometry:[{date:ago(5), coordinates:[10,70]}]}]};
   var FOX='<?xml version="1.0"?><rss><channel><title>Fox</title>'
     +'<item><title>Fox one &amp; more</title><link>https://www.foxnews.com/world/one</link><pubDate>'+new Date(Date.now()-30*60000).toUTCString()+'</pubDate></item>'
     +'<item><title>Fox two</title><link>https://www.foxnews.com/world/two</link><pubDate>'+new Date(Date.now()-5*3600000).toUTCString()+'</pubDate></item>'
@@ -107,6 +130,9 @@
     if(/statsapi/.test(url)){ hubCalls.push('mlb'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,MLB) }
     if(/earthquake\.usgs\.gov/.test(url)){ hubCalls.push('quakes'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,QUAKES) }
     if(/gdacs\.org/.test(url)){ hubCalls.push('gdacs'); return FAIL_HUB ? res(503,'') : res(200,GDACS) }
+    if(/api\.rainviewer\.com/.test(url)){ hubCalls.push('radar'); return FAIL_HUB ? res(503,'') : res(200,RADAR) }
+    if(/api\.weather\.gov/.test(url)){ hubCalls.push('nws'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,NWS) }
+    if(/eonet\.gsfc\.nasa\.gov/.test(url)){ hubCalls.push('eonet'); return FAIL_HUB ? res(503,'') : res(200,EONET) }
     var mg=url.match(/api\.gold-api\.com\/price\/([A-Z]+)/);
     if(mg){ hubCalls.push('gold'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,{symbol:mg[1], price:METAL[mg[1]]}) }
     if(/currency-api/.test(url)){ hubCalls.push('snap'); if(FAIL_HUB) return Promise.reject(new Error('down'));
@@ -387,6 +413,14 @@
     T(ord('map')<ord('tv') && ord('tv')<ord('time') && ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('inbox')<ord('news'),
       'a saved layout comes back: map, TV, then the rest in their usual order');
     T(tile('map').getAttribute('data-size')==='L' && tile('tv').getAttribute('data-size')==='M', 'saved sizes kept, a bad size ignored');
+    // the saved map setting: Night lights and Radar come back, the unknown layer and the not-quite-true one do not
+    var mb=$('map-base'), ml=$('map-lay'), mcs=window.__mapCalls;
+    function prs(g){ return g ? [].filter.call(g.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }).join() : 'no chips' }
+    T(prs(mb)==='Night lights' && prs(ml)==='Radar', 'a saved map setting comes back: Night lights + Radar, junk ignored ('+prs(mb)+' / '+prs(ml)+')');
+    if(mcs.panes && mcs.panes.lbl) setTimeout(function(){   // on a phone the map was just created: the radar index answers a tick later
+      var onT=mcs.tileLayers.filter(function(t){ return t.on });
+      T(onT.length===3 && /VIIRS_Black_Marble/.test(onT[0].url) && /rainviewer/.test(onT[2].url) && hubCalls.indexOf('radar')>-1 && hubCalls.indexOf('nws')<0,
+        'the map opens on Black Marble with the radar fetched and drawn, alerts not fetched ('+onT.map(function(t){ return t.url.replace(/^.*\/([^\/]+)\/MapServer.*$|^.*rainviewer.*$/, function(m,a){ return a||'radar' }) }).join(',')+')'); }, 30);
     T(!vis(tile('dodgers')) && !tile('inbox').classList.contains('shut') && tile('news').classList.contains('shut'), 'hidden and unfolded as saved; unknown names ignored');
     var tools=tile('tv').querySelector('.hb-tools');
     T(!vis(tools) && !vis($('hub-reset')), 'the move / size / hide tools stay out of sight until Arrange');
@@ -561,6 +595,75 @@
     var p0=frames[0].querySelector('.cam-place');
     T(vis(p0) && p0.textContent.length>0 && (p0.scrollWidth<=p0.clientWidth+1 || R(p0).r-R(p0).l>=60), 'cameras: the spot stays readable, not cut to a letter ('+Math.round(R(p0).r-R(p0).l)+'px)');
   }
+  // the basemaps and the layers he can switch on (Hector 2026-09-15: "better quality map", "earthquakes and that stuff")
+  function mapLayersOK(allowAsk){
+    var mc=window.__mapCalls, ch=$('map-ch'), base=$('map-base'), lay=$('map-lay');
+    if(!q.has('t')) return;   // real Leaflet (WebKit): no stand-in to read, and clicking chips here would fight a screenshot script
+    if(!ch || !base || !lay || !mc.tileLayers){ T(false, 'map: basemap and layer chips exist'); return }
+    function on(){ return mc.tileLayers.filter(function(t){ return t.on }) }
+    function pressed(g){ return [].filter.call(g.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }) }
+    function chip(g, txt){ return [].filter.call(g.children, function(c){ return c.textContent===txt })[0] }
+    function saved(){ try{ return JSON.parse(localStorage.getItem('esq_map')||'null') }catch(e){ return null } }
+    var t0=on();
+    T(t0.length===2 && t0[0].canvas && /World_Dark_Gray_Base/.test(t0[0].url) && /World_Hillshade\//.test(t0[0].hs) && /World_Dark_Gray_Reference/.test(t0[1].url) && t0[1].o.pane==='lbl',
+      'map: the dark base is a canvas of Esri dark + hillshade, with Esri labels on top (no key)');
+    T(!mc.panes.hs && !!mc.panes.lbl && String(mc.panes.lbl.style.zIndex)==='300' && String(mc.panes.wx.style.zIndex)==='260',
+      'map: no blend-mode pane (WebKit ignores it); radar under the labels, labels under the events');
+    T(pressed(base).join()==='Dark' && pressed(lay).length===0 && base.children.length===4 && lay.children.length===4, 'map: Dark is the pressed basemap, no layer on ('+pressed(base)+')');
+    chip(base,'Satellite').click(); var t1=on();
+    T(t1.length===2 && /World_Imagery/.test(t1[0].url) && /World_Boundaries_and_Places/.test(t1[1].url) && t1[1].o.pane==='lbl' && pressed(base).join()==='Satellite' && !!saved() && saved().base==='sat',
+      'map: Satellite = Esri imagery + boundaries and places labels, no hillshade, remembered');
+    chip(base,'Night lights').click(); var t2=on();
+    T(t2.length===2 && /gibs\.earthdata\.nasa\.gov.*VIIRS_Black_Marble.*Level8.*\.png$/.test(t2[0].url) && t2[0].o.maxNativeZoom===8 && /World_Dark_Gray_Reference/.test(t2[1].url), 'map: Night lights = NASA Black Marble + dark labels');
+    var yday=new Date(Date.now()-864e5).toISOString().slice(0,10);
+    chip(base,'Latest pass').click(); var t3=on();
+    T(t3.length===2 && t3[0].url.indexOf('VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/'+yday+'/GoogleMapsCompatible_Level9/')>-1 && /\.jpg$/.test(t3[0].url) && /World_Boundaries_and_Places/.test(t3[1].url),
+      'map: Latest pass = yesterday\'s NASA true colour ('+yday+') + place labels');
+    chip(base,'Dark').click(); T(on().length===2 && on()[0].canvas && pressed(base).join()==='Dark' && saved().base==='dark', 'map: and back to Dark');
+    var h0=hubCalls.length; chip(lay,'Radar').click();
+    setTimeout(function(){
+      var rt=on().filter(function(t){ return /rainviewer/.test(t.url) })[0];
+      if(FAIL_HUB) T(hubCalls.indexOf('radar',h0)>-1 && !rt && /Radar unavailable/.test(tx('map-note')), 'map: radar down, it says so ('+tx('map-note')+')');
+      else T(hubCalls.indexOf('radar',h0)>-1 && !!rt && rt.url==='https://tilecache.rainviewer.com/v2/radar/a6ee65c34d73/256/{z}/{x}/{y}/2/1_1.png' && rt.o.pane==='wx' && /Radar \d/.test(tx('map-note')) && saved().lay.radar===true,
+          'map: Radar = RainViewer\'s newest frame from the browser, under the labels, its time in the note ('+tx('map-note')+')');
+      chip(lay,'Radar').click();
+      T(!on().some(function(t){ return /rainviewer/.test(t.url) }) && !/Radar/.test(tx('map-note')) && saved().lay.radar===false, 'map: Radar off removes it');
+      var h1=hubCalls.length; chip(lay,'US alerts').click(); chip(lay,'Wildfires').click(); chip(lay,'Storms').click();
+      setTimeout(function(){
+        var ag=mc.groups[1], fg=mc.groups[2], sg=mc.groups[3];
+        T(hubCalls.slice(h1).filter(function(k){ return k==='nws' }).length===1 && hubCalls.slice(h1).filter(function(k){ return k==='eonet' }).length===1 && !!ag && !!fg && !!sg,
+          'map: alerts, wildfires and storms are three switches and two browser fetches (EONET once for both)');
+        if(FAIL_HUB){
+          T(/US alerts unavailable/.test(tx('map-note')) && /Wildfires unavailable/.test(tx('map-note')) && /Storms unavailable/.test(tx('map-note')) && ag.layers.length===0 && fg.layers.length===0 && sg.layers.length===0,
+            'map: every layer down, each says so ('+tx('map-note')+')');
+          return;
+        }
+        T(ag.layers.length===2 && /2 severe weather alerts \(\+1 with no map shape\)/.test(tx('map-note')), 'map: 2 outlined NWS alerts drawn, the zone-only one counted, the nameless one dropped ('+tx('map-note')+')');
+        var tor=ag.layers.filter(function(l){ return l.popup && /Tornado/.test(l.popup.textContent) })[0], fl=ag.layers.filter(function(l){ return l.popup && /Flood/.test(l.popup.textContent) })[0];
+        T(!!tor && tor.o.style.color==='#FF3B30' && !!fl && fl.o.style.color==='#FF8A3D', 'map: a tornado warning is red, a severe flood warning orange');
+        T(!!fl && !fl.popup.querySelector('img') && /<img/.test(fl.popup.textContent) && window.__pwned===undefined && /Severe alert/.test(fl.popup.textContent) && /NWS/.test(fl.popup.textContent) && /Maumee/.test(fl.popup.textContent),
+          'map: markup in an alert name stays text; the area, severity and NWS in the popup');
+        T(fg.layers.length===2 && /2 wildfires/.test(tx('map-note')) && fg.layers.every(function(l){ return l.o.color==='#FF5A1F' }), 'map: 2 named wildfires drawn (EONET), no coordinates dropped, sea ice ignored');
+        var bad=fg.layers.filter(function(l){ return /<img/.test(l.popup.textContent) })[0], meers=fg.layers.filter(function(l){ return /MEERS/.test(l.popup.textContent) })[0];
+        T(!!bad && !bad.popup.querySelector('img') && !bad.popup.querySelector('a') && window.__pwned===undefined && !!meers && !meers.popup.querySelector('a') && !/^Wildfire/.test(meers.popup.querySelector('.ev-t').textContent),
+          'map: a fire\'s links are dropped (evil, and IRWIN\'s login page), its name loses the "Wildfire" prefix');
+        T(sg.layers.length===2 && sg.layers[0].ll.length===3 && sg.layers[0].ll[2][0]===20.4 && sg.layers[0].ll[2][1]===-142.4 && /Norbert/.test(sg.layers[1].popup.textContent) && /1 storm/.test(tx('map-note'))
+          && [].every.call(sg.layers[1].popup.querySelectorAll('a'), function(a){ return /^https:\/\/www\.nhc\.noaa\.gov\//.test(a.href) }) && !!sg.layers[1].popup.querySelector('a'),
+          'map: the storm is a 3-point track ending at its last position, with its NHC link');
+        T([].filter.call(document.querySelectorAll('.map-key [data-key]'), function(k){ return !k.hidden }).length===3, 'map: the key shows the three layers that are on');
+        if(allowAsk && !window.__esq.busy){ var n=calls.length; tor.popup.querySelector('.hl-ask').click();
+          T(calls.length===n+1 && calls[n].a==='chat' && /NWS/.test(calls[n].msg||'') && /Tornado Warning/.test(calls[n].msg||''), 'map: Ask hands the alert to Esquiffis'); }
+        chip(lay,'Wildfires').click();
+        T(fg.layers.length===0 && sg.layers.length===2 && !/wildfire/.test(tx('map-note')) && /1 storm/.test(tx('map-note')) && saved().lay.fires===false && saved().lay.storms===true, 'map: Wildfires off leaves the storm track');
+        var tick=window.__esq.hubTick; chip(lay,'Radar').click();
+        setTimeout(function(){
+          var h3=hubCalls.length; tick(Date.now()+16*60000); var fresh=hubCalls.slice(h3);
+          T(fresh.indexOf('radar')>-1 && fresh.indexOf('nws')>-1 && fresh.indexOf('eonet')>-1, 'map: 16 minutes later radar, alerts and storms refresh by themselves, 0 n8n calls ('+fresh.filter(function(k,i,a){ return a.indexOf(k)===i }).join(',')+')');
+          var h4=hubCalls.length; tick(Date.now()+60000); T(hubCalls.length===h4, 'map: nothing refetched a minute later');
+        }, 30);
+      }, 30);
+    }, 30);
+  }
   // the map, once its feeds have answered (call after a pause)
   function mapOK(allowAsk){
     var mc=window.__mapCalls;
@@ -569,7 +672,7 @@
       T(/unavailable/.test($('map-note').textContent) && mc.markers.length===0, 'map: both feeds down, it says so ('+$('map-note').textContent+')');
       return;
     }
-    T(mc.tiles===1 && /^https:\/\/server\.arcgisonline\.com\/.*World_Dark_Gray_Base/.test(mc.tileUrl), 'map: one dark basemap, Esri (no key, no watermark)');
+    T(mc.tileLayers && mc.tileLayers.length>=1 && /^https:\/\/server\.arcgisonline\.com\/.*World_Dark_Gray_Base/.test(mc.tileLayers[0].url), 'map: the dark basemap is Esri (no key, no watermark)');
     T(mc.markers.length===5, 'map: 2 quakes + 3 alerts drawn; green GDACS quakes, ended, unknown and coordinate-less events dropped ('+mc.markers.length+')');
     T(/2 earthquakes/.test($('map-note').textContent) && /3 disaster alerts/.test($('map-note').textContent) && /Updated/.test($('map-note').textContent), 'map: the count line ('+$('map-note').textContent+')');
     var pops=mc.markers.map(function(m){ return m.popup }).filter(Boolean), tc=pops.filter(function(p){ return /Cyclone/.test(p.textContent) })[0];
@@ -651,7 +754,7 @@
         T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
         T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
         tvOK();
-        mapOK(false);
+        mapOK(false); mapLayersOK(false);
         camsOK();
         // "the stuff than can be refresh auto without execution from N8N, do it": 16 minutes on, the browser refreshes by itself
         var nN8n=calls.length, h0=hubCalls.length, tick=window.__esq && window.__esq.hubTick;
@@ -768,7 +871,7 @@
     var l=$('log'); T(Math.abs(l.scrollTop+l.clientHeight-l.scrollHeight)<=2 || l.scrollHeight<=l.clientHeight, 'the conversation is scrolled to the newest message');
     var saved=JSON.parse(localStorage.getItem('esq_log')||'[]');
     T(saved.length===2 && saved[1].r==='esq', 'the transcript is remembered for a reload');
-    if(WIDE && (mode==='ok' || FAIL_HUB)) mapOK(true);
+    if(WIDE && (mode==='ok' || FAIL_HUB)){ mapOK(true); mapLayersOK(true) }
     floorOK('chat');
     layout('chat');
     done();

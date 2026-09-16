@@ -33,6 +33,6 @@ if [ "$WHAT" = all ] || [ "$WHAT" = chat ]; then
   echo "  -> $PASS pass / $FAIL fail"
 fi
 if [ "$WHAT" = webkit ]; then
-  node ../webkit-check/check.js "file://$PWD/index.html" --out "$B/shots"
+  node ../webkit-check/check.js "$PWD/index.html" --out "$B/shots"
 fi
 [ "$FAIL" = 0 ] && echo "ALL GREEN — $PASS assertions, 0 failures" || { echo "FAILURES: $FAIL"; exit 1; }
