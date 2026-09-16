@@ -73,6 +73,7 @@ js = once_re(js, r"      if\(r<\.2\)\{ var nx=Math\.max.*?\n      else startAct\
     "      if(r<.12){ var nx=V.x,tries=0; while(Math.abs(nx-V.x)<W*.22&&tries++<8) nx=8*S+Math.random()*Math.max(1,W-56*S);\n"
     "        try{ if(window.PET_PICK){ var pk=window.PET_PICK(W,S,V.x); if(isFinite(pk)) nx=pk; } }catch(e){}   // WEB: the page says where he can be seen\n"
     "        V.dir=nx>V.x?1:-1; walk(V,nx,sp*(.7+Math.random()*.3)); mode='walk'; }   // WEB: off to another part of the page\n"
+    "      else if(r<.24&&opts.climb&&platforms.length){ startAct('climb'); }   // WEB: up onto a widget's edge (Hector 2026-09-15)\n"
     "      else if(r<.46){ mode='idle'; timer=6+Math.random()*6; }             // WEB: once there, he stays\n"
     "      else if(r<.70){ if(opts.bubbles) chat(); mode='idle'; timer=5+Math.random()*3; }\n"
     "      else if(r<.80) startAct('wave');\n"

@@ -22,10 +22,12 @@ if [ "$WHAT" = all ] || [ "$WHAT" = chat ]; then
   echo "CHAT  (9 modes x 4 viewports)"
   for m in ok badpw expired persist guard hub hubfail arrange timeout; do
     for v in "393 700" "393 852" "852 393" "2026 1037"; do set -- $v
-      budget=8000; [ "$m" = timeout ] && budget=140000
+      budget=8000; [ "$m" = timeout ] && budget=140000; [ "$m" = hub ] && budget=24000   # hub: VaderClawd's climb and drop take real (virtual) seconds
       R=$(title "$1" "$2" "file://$B/c.html?t=$m" $budget)
       p=$(printf '%s' "$R" | grep -o PASS | wc -l | tr -d ' '); f=$(printf '%s' "$R" | grep -o FAIL | wc -l | tr -d ' ')
       PASS=$((PASS+p)); FAIL=$((FAIL+f))
+      # a check that never ran looks like a pass: the wide hub run must reach the last edge check
+      [ "$m" = hub ] && [ "$1" = 2026 ] && { printf '%s' "$R" | grep -q 'edges: all checks ran' || { FAIL=$((FAIL+1)); echo "  t=hub ${1}x${2}: the edge checks never finished (virtual time ran out?)"; }; }
       [ -z "$R" ] && { FAIL=$((FAIL+1)); echo "  t=$m ${1}x${2}: NO RESULT (harness never reported)"; }
       [ "$f" != 0 ] && { echo "  t=$m ${1}x${2}"; printf '%s' "$R" | sed 's/FAIL/\nFAIL/g' | grep FAIL | sed 's/^/     /'; }
     done

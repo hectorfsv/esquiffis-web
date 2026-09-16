@@ -278,6 +278,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .map-key .k-w{width:10px;height:7px;border-radius:0;background:rgba(255,59,48,.35);border:1px solid #FF3B30}
 .map-key .k-f{background:#FF5A1F}
 .map-key .k-s{width:14px;height:2px;border-radius:0;background:#6FB7FF}
+.map-key .k-war{width:11px;height:8px;border-radius:0;background:rgba(255,59,48,.45)}
 /* basemap and layer chips: Dark / Satellite / Night lights / Latest pass, then Radar / US alerts / Wildfires / Storms */
 .map-ch{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:10px}
 .map-cg{display:flex;flex-wrap:wrap;gap:6px}
@@ -509,8 +510,11 @@ body.carrying{user-select:none;-webkit-user-select:none}
     padding:16px 16px calc(var(--pet) - var(--petband) + 12px);z-index:2}   /* in front of VaderClawd; the last row scrolls clear above his head */
   .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:14px 16px}
   .hub .hub-bar{padding:0}
-  .hub-floor{display:block;position:relative;z-index:1;flex:none;height:var(--petband)}   /* his feet; the rest of his canvas rises behind the hub */
-  body.carrying .hub-floor{z-index:3}   /* while he is carried he passes in front of the widgets */
+  .hub-floor{display:block;position:static;flex:none;height:var(--petband)}   /* his feet band; his stage is the whole hub side */
+  /* Hector 2026-09-15: the widget edges are his paths, so his canvas covers the hub side (floor at its bottom, the widgets'
+     top edges as ledges above). Behind the widgets as before; in front while he climbs, perches or is carried. */
+  .hub-floor .petbar{position:absolute;left:0;right:0;top:0;bottom:0;width:auto;height:auto;z-index:1;pointer-events:none}
+  body.carrying .hub-floor .petbar,body.petfront .hub-floor .petbar{z-index:3}
   .hub-floor .petbar::after{display:none}
   .chat .talk,.chat.hubview .talk{flex:0 0 clamp(400px,25%,640px);min-width:0;background:linear-gradient(180deg,rgba(6,4,5,.6),rgba(6,4,5,.76))}   /* Gargantua shows through */
   /* folded away (Hector 2026-09-15): the conversation gives up its column, the hub takes the whole window and
@@ -635,7 +639,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
               <div class="tv-foot"><span id="tv-note" class="h-note">Nothing loads until you press Play.</span><button id="tv-stop" class="hb-btn" type="button" hidden>Stop</button></div>
             </section>
             <section class="hb hb-map" data-w="map" aria-labelledby="map-h">
-              <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span><i class="k-q"></i>Quake</span><span><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span></span></div>
+              <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span><i class="k-q"></i>Quake</span><span><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span><span data-key="wars" hidden><i class="k-war"></i>At war</span></span></div>
               <div id="map-ch" class="map-ch"><span id="map-base" class="map-cg" role="group" aria-label="Basemap"></span><span id="map-lay" class="map-cg" role="group" aria-label="Layers"></span></div>
               <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes, disaster alerts, weather and wildfires"></div>
               <p id="map-note" class="h-note">The map loads when the hub is on screen.</p>
@@ -735,7 +739,30 @@ body.carrying{user-select:none;-webkit-user-select:none}
   function placePet(){
     var st=$('vc-stage'), home=petHome();
     if(st.parentNode!==home){ home.appendChild(st); try{ window.pet.restart() }catch(e){} }   // a new floor: he walks in from the right
+    // on the hub side the widget edges are his ledges (Hector 2026-09-15); anywhere else there are none
+    try{ window.pet.options({night:false, bubbles:true, march:false, sign:false, climb:home===$('hub-floor'), perchMin:20}) }catch(e){}
+    feedPlatforms();
   }
+  /* Hector 2026-09-15: "all the edges of each individual window like a path for him". Every widget's top edge is a ledge:
+     he Force-leaps onto one, strolls along it, rides it when the hub scrolls, walks off the end; carried over a widget
+     and let go, he lands on it. The climb is the engine's own (the desktop pet climbs real Mac windows the same way);
+     the page only tells it where the edges are, in his canvas's pixels, whenever they can have moved. */
+  var platRaf=0, platTimer=null;
+  function feedPlatforms(){
+    if(!window.pet || !window.pet.platforms) return;
+    var st=$('vc-stage'), list=[];
+    if(st && st.parentNode===$('hub-floor') && hubOn){
+      var sr=st.getBoundingClientRect();
+      [].forEach.call($('hub').querySelectorAll('.hb[data-w]'), function(t){
+        if(t.hidden || t.classList.contains('off')) return;
+        var r=t.getBoundingClientRect();
+        if(r.width<60 || r.top<=sr.top+4 || r.top>=sr.bottom-8) return;   // an edge he cannot see is not a ledge
+        list.push({id:t.getAttribute('data-w'), x1:r.left-sr.left, x2:r.right-sr.left, y:r.top-sr.top});
+      });
+    }
+    try{ window.pet.platforms(list) }catch(e){}
+  }
+  function schedPlatforms(){ if(platRaf) return; platRaf=requestAnimationFrame(function(){ platRaf=0; feedPlatforms() }) }
   /* where he can be seen: his whole floor, minus anything that stands on it (the chat box, the passphrase).
      The rightmost clear stretch is home. Used by the pet's roam through PET_HOME / PET_PICK. */
   function cut(zones, a, b){
@@ -1155,6 +1182,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
     loadWeather(); var feeds=loadFeeds(); loadMlb(); loadScores(); loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief();
+    if(!platTimer) platTimer=setInterval(feedPlatforms, 1000);   // the ledges follow every move, fold and resize within a second
     if(fresh){
       lastServerTry=Date.now();   // the login call that just happened is the inbox and headlines refresh
       // the login just brought BBC and Jerusalem Post; let Fox land (or 4 s pass), then one brief for everything
@@ -1478,7 +1506,12 @@ body.carrying{user-select:none;-webkit-user-select:none}
     {k:'aje', short:'Al Jazeera', name:'Al Jazeera English', vid:'gCNeDWCI0vo', page:'https://www.youtube.com/@aljazeeraenglish/live'},   // in NBC's place (Hector 2026-09-15); its channel-live embed did not play
     {k:'cbs', short:'CBS News', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
     {k:'bbg', short:'Bloomberg', name:'Bloomberg', ch:'UCIALMKvObZNtJ6AmdCLP7Lg', page:'https://www.youtube.com/@markets/live'},
-    {k:'mmty', short:'Multimedios MTY', name:'Multimedios Monterrey', vid:'SM864ZgPpG8', page:'https://www.youtube.com/@Multimedios/live'}];   // Canal 6 Monterrey, the official Multimedios live stream (Hector 2026-09-15)
+    {k:'mmty', short:'Multimedios MTY', name:'Multimedios Monterrey', vid:'SM864ZgPpG8', page:'https://www.youtube.com/@Multimedios/live'},   // Canal 6 Monterrey, the official Multimedios live stream (Hector 2026-09-15)
+    // Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB" - the two 24/7 streams keep one video id;
+    // Canal 5's channel-live embed played from the live origin (measured), so it follows restarts by itself.
+    {k:'tdep', short:'Telemundo Deportes', name:'Telemundo Deportes Ahora 24/7', vid:'iOdDkZltnJE', page:'https://www.youtube.com/@deportes/live'},
+    {k:'c5', short:'Canal 5', name:'Canal 5 · Me Caigo de Risa 24/7', ch:'UCRZSTf9laa2wkHPOaiOoldA', page:'https://www.youtube.com/@canal5_mx/live'},
+    {k:'lomlb', short:'Locked On MLB', name:'Locked On MLB 24/7 (baseball talk, not games)', vid:'BSU7OK-T_LQ', page:'https://www.youtube.com/@LockedOnMLB/live'}];
   var K_TV='esq_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
   function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0' }   // Hector: the TV starts on his click, muted
@@ -1762,7 +1795,17 @@ body.carrying{user-select:none;-webkit-user-select:none}
     {k:'pass', name:'Latest pass', get tiles(){ return GIBS+'VIIRS_NOAA20_CorrectedReflectance_TrueColor/default/'+gibsDay()+'/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg' }, max:9, labels:'places', attr:'NASA GIBS VIIRS'}];
   var MAP_LABELS={dark:ESRI+'Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', places:ESRI+'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'},
       HS_URL=ESRI+'Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}';
-  var MAP_LAYERS=[{k:'radar', name:'Radar'}, {k:'alerts', name:'US alerts'}, {k:'fires', name:'Wildfires'}, {k:'storms', name:'Storms'}];
+  var MAP_LAYERS=[{k:'radar', name:'Radar'}, {k:'alerts', name:'US alerts'}, {k:'fires', name:'Wildfires'}, {k:'storms', name:'Storms'}, {k:'wars', name:'Wars'}];
+  /* Hector 2026-09-15: "in their map they mark the zones that are at war". The countries in Wikipedia's list of ongoing
+     armed conflicts - Major wars (10,000+ deaths this year or last) and Minor wars (1,000-9,999) - shaded on the map.
+     The list is baked in by tools/build-wars.py (dated below; re-run it to catch up); the page fetches only the countries
+     GeoJSON (jsDelivr, CORS *), once a session, when the layer is on. 0 executions. */
+  var COUNTRIES_URL='https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json',
+      WARS_LINK='https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts',
+      GAZA_POLY=[[[34.2,31.2],[34.6,31.2],[34.6,31.62],[34.2,31.62],[34.2,31.2]]];   // the 110m countries file has no Gaza
+  /*WARS-BEGIN*/
+  var WARS_DATE="2026-09-15", WARS=[{"n":"Arab–Israeli conflict","t":"major","y":1948,"c":["ISR","PSE","LBN","SYR","IRN","IRQ","JOR","SAU","KWT","QAT","ARE","OMN","YEM","EGY"],"d":10997},{"n":"Myanmar conflict","t":"major","y":1948,"c":["MMR","IND","BGD","THA","CHN"],"d":7880},{"n":"Sudanese Civil War","t":"major","y":1955,"c":["SDN","SSD","EGY","LBY","TCD","ETH","CAF"],"d":9625},{"n":"Congolese conflicts","t":"major","y":1960,"c":["COD","CAF","SSD","RWA","BDI","UGA"],"d":3423},{"n":"Somali Civil War","t":"major","y":1978,"c":["SOM","KEN","ETH"],"d":5427},{"n":"Insurgency in the Maghreb","t":"major","y":2002,"c":["DZA","BEN","BFA","CMR","TCD","CIV","LBY","MLI","MRT","MAR","NER","NGA","TGO","TUN"],"d":17382},{"n":"Mexican drug war","t":"major","y":2006,"c":["MEX","BLZ","SLV","HND","GTM","NIC","USA"],"d":5235},{"n":"Russo-Ukrainian war","t":"major","y":2014,"c":["UKR","RUS","BLR"],"d":40178},{"n":"Terrorism in Iran","t":"minor","y":1918,"c":["IRN","IRQ","TUR"],"d":7045},{"n":"Ethiopian civil war","t":"minor","y":1961,"c":["ETH","ERI","SOM","SDN"],"d":4956},{"n":"Colombian conflict","t":"minor","y":1964,"c":["COL","VEN","ECU"],"d":1408},{"n":"Afghan conflict","t":"minor","y":1978,"c":["AFG","PAK","TJK"],"d":4741},{"n":"Terrorism in Ecuador","t":"minor","y":1993,"c":["ECU","COL"],"d":2743},{"n":"Communal conflicts in Nigeria","t":"minor","y":1998,"c":["NGA","NER","CMR","TCD"],"d":3400},{"n":"Crisis in Venezuela","t":"minor","y":2010,"c":["VEN","COL"],"d":336},{"n":"Yemeni civil war","t":"minor","y":2011,"c":["YEM","SAU","ARE","ISR"],"d":1850},{"n":"Aftermath of the Syrian civil war","t":"minor","y":2011,"c":["SYR","ISR","LBN","IRQ","TUR"],"d":1531},{"n":"Cameroonian Civil War","t":"minor","y":2012,"c":["CMR","NGA","NER","TCD"],"d":1361},{"n":"Central African Republic Civil War","t":"minor","y":2012,"c":["CAF","CMR","COD","SSD"],"d":468},{"n":"Haitian crisis","t":"minor","y":2018,"c":["HTI"],"d":2194}];
+  /*WARS-END*/
   var K_MAP='esq_map', mapSet={base:'dark', lay:{}};   // his basemap and layers, remembered on this device
   function mapLoadSaved(){   // only a known basemap, and layers saved as exactly true
     mapSet={base:'dark', lay:{}}; MAP_LAYERS.forEach(function(l){ mapSet.lay[l.k]=false });
@@ -1780,7 +1823,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
   var baseTiles={base:null, labels:null}, passDay='', evNote='';
   var radarTile=null, lastRadar=0, radarNote='', alertGroup=null, lastNws=0, lastAlerts=null, alertNote='',
       fireGroup=null, stormGroup=null, lastEonet=0, lastEonetData=null, eonetNote={fires:'', storms:''},
-      busyFetch={radar:false, nws:false, eonet:false};   // one fetch in flight per source: Wildfires + Storms pressed together = one EONET call
+      warGroup=null, lastCountries=null, warNote='',
+      busyFetch={radar:false, nws:false, eonet:false, countries:false};   // one fetch in flight per source: Wildfires + Storms pressed together = one EONET call
   var GD_KIND={TC:'Cyclone', FL:'Flood', VO:'Volcano', DR:'Drought', WF:'Wildfire', EQ:'Earthquake'},
       GD_COLOR={Green:'#3FD07A', Orange:'#FF8A3D', Red:'#FF3B30'};
   function loadLeaflet(done){
@@ -1811,7 +1855,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
         MAP.createPane('wx').style.zIndex=260;
         MAP.createPane('lbl').style.zIndex=300;
         mapLayer=L.layerGroup().addTo(MAP);   // events first: quakes and disaster alerts
-        alertGroup=L.layerGroup().addTo(MAP); fireGroup=L.layerGroup().addTo(MAP); stormGroup=L.layerGroup().addTo(MAP);
+        alertGroup=L.layerGroup().addTo(MAP); fireGroup=L.layerGroup().addTo(MAP); stormGroup=L.layerGroup().addTo(MAP); warGroup=L.layerGroup().addTo(MAP);
         mapBaseApply();
       }catch(e){ MAP=null; $('map-note').textContent='The map could not load.'; return }
       if(lastEv) paintEvents(lastEv[0], lastEv[1]);   // the events already came in at login: draw them
@@ -1868,7 +1912,37 @@ body.carrying{user-select:none;-webkit-user-select:none}
     var on=mapSet.lay[k], now=Date.now();
     if(k==='radar'){ if(on) radarLoad(); else { if(radarTile){ try{ radarTile.remove() }catch(e){} radarTile=null } radarNote='' } }
     else if(k==='alerts'){ if(on){ if(lastAlerts && now-lastNws<NWS_MS) paintAlerts(lastAlerts); else nwsLoad() } else { try{ alertGroup.clearLayers() }catch(e){} alertNote='' } }
+    else if(k==='wars'){ if(on){ if(lastCountries) paintWars(lastCountries); else countriesLoad() } else { try{ warGroup.clearLayers() }catch(e){} warNote='' } }
     else { if(on){ if(lastEonetData && now-lastEonet<EONET_MS) paintEonet(lastEonetData); else eonetLoad() } else { try{ (k==='fires' ? fireGroup : stormGroup).clearLayers() }catch(e){} eonetNote[k]='' } }
+    mapNote();
+  }
+  function countriesLoad(){
+    var p=fetchJson('countries', COUNTRIES_URL); if(!p) return;
+    p.then(function(d){ lastCountries=d; if(mapSet.lay.wars) paintWars(d) })
+      .catch(function(){ warNote='Wars unavailable'; mapNote() });
+  }
+  function paintWars(d){
+    var byCode={}, acc={}, drawn=0;
+    ((d && d.features) || []).forEach(function(f){ if(f && typeof f.id==='string' && f.geometry) byCode[f.id]=f });
+    WARS.forEach(function(w){
+      if(!w || !Array.isArray(w.c) || typeof w.n!=='string') return;
+      w.c.forEach(function(code){
+        var a=acc[code] || (acc[code]={major:false, wars:[]});
+        if(w.t==='major') a.major=true;
+        a.wars.push(w);
+      });
+    });
+    if(warGroup){ try{ warGroup.clearLayers() }catch(e){} }
+    Object.keys(acc).forEach(function(code){
+      var a=acc[code], f=code==='GAZA' ? {type:'Feature', properties:{name:'Gaza Strip'}, geometry:{type:'Polygon', coordinates:GAZA_POLY}} : byCode[code];
+      if(!f || !warGroup) return;
+      var name=String((f.properties && f.properties.name) || code).slice(0,60), color=a.major ? '#FF3B30' : '#FF8A3D';
+      var e={src:'Wikipedia', kind:a.wars.slice(0,3).map(function(w){ return w.n+(w.y ? ' (since '+w.y+')' : '') }).join('  ·  ').slice(0,200),
+        level:'', title:name+' · '+(a.major ? 'Major war' : 'Minor war'), t:null, link:WARS_LINK,
+        ask:'What is the latest on the war in '+name+' ('+a.wars[0].n+')?'};
+      try{ L.geoJSON(f, {style:{color:color, weight:1, opacity:.8, fillColor:color, fillOpacity:a.major ? .2 : .13}}).bindPopup(evPopup(e)).addTo(warGroup); drawn++ }catch(err){}
+    });
+    warNote=drawn+(drawn===1 ? ' country' : ' countries')+' at war (Wikipedia, list from '+WARS_DATE+')';
     mapNote();
   }
   function fetchJson(k, url){   // one request per source at a time; a second ask while it flies gets the same answer
@@ -1878,7 +1952,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       .then(function(d){ busyFetch[k]=false; return d }, function(err){ busyFetch[k]=false; throw err });
   }
   function mapNote(){
-    var parts=[evNote, radarNote, alertNote, eonetNote.fires, eonetNote.storms].filter(Boolean);
+    var parts=[evNote, radarNote, alertNote, eonetNote.fires, eonetNote.storms, warNote].filter(Boolean);
     $('map-note').textContent=parts.length ? parts.join('  ·  ') : (lastMap ? 'Loading events…' : 'The map loads when the hub is on screen.');
   }
   function radarLoad(){
@@ -1996,9 +2070,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
     var m=document.createElement('div'); m.className='ev-m';
     m.textContent=[e.kind, e.level ? e.level+' alert' : '', ago(e.t), e.src].filter(Boolean).join('  ·  '); d.appendChild(m);
     var row=document.createElement('div'); row.className='ev-r';
-    if(e.link){ var a=document.createElement('a'); a.href=e.link; a.target='_blank'; a.rel='noopener'; a.textContent='Details'; row.appendChild(a) }
+    if(e.link){ var a=document.createElement('a'); a.href=e.link; a.target='_blank'; a.rel='noopener'; a.textContent=e.src==='Wikipedia' ? 'The list' : 'Details'; row.appendChild(a) }
     var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask';
-    b.addEventListener('click', function(){ if(busy) return; box.value='Tell me more about this event from '+e.src+': "'+e.title+'" ('+e.kind+')'; send() });
+    b.addEventListener('click', function(){ if(busy) return; box.value=e.ask || ('Tell me more about this event from '+e.src+': "'+e.title+'" ('+e.kind+')'); send() });
     row.appendChild(b); d.appendChild(row);
     return d;
   }
@@ -2184,7 +2258,13 @@ body.carrying{user-select:none;-webkit-user-select:none}
      and falls to his floor where he is let go. Presses anywhere else are untouched. Off by default, remembered. */
   var K_GRAB='esq_grab', grabOn=false, petBox=null, carrying=null;
   try{ grabOn=localStorage.getItem(K_GRAB)==='1' }catch(e){}
-  window.PET_POST=function(o){ if(o && o.type==='hit') petBox=o.w ? o : null };
+  window.PET_POST=function(o){
+    if(!o) return;
+    if(o.type==='hit') petBox=o.w ? o : null;
+    else if(o.type==='climb') document.body.classList.toggle('petfront', !!o.want);   // up on a widget: drawn in front of it
+  };
+  $('hub').addEventListener('scroll', schedPlatforms, {passive:true});
+  window.addEventListener('resize', schedPlatforms);
   function petCanvas(){ var st=$('vc-stage'); return st ? st.querySelector('canvas') : null }
   function petHitAt(cx, cy){   // the point on his canvas if this client point is on him, else null
     var cv=petCanvas(); if(!cv || !petBox || !grabOn) return null;
@@ -2260,7 +2340,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying } };
+  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, get wars(){ return WARS }, feedPlatforms:feedPlatforms };
 })();
 </script>
 <script>
@@ -2787,7 +2867,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
   // The WebKit test harnesses fake the clock through rAF, so they set window.PET_SCHED='raf'.
   var opts={night:false,sound:false,bubbles:true,climb:false,march:false,glow:'pixel',sched:window.PET_SCHED||'timer',fps:30,skip:true,sign:false};
   var sys={cpu:0,cpuKnown:false,hotCount:0,hot:false,thermal:0,battery:100,onAC:true,low:false,music:{playing:false,title:'',artist:''}};
-  var neighbors={left:false,right:false,home:0,atHome:true,hasHome:false},roam=null,cursor=null,platforms=[];
+  var neighbors={left:false,right:false,home:0,atHome:true,hasHome:false},roam=null,cursor=null,platforms=[],platformsAt=-1e9;
   var pendingAct=null,lastCelebrate=-1e9,viaTie=false,climbWanted=false;
   function freshExtras(){ return {flyer:null,orbit:null,ring:null,bubble:null,tie:null,cpuCrate:null,notes:[],
     flights:[],lasers:[],drones:[],scan:null,gym:null}; }
@@ -2796,6 +2876,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
   function isNight(){ if(!opts.night) return false; return new Date().getHours()<9; }
 
   /* ---------- speech bubbles (parody lines, never movie quotes) ---------- */
+  // drawBubble draws ONE line and never wraps, so anything longer belongs in the Mac's panel, not over his head
+  var SPEAK_MAX=72;
   var LINES={
     idle:['Ask him something.','Esquiffis is listening.','*mechanical breathing*','The web door is open.',
           'Check the smoker, pitmaster.','Hydrate, apprentice.','Same Esquiffis. Same Empire.','Your inbox fears you.',
@@ -3623,9 +3705,10 @@ body.carrying{user-select:none;-webkit-user-select:none}
     }
     // climb a window: ask the app for the whole screen and where the windows are,
     // Force-leap onto a top edge, stroll along it, ride it if it moves, fall if it goes
-    function climb(){
-      var phase='ask',tt=0,plat=null,airT=1;
+    function climb(startPlat){
+      var phase=startPlat?'perched':'ask',tt=0,plat=startPlat||null,airT=1;
       climbWanted=true; post({type:'climb',want:true});
+      if(startPlat){ V.perched=true; V.vy=0; V.lift=(FLOOR/dpr-startPlat.y)/S; V.target=V.x; V.squash=.2; }   // set down on an edge: carried there and let go
       function note(m){ post({type:'debug',key:'climb',msg:m}); }   // readable later: defaults read com.hectorfsv.vaderclawd debug_climb
       function finish(){ V.perched=false; if(climbWanted){ climbWanted=false; post({type:'climb',want:false}); } }
       function liveOf(){ for(var i=0;i<platforms.length;i++) if(platforms[i].id===plat.id) return platforms[i]; return null; }
@@ -3676,7 +3759,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
           var c2=V.x+18*S;
           if(c2<live.x1-4*S||c2>live.x2+4*S){ V.perched=false; phase='fall'; return false; }
           if(phase==='perched'&&here(V)){
-            if(tt>10+Math.random()*6){
+            if(tt>(opts.perchMin||10)+Math.random()*6){
               var off=(c2-live.x1<live.x2-c2)?live.x1-40*S:live.x2+4*S; V.dir=off>V.x?1:-1; walk(V,off,spd()*.8); phase='leaving';
             } else if(Math.random()<dt*.5){
               var nx=live.x1+Math.random()*Math.max(0,live.x2-live.x1-36*S); V.dir=nx>V.x?1:-1; walk(V,nx,spd()*.6);
@@ -3688,13 +3771,13 @@ body.carrying{user-select:none;-webkit-user-select:none}
         return false;
       };
     }
-    function makeAct(name){
+    function makeAct(name,arg){
       switch(name){
         case 'throw': return saberThrow();   case 'meditate': return meditate();
         case 'celebrate': return celebrate(); case 'crate': return crate();
         case 'strain': return strain();       case 'tired': return tired();
         case 'dance': return dance();         case 'march': return march();
-        case 'climb': return climb();         case 'look': return look();
+        case 'climb': return climb(arg);      case 'look': return look();
         case 'storm': return storm();         case 'drone': return droneDrop();
         case 'probe': return probe();         case 'swarm': return swarm();
         case 'flyover': return flyover();     case 'wave': return wave();
@@ -3711,7 +3794,19 @@ body.carrying{user-select:none;-webkit-user-select:none}
       V.sit=false; V.perched=false; V.waving=false;
       if(climbWanted){ climbWanted=false; post({type:'climb',want:false}); }
     }
-    function startAct(name){ actName=name; act=makeAct(name); mode='act'; }
+    function startAct(name,arg){ actName=name; act=makeAct(name,arg); mode='act'; }
+    // let go over a window (platforms fresh from the app or the page): if his feet pass a top edge on the way down, he lands on it
+    var fallFrom=null;
+    function landingEdge(){
+      if(V.vy<=0||!platforms.length||performance.now()-platformsAt>3000){ fallFrom=V.lift; return null; }
+      var c2=V.x+18*S,best=null,floorY=FLOOR/dpr;
+      platforms.forEach(function(p){
+        var h=(floorY-p.y)/S; if(h<4||c2<p.x1-4*S||c2>p.x2+4*S) return;
+        if(fallFrom!==null&&fallFrom>=h-.5&&V.lift<=h+.5&&(!best||h>best.h)) best={p:p,h:h};
+      });
+      fallFrom=V.lift;
+      return best?best.p:null;
+    }
     /* ---- TIE fighter: picked up here, dropped off on the next monitor ---- */
     function tieLeave(d){
       act=null; clearExtras(); V.dir=d; V.bladeTo=0; V.reach=false; V.target=V.x; mode='tie'; viaTie=true; say('tie',null,2);
@@ -3783,6 +3878,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       if(r<.12){ var nx=V.x,tries=0; while(Math.abs(nx-V.x)<W*.22&&tries++<8) nx=8*S+Math.random()*Math.max(1,W-56*S);
         try{ if(window.PET_PICK){ var pk=window.PET_PICK(W,S,V.x); if(isFinite(pk)) nx=pk; } }catch(e){}   // WEB: the page says where he can be seen
         V.dir=nx>V.x?1:-1; walk(V,nx,sp*(.7+Math.random()*.3)); mode='walk'; }   // WEB: off to another part of the page
+      else if(r<.24&&opts.climb&&platforms.length){ startAct('climb'); }   // WEB: up onto a widget's edge (Hector 2026-09-15)
       else if(r<.46){ mode='idle'; timer=6+Math.random()*6; }             // WEB: once there, he stays
       else if(r<.70){ if(opts.bubbles) chat(); mode='idle'; timer=5+Math.random()*3; }
       else if(r<.80) startAct('wave');
@@ -3849,7 +3945,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       travel:function(side){ if(mode==='held'||mode==='falling'||mode==='gone'||mode==='tie') return; leave(side==='left'?-1:1); },
       grab:function(){ if(mode==='tie'||mode==='gone') return; clearExtras(); act=null; mode='held'; V.held=true; V.reach=false; V.bladeTo=0; V.target=V.x; V.emote=.7; },
       hold:function(x,y){ if(mode!=='held') return; V.x=V.target=x-18*S; V.lift=Math.max(0,(FLOOR/dpr-y)/S-12); },
-      drop:function(){ if(mode!=='held') return; V.held=false; V.vy=0; V.landed=false; mode='falling'; noticeCool=3; },
+      drop:function(){ if(mode!=='held') return; V.held=false; V.vy=0; V.landed=false; fallFrom=V.lift; mode='falling'; noticeCool=3; },
       act:function(name){
         // walking off for a show that hasn't started: a move picked from the menu wins, right away
         if(mode==='exit'&&V.x>-30*S&&V.x<W-6*S){ mode='idle'; V.target=V.x; }
@@ -3880,7 +3976,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
         if(V.x>W+2*S||V.x<-40*S){ mode='gone'; goneT=0; post({type:'travel',side:V.dir>0?'right':'left'}); } }
       else if(mode==='gone'){ goneT+=dt; if(goneT>3) roam.arrive(V.dir>0?'right':'left'); }   // nobody moved the strip: back in
       else if(mode==='falling'){
-        if(V.lift===0&&V.vy===0){ mode='idle'; timer=1.2; V.emote=.6; post({type:'landed'}); } }
+        var edge=landingEdge();
+        if(edge){ startAct('climb',edge); }
+        else if(V.lift===0&&V.vy===0){ mode='idle'; timer=1.2; V.emote=.6; post({type:'landed'}); } }
       if(extras.ring) extras.ring.t+=dt;
       // standing still for a moment: up goes the CPU sign; any walk, move, saber or bubble lowers it
       var standing=mode==='idle'||(mode==='bench'&&benchKind==='stand');
@@ -4164,7 +4262,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     options:function(o){ o=o||{}; opts.night=o.night!==false; opts.bubbles=o.bubbles!==false; opts.climb=o.climb!==false;
       opts.sound=!!o.sound; snd.set(opts.sound); if(!opts.bubbles) extras.bubble=null;
       opts.march=o.march!==false; if(!opts.march||!opts.sound) snd.marchStop();
-      opts.sign=o.sign!==false; },
+      opts.sign=o.sign!==false; if(o.perchMin) opts.perchMin=+o.perchMin; },   // perchMin: seconds he strolls an edge before leaving (web: 20)
     night:function(b){ opts.night=!!b; },
     // CPU load (0-100) and macOS thermal state (0 nominal .. 3 critical), every few seconds
     cpu:function(pct,thermal){
@@ -4191,7 +4289,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
       }
     },
     // window top edges on his screen, in page points: [{id,x1,x2,y}]
-    platforms:function(list){ platforms=Array.isArray(list)?list:[]; },
+    platforms:function(list){ platforms=Array.isArray(list)?list:[]; platformsAt=performance.now(); },   // fresh for 3 s: a drop lands on an edge only while the list is current
     act:function(name){
       if(name==='choke'){ return this.play('choke'); }
       if(sceneKey==='roam'&&roam&&roam.act(name)) return wake();
@@ -4201,6 +4299,17 @@ body.carrying{user-select:none;-webkit-user-select:none}
       var now=performance.now();
       if(paused||sceneKey!=='roam'||!roam||now-lastCelebrate<20000) return;
       if(roam.act('celebrate')) lastCelebrate=now;
+    },
+    // Esquiffis talking through him (Hector 2026-09-15). Returns false when the line cannot be said here - too long
+    // for one unwrapped line, bubbles switched off, or he is held/travelling - so the app shows its panel instead.
+    speak:function(text,dur){
+      var t=String(text==null?'':text).replace(/\s+/g,' ').trim();
+      if(!t||!opts.bubbles||t.length>SPEAK_MAX) return false;
+      var V=(sceneKey==='roam'&&roam)?roam.V:null, m=(sceneKey==='roam'&&roam)?roam.mode():'';
+      if(!V||V.hidden||m==='held'||m==='falling'||m==='travel'||m==='gone') return false;
+      extras.bubble={text:t,t:0,dur:Math.max(2.5,Math.min(12,+dur||Math.max(3,t.length/9))),who:null};
+      wake();
+      return true;
     },
     state:function(){
       var V=(sceneKey==='roam'&&roam)?roam.V:null;

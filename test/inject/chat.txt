@@ -116,6 +116,13 @@
   var MLB={dates:[{games:[
     {gameDate:new Date(Date.now()-864e5).toISOString(),status:{abstractGameState:'Final'},teams:{home:{team:{id:119,name:'Los Angeles Dodgers'},score:5},away:{team:{id:135,name:'San Diego Padres'},score:2}}},
     {gameDate:new Date(Date.now()+864e5).toISOString(),status:{abstractGameState:'Preview'},teams:{home:{team:{id:137,name:'San Francisco Giants'}},away:{team:{id:119,name:'Los Angeles Dodgers'}}}}]}]};
+  // the countries file the Wars layer shades (four countries only; the page's baked list decides which are at war)
+  var COUNTRIES={type:'FeatureCollection', features:[
+    {type:'Feature', id:'UKR', properties:{name:'Ukraine'}, geometry:{type:'Polygon', coordinates:[[[30,50],[32,50],[32,52],[30,50]]]}},
+    {type:'Feature', id:'ISR', properties:{name:'Israel'}, geometry:{type:'Polygon', coordinates:[[[34.5,31],[35.5,31],[35.5,33],[34.5,31]]]}},
+    {type:'Feature', id:'SDN', properties:{name:'Sudan'}, geometry:{type:'Polygon', coordinates:[[[25,12],[35,12],[35,20],[25,12]]]}},
+    {type:'Feature', id:'PSE', properties:{name:'West Bank'}, geometry:{type:'Polygon', coordinates:[[[35,31.5],[35.5,31.5],[35.5,32.5],[35,31.5]]]}},
+    {type:'Feature', id:'CHE', properties:{name:'Switzerland'}, geometry:{type:'Polygon', coordinates:[[[6,46],[10,46],[10,47.5],[6,46]]]}}]};
   // ESPN's scoreboard for whatever league is asked: one live game, one final, one still to come, one malformed
   var ESPN={events:[
     {date:new Date(Date.now()+3*3600000).toISOString(), status:{type:{state:'pre', shortDetail:'9/17 - 8:15 PM EDT'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'BUF'}, score:'0'}, {homeAway:'home', team:{abbreviation:'DET'}, score:'0'}]}]},
@@ -140,6 +147,7 @@
     if(/api\.rainviewer\.com/.test(url)){ hubCalls.push('radar'); return FAIL_HUB ? res(503,'') : res(200,RADAR) }
     if(/api\.weather\.gov/.test(url)){ hubCalls.push('nws'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,NWS) }
     if(/eonet\.gsfc\.nasa\.gov/.test(url)){ hubCalls.push('eonet'); return FAIL_HUB ? res(503,'') : res(200,EONET) }
+    if(/countries\.geo\.json/.test(url)){ hubCalls.push('countries'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,COUNTRIES) }
     var mg=url.match(/api\.gold-api\.com\/price\/([A-Z]+)/);
     if(mg){ hubCalls.push('gold'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,{symbol:mg[1], price:METAL[mg[1]]}) }
     if(/currency-api/.test(url)){ hubCalls.push('snap'); if(FAIL_HUB) return Promise.reject(new Error('down'));
@@ -265,8 +273,11 @@
       T(band.b-band.t<=80 && p.b-p.t>=150, tag+': blended in - he keeps his size ('+Math.round(p.b-p.t)+'px canvas) but reserves only '+Math.round(band.b-band.t)+'px');
       T(p.r<=tk.l+1, tag+': he never walks into the chat ('+Math.round(p.r)+' <= '+Math.round(tk.l)+')');
       T(hb.b<=band.t+1, tag+': the widgets stop at his feet band ('+Math.round(hb.b)+' <= '+Math.round(band.t)+')');
-      T((+hubCs.zIndex)>(+getComputedStyle($('hub-floor')).zIndex), tag+': widgets pass in front of him, never under him');
-      T(parseFloat(hubCs.paddingBottom)>=(p.b-p.t)-(band.b-band.t), tag+': the last widgets can scroll clear above his head ('+hubCs.paddingBottom+')');
+      // Hector 2026-09-15: the widget edges are his paths - behind the widgets on the floor, in front of them up on an edge
+      var pbZ=+getComputedStyle(st).zIndex, up=document.body.classList.contains('petfront') || document.body.classList.contains('carrying');
+      T(up ? pbZ>+hubCs.zIndex : +hubCs.zIndex>pbZ, tag+': widgets pass in front of him on the floor, he passes in front of them on their edges ('+(up ? 'up' : 'floor')+')');
+      var petS=(window.pet && window.pet.state && window.pet.state().S) || 2.5;
+      T(parseFloat(hubCs.paddingBottom)>=Math.max(0, Math.round(26*petS)+12-(band.b-band.t)), tag+': the last widgets can scroll clear above his standing head ('+hubCs.paddingBottom+')');
       var inTile='';
       for(var x=band.l+4; x<band.r-4 && !inTile; x+=24){
         [band.t+4, band.b-4].forEach(function(y){ var e=document.elementFromPoint(Math.round(x), Math.round(y)); if(e && e.closest && e.closest('.hb')) inTile=Math.round(x)+','+Math.round(y) });
@@ -649,6 +660,41 @@
     var tr=R(tile('time')), e2=pev('pointerdown', tr.l+20, tr.t+20);
     T(!e2.defaultPrevented && !window.__esq.carrying, 'grab: a press anywhere else is left alone'); pev('pointerup', tr.l+20, tr.t+20);
     b.click(); T(b.getAttribute('aria-pressed')==='false' && localStorage.getItem('esq_grab')==='0', 'grab: and the switch turns off');
+    edgesOK(box, cv);
+  }
+  // the widget edges are his paths (Hector 2026-09-15: "all the edges of each individual window like a path for him")
+  function edgesOK(box0, cv){
+    var pet=window.pet, st0=pet.state();
+    if(typeof st0.platforms!=='number' || !window.__esq.feedPlatforms){ T(false, 'edges: the page hands him the widget edges'); return }
+    window.__esq.feedPlatforms(); var st1=pet.state();
+    var sr=cv.getBoundingClientRect(), side=$('hub-floor').parentNode.getBoundingClientRect();
+    T(st1.platforms>=5 && st1.platforms<=9, 'edges: every widget top edge on screen is a ledge ('+st1.platforms+')');
+    T(Math.abs(sr.top-side.top)<2 && Math.abs(sr.bottom-side.bottom)<2 && Math.abs(sr.left-side.left)<2, 'edges: his stage is the whole hub side ('+Math.round(sr.width)+'x'+Math.round(sr.height)+')');
+    setTimeout(function(){   // the grab test just dropped him: let him land first
+    pet.act('climb'); T(pet.state().act==='climb', 'edges: he can be sent up ('+pet.state().mode+', '+pet.state().act+')');
+    setTimeout(function(){
+      var st=pet.state();
+      T(st.perched===true && st.lift>20 && st.act==='climb' && document.body.classList.contains('petfront'), 'edges: 6 s later he is up on a widget edge, drawn in front of it (lift '+st.lift+', '+st.act+')');
+      var tiles=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis), on=tiles.filter(function(t){ var r=R(t), feetY=sr.bottom-st.lift*st.S, cx=sr.left+st.x+18*st.S; return Math.abs(r.t-feetY)<6 && cx>=r.l-8 && cx<=r.r+8 });
+      T(on.length===1, 'edges: his feet are on a real widget\'s top edge'+(on[0] ? ' ('+on[0].getAttribute('data-w')+')' : ''));
+      pet.act('look'); var st2=pet.state();
+      T(st2.perched===false && !document.body.classList.contains('petfront'), 'edges: cut short, he is back behind the widgets');
+      // carried over a widget and let go: he lands on its edge
+      var b=$('hub-grab'); b.click(); var box=window.__esq.petBox, r0=cv.getBoundingClientRect();
+      function pev(type, x, y){ var e=new PointerEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, pointerId:9, isPrimary:true, pointerType:'mouse', button:0}); (document.elementFromPoint(x,y)||document.body).dispatchEvent(e); return e }
+      setTimeout(function(){
+        box=window.__esq.petBox; if(!box){ T(false, 'edges: he reports where he is before the drop'); b.click(); return }
+        var tr=R(tile('time')), cx=r0.left+box.x+box.w/2, cy=r0.top+box.y+box.h/2;
+        pev('pointerdown', cx, cy); pev('pointermove', tr.l+60, tr.t-40); pev('pointerup', tr.l+60, tr.t-40);
+        setTimeout(function(){
+          var st3=pet.state();
+          T(st3.perched===true && st3.act==='climb' && Math.abs((sr.bottom-st3.lift*st3.S)-tr.t)<6, 'edges: dropped over the clock, he lands on its top edge (lift '+st3.lift+', '+st3.act+')');
+          pet.act('look'); b.click();
+          T(true, 'edges: all checks ran');
+        }, 1500);
+      }, 300);
+    }, 8000);
+    }, 1500);
   }
   // the basemaps and the layers he can switch on (Hector 2026-09-15: "better quality map", "earthquakes and that stuff")
   function mapLayersOK(allowAsk){
@@ -664,7 +710,7 @@
       'map: the dark base is a canvas of Esri dark + hillshade, with Esri labels on top (no key)');
     T(!mc.panes.hs && !!mc.panes.lbl && String(mc.panes.lbl.style.zIndex)==='300' && String(mc.panes.wx.style.zIndex)==='260',
       'map: no blend-mode pane (WebKit ignores it); radar under the labels, labels under the events');
-    T(pressed(base).join()==='Dark' && pressed(lay).length===0 && base.children.length===4 && lay.children.length===4, 'map: Dark is the pressed basemap, no layer on ('+pressed(base)+')');
+    T(pressed(base).join()==='Dark' && pressed(lay).length===0 && base.children.length===4 && lay.children.length===5, 'map: Dark is the pressed basemap, no layer on ('+pressed(base)+')');
     chip(base,'Satellite').click(); var t1=on();
     T(t1.length===2 && /World_Imagery/.test(t1[0].url) && /World_Boundaries_and_Places/.test(t1[1].url) && t1[1].o.pane==='lbl' && pressed(base).join()==='Satellite' && !!saved() && saved().base==='sat',
       'map: Satellite = Esri imagery + boundaries and places labels, no hillshade, remembered');
@@ -691,6 +737,7 @@
         if(FAIL_HUB){
           T(/US alerts unavailable/.test(tx('map-note')) && /Wildfires unavailable/.test(tx('map-note')) && /Storms unavailable/.test(tx('map-note')) && ag.layers.length===0 && fg.layers.length===0 && sg.layers.length===0,
             'map: every layer down, each says so ('+tx('map-note')+')');
+          var wfc=chip(lay,'Wars'); if(wfc){ wfc.click(); setTimeout(function(){ T(/Wars unavailable/.test(tx('map-note')), 'wars: the countries file down, it says so ('+tx('map-note')+')') }, 30); } else T(false, 'wars: the Wars chip exists');
           return;
         }
         T(ag.layers.length===2 && /2 severe weather alerts \(\+1 with no map shape\)/.test(tx('map-note')), 'map: 2 outlined NWS alerts drawn, the zone-only one counted, the nameless one dropped ('+tx('map-note')+')');
@@ -710,6 +757,27 @@
           T(calls.length===n+1 && calls[n].a==='chat' && /NWS/.test(calls[n].msg||'') && /Tornado Warning/.test(calls[n].msg||''), 'map: Ask hands the alert to Esquiffis'); }
         chip(lay,'Wildfires').click();
         T(fg.layers.length===0 && sg.layers.length===2 && !/wildfire/.test(tx('map-note')) && /1 storm/.test(tx('map-note')) && saved().lay.fires===false && saved().lay.storms===true, 'map: Wildfires off leaves the storm track');
+        // Hector 2026-09-15: "in their map they mark the zones that are at war" - the countries of Wikipedia's ongoing wars, shaded
+        var wars=window.__esq.wars, wg=mc.groups[4], hw=hubCalls.length, wchip=chip(lay,'Wars');
+        if(!wchip){ T(false, 'wars: the Wars chip exists'); return }
+        wchip.click();
+        setTimeout(function(){
+          var codes={}; (wars||[]).forEach(function(w){ (w.c||[]).forEach(function(c){ codes[c]=1 }) });
+          var expect=['UKR','ISR','SDN','PSE','CHE'].filter(function(c){ return codes[c] }).length;
+          T(Array.isArray(wars) && wars.length>=10 && wars.every(function(w){ return typeof w.n==='string' && /^(major|minor)$/.test(w.t) && Array.isArray(w.c) && w.c.length }) && codes.UKR && codes.SDN && !codes.CHE,
+            'wars: a baked list of ongoing wars, each with a tier and its countries ('+(wars||[]).length+' wars)');
+          T(hubCalls.indexOf('countries',hw)>-1 && !!wg && wg.layers.length===expect && expect>=3 && /countries at war/.test(tx('map-note')) && new RegExp(String(window.__esq.wars.length ? '' : 'x')).test(''),
+            'wars: the countries file comes from the browser once and every listed country in it is shaded ('+(wg ? wg.layers.length : '-')+' of '+expect+'): '+tx('map-note'));
+          var ukr=wg && wg.layers.filter(function(l){ return l.f && l.f.id==='UKR' })[0], che=wg && wg.layers.filter(function(l){ return l.f && l.f.id==='CHE' })[0];
+          T(!!ukr && !che && ukr.o.style.color==='#FF3B30' && /Ukraine · Major war/.test(ukr.popup.textContent) && /since 20\d\d/.test(ukr.popup.textContent) && /Wikipedia/.test(ukr.popup.textContent)
+            && [].every.call(ukr.popup.querySelectorAll('a'), function(a){ return /^https:\/\/en\.wikipedia\.org\//.test(a.href) }) && !!ukr.popup.querySelector('a'),
+            'wars: Ukraine is shaded red as a major war since its year, Switzerland is not; the popup links only to Wikipedia');
+          if(allowAsk && ukr && !window.__esq.busy){ var n=calls.length; ukr.popup.querySelector('.hl-ask').click();
+            T(calls.length===n+1 && /latest on the war in Ukraine/.test(calls[n].msg||''), 'wars: Ask asks Esquiffis for the latest on that war'); }
+          chip(lay,'Wars').click(); T(wg.layers.length===0 && !/at war/.test(tx('map-note')) && saved().lay.wars===false, 'wars: off clears the shading');
+          var hw2=hubCalls.length; chip(lay,'Wars').click(); T(hubCalls.indexOf('countries',hw2)<0 && wg.layers.length===expect, 'wars: on again draws from memory, no second fetch');
+          chip(lay,'Wars').click();
+        }, 30);
         var tick=window.__esq.hubTick; chip(lay,'Radar').click();
         setTimeout(function(){
           var h3=hubCalls.length; tick(Date.now()+16*60000); var fresh=hubCalls.slice(h3);
@@ -744,9 +812,12 @@
     var scr=$('tv-screen');
     T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
     var chips=$('tv-ch').querySelectorAll('button'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
-    T(chips.length===6 && !!on && on.textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: six channels with clear names, FOX first');
+    T(chips.length===9 && !!on && on.textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: nine channels with clear names, FOX first');
     var mm=$('tv-ch').querySelector('[data-k="mmty"]');
     T(!!mm && mm.textContent==='Multimedios MTY', 'TV: Multimedios Monterrey is on the TV');
+    // Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB"
+    var td=$('tv-ch').querySelector('[data-k="tdep"]'), c5=$('tv-ch').querySelector('[data-k="c5"]'), lo=$('tv-ch').querySelector('[data-k="lomlb"]');
+    T(!!td && td.textContent==='Telemundo Deportes' && !!c5 && c5.textContent==='Canal 5' && !!lo && lo.textContent==='Locked On MLB', 'TV: Telemundo Deportes, Canal 5 and Locked On MLB are on the TV');
     T(!!$('tv-ch').querySelector('[data-k="aje"]') && !$('tv-ch').querySelector('[data-k="nbc"]') && /Al Jazeera/.test($('tv-ch').querySelector('[data-k="aje"]').textContent), 'TV: Al Jazeera English in NBC\'s place');
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: the YouTube frame is dark while nothing plays');
     $('tv-play').click();
