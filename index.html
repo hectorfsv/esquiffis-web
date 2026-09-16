@@ -509,7 +509,10 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 }
 /* twelve columns on his desktop: widths are twelfths, set per widget by the page (applyHub) */
 @container (min-width:1100px){
-  .hub,.chat.hubview .hub{grid-template-columns:repeat(12,minmax(0,1fr))}
+  /* free range (Hector 2026-09-15): every widget is pinned to a column and a row, so nothing reflows and a gap
+     stays where he leaves one. A 10px row grain with the gap moved onto the tile keeps vertical placement fine. */
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:row;grid-auto-rows:10px;column-gap:14px;row-gap:0}
+  .hub .hb{margin-bottom:14px}
   .hb-news[data-size="M"] .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px}
   .hb-news[data-size="L"] .h-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px}
   .hb-inbox[data-size="L"]:not(.shut) .ib-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 24px}
@@ -1185,7 +1188,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
   function wname(w){ var x=winfo(w); return x ? x.name : w }
   function hubDefault(){
-    var d={order:[], span:{}, h:{}, hidden:[], shut:{}};
+    var d={order:[], span:{}, h:{}, col:{}, row:{}, hidden:[], shut:{}};
     WIDGETS.forEach(function(x){ d.order.push(x.w); d.span[x.w]=x.span; d.shut[x.w]=!!x.shut });
     return d;
   }
@@ -1200,6 +1203,8 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
         if(sv.size && typeof sv.size==='object') Object.keys(sv.size).forEach(function(w){ if(winfo(w) && LEGACY_SPAN[sv.size[w]]) d.span[w]=LEGACY_SPAN[sv.size[w]] });   // saved before free sizes
         if(sv.span && typeof sv.span==='object') Object.keys(sv.span).forEach(function(w){ var n=sv.span[w]; if(winfo(w) && typeof n==='number' && n===Math.round(n) && n>=MIN_SPAN && n<=12) d.span[w]=n });
         if(sv.h && typeof sv.h==='object') Object.keys(sv.h).forEach(function(w){ var n=sv.h[w], x=winfo(w); if(x && typeof n==='number' && n>=x.minH && n<=MAX_H) d.h[w]=Math.round(n) });
+        if(sv.col && typeof sv.col==='object') Object.keys(sv.col).forEach(function(w){ var n=sv.col[w]; if(winfo(w) && typeof n==='number' && n>=1 && n<=12) d.col[w]=Math.round(n) });
+        if(sv.row && typeof sv.row==='object') Object.keys(sv.row).forEach(function(w){ var n=sv.row[w]; if(winfo(w) && typeof n==='number' && n>=0 && n<=2000) d.row[w]=Math.round(n) });
         if(Array.isArray(sv.hidden)) d.hidden=sv.hidden.filter(function(w,i,a){ return !!winfo(w) && a.indexOf(w)===i });
         if(sv.shut && typeof sv.shut==='object') Object.keys(sv.shut).forEach(function(w){ if(winfo(w)) d.shut[w]=sv.shut[w]===true });
       }
@@ -1227,20 +1232,84 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     });
     applyHub();
   }
+  var ROWU=10, freezing=false;
+  // what he arranged, read top-to-bottom then left-to-right: how a phone (one column) stacks the same hub
+  function visualOrder(){
+    return hub.order.slice().sort(function(a,b){
+      var ra=hub.row[a], rb=hub.row[b];
+      if(ra==null || rb==null) return 0;
+      return ra===rb ? (hub.col[a]||1)-(hub.col[b]||1) : ra-rb;
+    });
+  }
+  /* Pinning a widget to a row needs a height for every widget, because the grid has to know how many rows it fills.
+     The first time this runs it measures the hub exactly as it looks today and freezes that, so nothing jumps. */
+  function hubFreeze(){
+    var need=[];
+    hub.order.forEach(function(w){
+      var t=tile(w); if(!t || !shown(w)) return;
+      var x=winfo(w)||{};
+      if(!hub.h[w]) hub.h[w]=Math.max(x.minH||90, Math.round(t.getBoundingClientRect().height)||0);
+      if(!hub.col[w] || hub.row[w]==null) need.push(w);
+    });
+    if(!need.length) return;
+    /* The packed layout is WORKED OUT, not measured: reading tile positions gave every widget the same top and
+       piled the hub into one corner, because layout had not settled when the measurement ran. Heights are
+       measured (a height is stable in a way a position is not), the rest is arithmetic. */
+    var rowTop=0;
+    hub.order.forEach(function(w){                       // anything already placed keeps its cell; new ones go below it
+      if(!shown(w) || need.indexOf(w)>-1 || hub.row[w]==null) return;
+      rowTop=Math.max(rowTop, hub.row[w]*ROWU+(hub.h[w]||90)+14);
+    });
+    var x=0, rowH=0;
+    need.forEach(function(w){
+      var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN));
+      if(x+sp>12){ rowTop+=rowH+14; x=0; rowH=0 }
+      hub.col[w]=x+1;
+      hub.row[w]=Math.ceil(rowTop/ROWU);
+      x+=sp; rowH=Math.max(rowH, hub.h[w]||90);
+    });
+    hubSave(); applyHub();
+  }
+  // the cell under the pointer, clamped so a widget can never start past the right edge
+  function hubCellAt(x, y, w){
+    var host=$('hub'), hr=host.getBoundingClientRect(), cs=getComputedStyle(host);
+    var padL=parseFloat(cs.paddingLeft)||0, padR=parseFloat(cs.paddingRight)||0;
+    var colW=(host.clientWidth-padL-padR-11*14)/12;
+    if(!(colW>0)) return null;
+    var bar=host.querySelector('.hub-bar');
+    var top=(bar ? bar.getBoundingClientRect().bottom-hr.top : parseFloat(cs.paddingTop)||0)+host.scrollTop+14;
+    var span=hub.span[w]||MIN_SPAN;
+    return {col:Math.max(1, Math.min(13-span, Math.round((x-hr.left-padL)/(colW+14))+1)),
+            row:Math.max(0, Math.round((y-hr.top+host.scrollTop-top)/ROWU))};
+  }
   function applyHub(){
     if(!hub) return;
-    var cols=gridCols();
-    hub.order.forEach(function(w, i){
+    var cols=gridCols(), free=cols>=12, bar=$('hub').querySelector('.hub-bar'), ROW0=1;
+    if(free && bar){
+      var brows=Math.max(1, Math.ceil(((bar.getBoundingClientRect().height||34)+14)/ROWU));
+      bar.style.gridRow='1 / span '+brows; ROW0=brows+1;
+    } else if(bar) bar.style.gridRow='';
+    (free ? hub.order : visualOrder()).forEach(function(w, i){
       var t=tile(w); if(!t) return;
       var span=hub.span[w], eff=cols>=12 ? span : Math.max(1, Math.round(span*cols/12));
       t.style.order=String(i+1);
-      t.style.gridColumn=cols>1 ? 'span '+Math.min(cols, eff) : '';
+      if(free && hub.col[w] && hub.row[w]!=null && hub.h[w]){
+        var col=Math.max(1, Math.min(13-span, hub.col[w]));
+        t.style.gridColumn=col+' / span '+span;
+        t.style.gridRow=(ROW0+hub.row[w])+' / span '+Math.max(1, Math.ceil((hub.h[w]+14)/ROWU));
+      } else {
+        t.style.gridColumn=cols>1 ? 'span '+Math.min(cols, eff) : '';
+        t.style.gridRow='';
+      }
       t.setAttribute('data-size', span<=4 ? 'S' : span<=8 ? 'M' : 'L');
       t.style.height=hub.h[w] ? hub.h[w]+'px' : '';
       t.classList.toggle('sized', !!hub.h[w]);
       t.classList.toggle('off', hub.hidden.indexOf(w)>-1);
       t.classList.toggle('shut', !!hub.shut[w]);
       var f=t.querySelector('.hb-fold'); if(f) f.setAttribute('aria-expanded', hub.shut[w] ? 'false' : 'true');
+      var pv=t.querySelector('.ht-prev'), nxb=t.querySelector('.ht-next');
+      if(pv) pv.setAttribute('aria-label', (free ? 'Move left: ' : 'Move earlier: ')+wname(w));
+      if(nxb) nxb.setAttribute('aria-label', (free ? 'Move right: ' : 'Move later: ')+wname(w));
       var sz=t.querySelector('.ht-size');
       if(sz){
         sz.textContent=span===3 ? '¼' : span===6 ? '½' : span===9 ? '¾' : span===12 ? '1' : span+'/12';
@@ -1256,12 +1325,22 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     });
     add.hidden=!arranging || !hub.hidden.length;
     $('hub-reset').hidden=!arranging;
+    // a widget with no cell yet (first run, Reset, or one added later) gets today's layout frozen as its starting point
+    if(gridCols()>=12 && !freezing && hub.order.some(function(w){ return shown(w) && (!hub.col[w] || hub.row[w]==null || !hub.h[w]) })){
+      freezing=true;
+      setTimeout(function(){ freezing=false; hubFreeze() }, 0);   // a virtual-time harness never fires rAF
+    }
     if(hub.shut.tv || hub.hidden.indexOf('tv')>-1) tvStop();   // a folded or hidden TV does not keep playing out of sight
     if(hub.shut.cams || hub.hidden.indexOf('cams')>-1) camsStop();
     startMap();   // a map that was unfolded, shown or resized redraws to its new box
   }
   // arrows: take the place of the nearest widget that is actually on screen
   function hubStep(w, dir){
+    if(gridCols()>=12){
+      var sp=hub.span[w]||MIN_SPAN;
+      hub.col[w]=Math.max(1, Math.min(13-sp, (hub.col[w]||1)+dir));
+      applyHub(); hubSave(); return;
+    }
     var o=hub.order, i=o.indexOf(w), j=i+dir;
     while(j>=0 && j<o.length && !shown(o[j])) j+=dir;
     if(i<0 || j<0 || j>=o.length) return;
@@ -1689,7 +1768,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     var act=b.getAttribute('data-act'); if(!act || !w || !arranging) return;
     if(act==='prev') hubStep(w, -1);
     else if(act==='next') hubStep(w, 1);
-    else if(act==='size'){ var cur=hub.span[w], nx=SPANS.filter(function(x){ return x>cur })[0] || SPANS[0]; hub.span[w]=nx; applyHub(); hubSave() }
+    else if(act==='size'){ var cur=hub.span[w], nx=SPANS.filter(function(x){ return x>cur })[0] || SPANS[0]; hub.span[w]=nx; hub.col[w]=Math.min(hub.col[w]||1, 13-nx); applyHub(); hubSave() }
     else if(act==='hide'){ if(hub.hidden.indexOf(w)<0) hub.hidden.push(w); applyHub(); hubSave() }
   });
   // double-click a corner handle: the height fits the content again
@@ -1722,6 +1801,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
       if(z.cols>1){
         var eff=Math.max(1, Math.min(z.cols, Math.round((nw+z.gap)/(z.colw+z.gap))));
         hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // never narrower than a quarter: a one-column TV was 120px
+        hub.col[z.w]=Math.min(hub.col[z.w]||1, 13-hub.span[z.w]);
       }
       hub.h[z.w]=Math.round(Math.max(x.minH, Math.min(MAX_H, z.h0+(e.clientY-z.y0))));
       applyHub();
@@ -1731,6 +1811,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
     // near the top or bottom edge of the hub, scroll it, so a widget can be carried to a spot that is out of view
     var hr=$('hub').getBoundingClientRect();
     if(e.clientY<hr.top+48) $('hub').scrollTop-=24; else if(e.clientY>hr.bottom-48) $('hub').scrollTop+=24;
+    if(gridCols()>=12){
+      var cell=hubCellAt(e.clientX, e.clientY, drag.w); if(!cell) return;
+      var ck='c'+cell.col+'r'+cell.row; if(ck===drag.last) return;
+      drag.last=ck; hub.col[drag.w]=cell.col; hub.row[drag.w]=cell.row; applyHub();
+      return;
+    }
     var over=document.elementFromPoint(e.clientX, e.clientY), t=(over && over.closest) ? over.closest('.hb[data-w]') : null;
     if(!t || t===drag.el) return;
     var r=t.getBoundingClientRect(), after=(e.clientX-r.left)>r.width/2, key=t.getAttribute('data-w')+(after ? '>' : '<');

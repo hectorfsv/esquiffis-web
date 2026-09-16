@@ -160,6 +160,11 @@
   }
   function hit(a,b){ return a.l<b.r && a.r>b.l && a.t<b.b && a.b>b.t }
   var WIDE=innerWidth>=1100;
+  function gs(el,p){ return el ? getComputedStyle(el)[p] : '' }
+  function col(w){ return +gs(tile(w),'gridColumnStart') }
+  // free placement needs 12 columns, and that is the HUB's width, not the window's: at 1300 the chat takes its
+  // quarter and the hub only gets 6, where widgets still pack and the arrows still reorder
+  function freeHub(){ var g=gs($('hub'),'gridTemplateColumns'); return !!g && g!=='none' && g.split(' ').filter(Boolean).length>=12 }
   function art(){
     // Hector: Vader behind the letters, never his face covered
     var img=$('art'); T(!!img && img.naturalWidth>0, 'the Vader art is loaded on the lock screen');
@@ -372,14 +377,17 @@
     // the TV keeps playing while it moves: the very same player, never re-created or moved in the page
     $('tv-play').click();
     var f=$('tv-screen').querySelector('iframe'), src=f && f.src;
+    var tvSpan=parseInt(String(gs(tile('tv'),'gridColumnEnd')).replace(/\D+/g,''),10)||6, tvC0=col('tv');
     tile('tv').querySelector('[data-act="prev"]').click();
-    T(ord('tv')<ord('map'), 'the arrow moves the TV ahead of the map');
+    T(freeHub() ? (col('tv')===Math.max(1, tvC0-1)) : ord('tv')<ord('map'),
+      freeHub() ? 'the arrow moves the TV one column left ('+tvC0+' -> '+col('tv')+')' : 'the arrow moves the TV ahead of the map');
     T(!!f && $('tv-screen').querySelector('iframe')===f && f.isConnected && f.src===src, 'the TV kept playing through the move (same player)');
     tile('tv').querySelector('[data-act="next"]').click();
-    T(ord('map')<ord('tv'), 'and the other arrow moves it back');
+    T(freeHub() ? (col('tv')===Math.min(13-tvSpan, Math.max(1, tvC0-1)+1)) : ord('map')<ord('tv'), 'and the other arrow moves it back ('+col('tv')+')');
     // an arrow skips a widget that is not on screen
-    var before=ord('weather'); tile('inbox').querySelector('[data-act="prev"]').click();
-    T(ord('inbox')<ord('weather') && ord('inbox')>ord('time'), 'moving the inbox earlier passes the hidden Dodgers and lands before Weather');
+    var ibC0=col('inbox'), before=ord('weather'); tile('inbox').querySelector('[data-act="prev"]').click();
+    T(freeHub() ? (col('inbox')===Math.max(1, ibC0-1)) : (ord('inbox')<ord('weather') && ord('inbox')>ord('time')),
+      freeHub() ? 'the arrow moves the inbox one column left ('+ibC0+' -> '+col('inbox')+')' : 'moving the inbox earlier passes the hidden Dodgers and lands before Weather');
     var sz=tile('map').querySelector('[data-act="size"]');
     sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u00BC', 'the width button cycles: full -> a quarter');
     if(WIDE && innerWidth>=1900){ var hw=R($('hub')), mr=R(tile('map')); T(mr.r-mr.l<(hw.r-hw.l)/3, 'a small map takes one column ('+Math.round(mr.r-mr.l)+' of '+Math.round(hw.r-hw.l)+')'); }
@@ -409,7 +417,8 @@
       T(tile('news').classList.contains('dragging'), 'grabbing the grip picks the widget up');
       document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr.l+6), clientY:Math.round((tr.t+tr.b)/2), pointerId:1}));
       document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:1}));
-      T(ord('news')<ord('time') && !tile('news').classList.contains('dragging'), 'dropping Headlines on the clock puts it before the clock');
+      T(!tile('news').classList.contains('dragging') && (freeHub() ? col('news')===col('time') : ord('news')<ord('time')),
+        'dropping Headlines on the clock lands it there ('+(freeHub() ? 'column '+col('news')+' vs '+col('time') : 'order '+ord('news')+' vs '+ord('time'))+')');
       // Hector 2026-09-15: "once i click ARRANGE i can just drag and move each widget"
       tile('time').scrollIntoView({block:'center'});
       var mk=tile('markets'), mr=R(mk), tr2=R(tile('time'));
@@ -417,7 +426,22 @@
       T(mk.classList.contains('dragging'), 'arranging: pressing the widget itself picks it up, no grip needed');
       document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr2.l+6), clientY:Math.round((tr2.t+tr2.b)/2), pointerId:7}));
       document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:7}));
-      T(ord('markets')<ord('time') && !mk.classList.contains('dragging'), 'dragging a widget by its body moves it (markets before the clock)');
+      T(!mk.classList.contains('dragging'), 'dragging a widget by its body moves it');
+      // Hector 2026-09-15: "i need to have free range so i can arrange the HUB how i like it"
+      if(freeHub()){
+        var clockCell=[col('time'), gs(tile('time'),'gridRowStart')];
+        var hb=R($('hub')), fx=Math.round(hb.l+(hb.r-hb.l)*0.74), fy=Math.round(hb.t+60);
+        var wx=tile('weather'), wr=R(wx);                      // a quarter wide: a full-width widget can only start at column 1
+        wx.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((wr.l+wr.r)/2), clientY:Math.round(wr.t+8), pointerId:11}));
+        document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:fx, clientY:fy, pointerId:11}));
+        document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:11}));
+        T(col('weather')>=7, 'free range: a widget dropped on the right side stays on the right (column '+col('weather')+')');
+        T(col('time')===clockCell[0] && gs(tile('time'),'gridRowStart')===clockCell[1],
+          'free range: nothing reflows - the clock stayed put when the weather moved away');
+        var svc=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+        T(!!svc.col && typeof svc.col.weather==='number' && !!svc.row && typeof svc.row.weather==='number',
+          'free range: the cell is remembered (col '+(svc.col&&svc.col.weather)+', row '+(svc.row&&svc.row.weather)+')');
+      }
       var nb=tile('time').querySelector('[data-act="next"]');
       T(!!nb, 'the widget tools are still there while arranging');
       if(nb){
