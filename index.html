@@ -201,7 +201,7 @@ button{cursor:pointer}
 .send svg{width:20px;height:20px;fill:currentColor}
 
 /* ---------- the hub: clock, weather, headlines, Dodgers ---------- */
-.hub{display:none;position:relative;z-index:1;flex-direction:column;min-height:0;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.hub{display:none;position:relative;z-index:1;flex-direction:column;min-height:0;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;scrollbar-gutter:stable}   /* a classic scrollbar gets its own gutter, never the tiles' corners */
 /* the tiles' one look (Hector 2026-09-16: "i want the tile headers in roomy, and the rest on dense, but the size of the font
    from compact"): headers as they were, the tightest padding, gaps and margins, type one step down. tp/tpx tile padding,
    tg the gap between tiles (mirrored in the grid maths as GAP), hhm the header's margin, hm every other margin, bp button
@@ -407,11 +407,17 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .hub.arranging .hb iframe{pointer-events:none}
 /* free size: a corner handle (while arranging, or on hover with a mouse); a widget given a height lays out as a column
    whose list, player or map takes the room */
-.ht-resize{display:none;position:absolute;z-index:3;right:1px;bottom:1px;width:20px;height:20px;cursor:nwse-resize;touch-action:none;
+/* the handle sits in from the edge: a tile in the rightmost column has its corner under the hub's scrollbar, and a press there
+   goes to the scrollbar, not the tile (Hector 2026-09-16: the map would not shrink; measured in WebKit: elementFromPoint = the hub) */
+.ht-resize{display:none;position:absolute;z-index:3;right:14px;bottom:1px;width:26px;height:24px;cursor:nwse-resize;touch-action:none;
   background:linear-gradient(135deg,transparent 45%,var(--rule-hot) 45%,var(--rule-hot) 53%,transparent 53%,transparent 66%,var(--rule-hot) 66%,var(--rule-hot) 74%,transparent 74%)}
 .hub.arranging .ht-resize{display:block}
 @media (pointer:fine){ .hub .hb:hover>.ht-resize{display:block} }
 .hb.resizing{outline:1px solid var(--red);outline-offset:-1px}
+/* while a corner or a tile is held, a player or the map under the pointer must not take the moves (shrinking drags INTO the tile) */
+body.hub-resizing .hub .hb iframe,body.hub-resizing .hub .hb canvas,body.hub-resizing .hub .hb .maplibregl-canvas-container,body.hub-dragging .hub .hb iframe,body.hub-dragging .hub .hb canvas{pointer-events:none}
+body.hub-resizing,body.hub-resizing *{cursor:nwse-resize!important}
+body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 .hub .hb.sized{display:flex;flex-direction:column;overflow:hidden}
 .hub .hb.sized>*{flex:none}
 .hub .hb-time.sized{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}   /* the clock tile stays a row: the sun arc to the right of the time */
@@ -1511,14 +1517,14 @@ body.carrying{user-select:none;-webkit-user-select:none}
      remembered on this device (localStorage: widget names and sizes, never mail). Order is CSS order and never a DOM
      move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
   // minH is the floor a tile can be dragged down to (Hector 2026-09-16: as small as it goes); what it holds scrolls or clips inside
-  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:72}, {w:'weather', name:'Weather', span:3, minH:72}, {w:'dodgers', name:'Sports', span:3, minH:80, shut:true},
-    {w:'inbox', name:'Inbox', span:3, minH:80, shut:true}, {w:'tv', name:'Live news', span:6, minH:120}, {w:'map', name:'World events', span:6, minH:120},
-    {w:'markets', name:'Markets', span:12, minH:70}, {w:'cams', name:'Live cameras', span:6, minH:120}, {w:'news', name:'News', span:6, minH:80, shut:true},
-    {w:'stocks', name:'Stocks & crypto', span:6, minH:80}, {w:'fuel', name:'Fuel & energy', span:6, minH:80}, {w:'iss', name:'ISS overhead', span:6, minH:80}];   // Hector 2026-09-16
-  // widths are twelfths; the button cycles a sixth, a quarter, a third, half, two thirds, three quarters, full (Hector 2026-09-16: "the sports widget could be cut in half")
-  var K_HUB='esq_hub', SPANS=[2,3,4,6,8,9,12], SPAN_WORD={2:'a sixth', 3:'a quarter', 4:'a third', 6:'half', 8:'two thirds', 9:'three quarters', 12:'the full width'},
-      SPAN_GLYPH={2:'\u2159', 3:'\u00BC', 4:'\u2153', 6:'\u00BD', 8:'\u2154', 9:'\u00BE', 12:'1'},
-      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=2, MAX_H=1400, MIN_HS=36, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=2;   // GAP mirrors the CSS --tg for the grid maths; LOOK stamps a layout measured under the current look
+  var WIDGETS=[{w:'time', name:'Clock', span:3, minH:40}, {w:'weather', name:'Weather', span:3, minH:40}, {w:'dodgers', name:'Sports', span:3, minH:40, shut:true},
+    {w:'inbox', name:'Inbox', span:3, minH:40, shut:true}, {w:'tv', name:'Live news', span:6, minH:40}, {w:'map', name:'World events', span:6, minH:40},
+    {w:'markets', name:'Markets', span:12, minH:40}, {w:'cams', name:'Live cameras', span:6, minH:40}, {w:'news', name:'News', span:6, minH:40, shut:true},
+    {w:'stocks', name:'Stocks & crypto', span:6, minH:40}, {w:'fuel', name:'Fuel & energy', span:6, minH:40}, {w:'iss', name:'ISS overhead', span:6, minH:40}];   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
+  // widths are twelfths, down to a single twelfth; the button cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full (Hector 2026-09-16)
+  var K_HUB='esq_hub', SPANS=[1,2,3,4,6,8,9,12], SPAN_WORD={1:'a twelfth', 2:'a sixth', 3:'a quarter', 4:'a third', 6:'half', 8:'two thirds', 9:'three quarters', 12:'the full width'},
+      SPAN_GLYPH={1:'1/12', 2:'\u2159', 3:'\u00BC', 4:'\u2153', 6:'\u00BD', 8:'\u2154', 9:'\u00BE', 12:'1'},
+      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=1, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=2;   // GAP mirrors the CSS --tg for the grid maths; LOOK stamps a layout measured under the current look
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
   function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
   function wname(w){ var x=winfo(w); return x ? x.name : w }
@@ -1605,12 +1611,15 @@ body.carrying{user-select:none;-webkit-user-select:none}
       if(!shown(w) || need.indexOf(w)>-1 || hub.row[w]==null) return;
       rowTop=Math.max(rowTop, hub.row[w]*ROWU+(tileH(w)||90)+hubGap());
     });
-    var x=0, rowH=0;
+    var x=0, rowH=0, rowStart=null;
     need.forEach(function(w){
       var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN));
-      if(x+sp>12){ rowTop+=rowH+hubGap(); x=0; rowH=0 }
+      if(x+sp>12){ rowTop=rowStart+rowH+hubGap(); x=0; rowH=0; rowStart=null }
+      // the row starts on the grid line it lands on, and the next row counts from THERE: counting from the unrounded
+      // top let a row start up to 9px early (a 1px overlap under the 6px gap, 2026-09-16; the old 14px gap hid it)
+      if(rowStart===null) rowStart=Math.ceil(rowTop/ROWU)*ROWU;
       hub.col[w]=x+1;
-      hub.row[w]=Math.ceil(rowTop/ROWU);
+      hub.row[w]=rowStart/ROWU;
       x+=sp; rowH=Math.max(rowH, tileH(w)||90);
     });
     hubSave(); applyHub();
@@ -2575,21 +2584,25 @@ body.carrying{user-select:none;-webkit-user-select:none}
       e.preventDefault();
       resizing={w:t.getAttribute('data-w'), el:t, x0:e.clientX, y0:e.clientY, w0:r.width, h0:r.height, cols:gridCols(),
         colw:parseFloat(tr[0]) || r.width, gap:parseFloat(cs.columnGap) || 14};
-      t.classList.add('resizing');
+      t.classList.add('resizing'); document.body.classList.add('hub-resizing');
+      // Hector 2026-09-16: "it gets to a certain size and doesn't go smaller" - shrinking drags the corner INTO the tile, over its
+      // own player or map, which then swallowed the moves. The handle keeps the pointer, and nothing under it takes events meanwhile.
+      try{ rz.setPointerCapture(e.pointerId) }catch(err){}
       return;
     }
     // while arranging the whole widget is the handle, not just the grip (the grip stays as the visible affordance)
     if(!arranging) return;
     var tt=e.target.closest('.hb[data-w]'); if(!tt) return;
     if(e.target.closest('.hb-tools') && !e.target.closest('.ht-grip')) return;   // move, width and hide stay clickable
-    e.preventDefault(); drag={w:tt.getAttribute('data-w'), el:tt, last:''}; tt.classList.add('dragging');
+    e.preventDefault(); drag={w:tt.getAttribute('data-w'), el:tt, last:''}; tt.classList.add('dragging'); document.body.classList.add('hub-dragging');
+    try{ tt.setPointerCapture(e.pointerId) }catch(err){}
   });
   document.addEventListener('pointermove', function(e){
     if(resizing){
       var z=resizing, x=winfo(z.w), nw=z.w0+(e.clientX-z.x0);
       if(z.cols>1){
         var eff=Math.max(1, Math.min(z.cols, Math.round((nw+z.gap)/(z.colw+z.gap))));
-        hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // never narrower than a sixth (Hector 2026-09-16: the smallest tile he asked for)
+        hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // down to a single twelfth (Hector 2026-09-16: "however i want")
         hub.col[z.w]=Math.min(hub.col[z.w]||1, 13-hub.span[z.w]);
       }
       var nh=Math.round(Math.min(MAX_H, z.h0+(e.clientY-z.y0)));
@@ -2614,6 +2627,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     drag.last=key; hubDragTo(drag.w, t.getAttribute('data-w'), after);
   });
   function dragEnd(){
+    document.body.classList.remove('hub-resizing'); document.body.classList.remove('hub-dragging');
     if(resizing){ resizing.el.classList.remove('resizing'); resizing=null; hubSave() }
     if(!drag) return;
     drag.el.classList.remove('dragging'); drag=null; hubSave();

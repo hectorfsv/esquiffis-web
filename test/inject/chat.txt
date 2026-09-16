@@ -379,6 +379,9 @@
       T(!!hp && !!ha && !!hp.closest('.head') && !!ha.closest('.head') && vis(hp) && vis(ha) && ha.nextElementSibling===null && hp.nextElementSibling===ha && $('head-tools').nextElementSibling===tf && R(ha).r<=R(tf).l && Math.abs(R(ha).t-R(tf).t)<=2,
         'VaderClawd and Arrange sit on the red tape, right before Chat');
       T(!vis($('hub').querySelector('.hub-bar')) && !$('hub-dense'), 'no bar at the top of the hub while not arranging, and no size switch');
+      // Hector 2026-09-16: the map would not shrink - the rightmost tiles' corner sat under the hub's scrollbar (measured in WebKit)
+      var rh=tile('inbox').querySelector('.ht-resize'), rhs=rh && getComputedStyle(rh);
+      T(!!rhs && parseFloat(rhs.right)>=14 && parseFloat(rhs.width)>=24 && getComputedStyle($('hub')).scrollbarGutter==='stable', 'the corner handle sits in from the edge, clear of the hub\'s scrollbar, which keeps its own gutter ('+(rhs&&rhs.right)+', '+(rhs&&rhs.width)+')');
       var firstTop=Math.min.apply(null, [].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).map(function(t){ return R(t).t }));
       T(firstTop-R($('hub')).t<=8, 'the first tiles start right at the top of the hub ('+Math.round(firstTop-R($('hub')).t)+'px)');
       var stRow=$('st-stocks').querySelector('.mk-n');
@@ -408,7 +411,7 @@
         T(ibr.b<=hr.b && tvr.b<=hr.b && mpr.b<=hr.b, 'folded, clock, weather, Dodgers, inbox, TV and map are all on the first screen ('+Math.round(Math.max(tvr.b,mpr.b)-hr.t)+' of '+Math.round(hr.b-hr.t)+')');
         var mkr=R(tile('markets')), cmr=R(tile('cams'));
         T(Math.abs(tmr.t-ibr.t)<=1 && Math.abs(tvr.t-mpr.t)<=1 && tvr.r<=mpr.l && tvr.t>=ibr.b-1 && mkr.t>=tvr.b && (mkr.r-mkr.l)>=(hr.r-hr.l)-60 && cmr.t>=mkr.b && Math.abs(cmr.t-nwr.t)<=1 && cmr.r<=nwr.l,
-          'clock, weather, Dodgers and the inbox in a row; the TV beside the map; markets across; the cameras beside the news');
+          'clock, weather, Dodgers and the inbox in a row; the TV beside the map; markets across; the cameras beside the news ('+[tmr.t,ibr.t,tvr.t,mpr.t,tvr.r,mpr.l,ibr.b,mkr.t,tvr.b,mkr.r-mkr.l,hr.r-hr.l,cmr.t,mkr.b,nwr.t,cmr.r,nwr.l].map(Math.round).join(',')+')');
         var tvs=R($('tv-screen')); T(tvs.r-tvs.l>=420, 'the TV is big enough to watch ('+Math.round(tvs.r-tvs.l)+'x'+Math.round(tvs.b-tvs.t)+')');
       }
     } else {
@@ -593,7 +596,9 @@
       freeHub() ? 'the arrow moves the inbox one column left ('+ibC0+' -> '+col('inbox')+')' : 'moving the inbox earlier passes the hidden Dodgers and lands before Weather');
     var sz=tile('map').querySelector('[data-act="size"]');
     // Hector 2026-09-16: "i need to be able to get smaller tiles" - the width button cycles a sixth, a quarter, a third, half, two thirds, three quarters, full
-    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u2159', 'the width button cycles: full -> a sixth, the new floor');
+    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='1/12', 'the width button cycles: full -> a twelfth, the floor (Hector: "however i want")');
+    if(WIDE && innerWidth>=1900){ var hw0=R($('hub')), mr0=R(tile('map')); T(mr0.r-mr0.l<(hw0.r-hw0.l)/9, 'a twelfth-wide map is a tiny tile ('+Math.round(mr0.r-mr0.l)+' of '+Math.round(hw0.r-hw0.l)+')'); }
+    sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u2159', 'a twelfth -> a sixth');
     if(WIDE && innerWidth>=1900){ var hw=R($('hub')), mr=R(tile('map')); T(mr.r-mr.l<(hw.r-hw.l)/5, 'a sixth-wide map is a small tile ('+Math.round(mr.r-mr.l)+' of '+Math.round(hw.r-hw.l)+')'); }
     sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u00BC', 'a sixth -> a quarter');
     sz.click(); T(tile('map').getAttribute('data-size')==='S' && sz.textContent==='\u2153', 'a quarter -> a third');
@@ -602,7 +607,7 @@
     sz.click(); T(tile('map').getAttribute('data-size')==='M' && sz.textContent==='\u2154', 'half -> two thirds');
     sz.click(); T(tile('map').getAttribute('data-size')==='L' && sz.textContent==='\u00BE', 'two thirds -> three quarters');
     // the saved sixth came back; the saved twelfth (below the floor) fell back to the default quarter; the saved Dense came back
-    if(WIDE && innerWidth>=1900){ var hw3=R($('hub')), wr=R(tile('weather')), ir=R(tile('inbox')); T(wr.r-wr.l<(hw3.r-hw3.l)/5 && ir.r-ir.l>(hw3.r-hw3.l)/5, 'a saved sixth-wide Weather comes back; a saved twelfth is refused and the inbox keeps its quarter ('+Math.round(wr.r-wr.l)+' / '+Math.round(ir.r-ir.l)+')'); }
+    if(WIDE && innerWidth>=1900){ var hw3=R($('hub')), wr=R(tile('weather')), ir=R(tile('inbox')); T(wr.r-wr.l<(hw3.r-hw3.l)/5 && ir.r-ir.l<(hw3.r-hw3.l)/9, 'a saved sixth-wide Weather and a saved twelfth-wide Inbox both come back ('+Math.round(wr.r-wr.l)+' / '+Math.round(ir.r-ir.l)+')'); }
     T(tile('weather').getAttribute('data-size')==='S' && !$('hub-dense'), 'the size switch is gone (Hector 2026-09-16: "so many options"); a saved density is ignored');
     tile('weather').querySelector('[data-act="hide"]').click();
     var wb=[].filter.call($('hub-add').querySelectorAll('button'), function(b){ return /Weather/.test(b.textContent) })[0];
@@ -671,13 +676,18 @@
       T(vis(rz), 'while arranging, every widget has a corner handle');
       rz.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round(r0.r-4), clientY:Math.round(r0.b-4), pointerId:3}));
       T(tvT.classList.contains('resizing'), 'grabbing the corner starts a resize');
+      // Hector 2026-09-16: "it gets to a certain size and doesn't go smaller" - shrinking drags the corner into the tile, over its player
+      if(!$('tv-screen').querySelector('iframe')) $('tv-play').click();   // a playing TV under the pointer, the case that swallowed the drag
+      var tvIf=$('tv-screen').querySelector('iframe');
+      T(document.body.classList.contains('hub-resizing') && !!tvIf && getComputedStyle(tvIf).pointerEvents==='none', 'while the corner is held, the player under the pointer cannot swallow the drag');
       document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(r0.r-4-(r0.r-r0.l)*.6), clientY:Math.round(r0.b-4+120), pointerId:3}));
       document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:3}));
       var r1=R(tvT), ts=R($('tv-screen'));
+      T(!document.body.classList.contains('hub-resizing'), 'let go: the resize flag clears (Arrange itself keeps players click-proof until Done)');
       T((r1.r-r1.l)<(r0.r-r0.l)*.75 && Math.abs((r1.b-r1.t)-((r0.b-r0.t)+120))<=3 && !tvT.classList.contains('resizing'),
         'dragging the corner makes the TV narrower and taller ('+Math.round(r0.r-r0.l)+'x'+Math.round(r0.b-r0.t)+' -> '+Math.round(r1.r-r1.l)+'x'+Math.round(r1.b-r1.t)+')');
       T(ts.b<=r1.b+1 && ts.b-ts.t>150, 'the player grows to fill the taller window ('+Math.round(ts.b-ts.t)+'px)');
-      T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/6-16 && (r1.r-r1.l)<(R($('hub')).r-R($('hub')).l)/4, 'but never narrower than a sixth of the hub, the new floor (Hector 2026-09-16) ('+Math.round(r1.r-r1.l)+'px)');
+      T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/12-16 && (r1.r-r1.l)<(R($('hub')).r-R($('hub')).l)/4, 'a drag snaps to twelfths, down to a single one ('+Math.round(r1.r-r1.l)+'px)');
       var sv2=JSON.parse(localStorage.getItem('esq_hub')||'{}');
       T(!!sv2.h && Math.abs(sv2.h.tv-(r1.b-r1.t))<=1 && typeof sv2.span.tv==='number' && sv2.span.tv<6, 'the free size is remembered ('+JSON.stringify(sv2.h)+', width '+(sv2.span&&sv2.span.tv)+'/12)');
       rz.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}));
