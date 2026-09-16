@@ -430,6 +430,17 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .mk-c.up{color:var(--go)}
 .mk-c.down{color:var(--red-hot)}
 .mk-c.flat{color:var(--ink-faint)}
+.iss-now{font-size:13px;line-height:1.45;color:var(--ink-dim);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.iss-list{list-style:none;display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.iss-p{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;font-variant-numeric:tabular-nums}
+.iss-t{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--ink)}
+.iss-d{font-size:13px;color:var(--ink-dim)}
+.iss-b{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+.iss-b.hi{color:var(--go)}
+.iss-b.mid{color:var(--ink-dim)}
+.hub .hb-iss.sized .iss-list{flex:1 1 auto;min-height:0;overflow-y:auto}
+.hb-stocks .mk,.hb-fuel .mk{flex-wrap:nowrap}   /* one line a row: the name gives way, the price never wraps under it */
+.hb-stocks .mk-n,.hb-fuel .mk-n{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* the AI news brief on top of the news; with a brief, the folded list hides behind "Show all" */
 .brief-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
 .brief-bar .h-note{margin-top:0}
@@ -743,6 +754,26 @@ body.carrying{user-select:none;-webkit-user-select:none}
               <button id="h-more" class="hb-more" type="button" hidden></button>
               <p id="h-note" class="h-note"></p>
             </section>
+            <section class="hb hb-stocks" data-w="stocks" aria-labelledby="st-h">
+              <div class="hb-h"><span id="st-h">Stocks &amp; crypto</span><span id="st-note" class="mk-note"></span></div>
+              <div class="mk-grid">
+                <div><div class="mk-cap">Crypto</div><ul id="st-crypto" class="mk-list"></ul></div>
+                <div><div class="mk-cap">Stocks</div><ul id="st-stocks" class="mk-list"></ul></div>
+              </div>
+            </section>
+            <section class="hb hb-fuel" data-w="fuel" aria-labelledby="fu-h">
+              <div class="hb-h"><span id="fu-h">Fuel &amp; energy</span><span id="fu-note" class="mk-note"></span></div>
+              <div class="mk-grid">
+                <div><div class="mk-cap">At the pump</div><ul id="fu-pump" class="mk-list"></ul></div>
+                <div><div class="mk-cap">Wholesale</div><ul id="fu-whole" class="mk-list"></ul></div>
+              </div>
+            </section>
+            <section class="hb hb-iss" data-w="iss" aria-labelledby="iss-h">
+              <div class="hb-h"><span id="iss-h">ISS overhead</span><span id="iss-note" class="mk-note"></span></div>
+              <p id="iss-now" class="iss-now"></p>
+              <ol id="iss-list" class="iss-list"></ol>
+              <p id="iss-foot" class="h-note"></p>
+            </section>
           </aside>
         </div>
         <div class="talk">
@@ -915,13 +946,13 @@ body.carrying{user-select:none;-webkit-user-select:none}
     var v=$('pw').value.trim();
     if(!v){ lockMsg('Enter the passphrase.', true); return }
     $('unlock').disabled=true; lockMsg('');
-    post({action:'login', password:v})
+    post(loginFields(v))
       .then(function(r){
         if(r.status===401){ lockMsg('That passphrase is not right.', true); vc('locked'); return }
         if(!r.ok){ lockMsg('Esquiffis did not answer ('+r.status+'). Try again.', true); return }
         pw=v; savePw(v);
         // the login answer also carries the hub's headlines (fetched by n8n in this same call)
-        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); enter(true) });
+        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setFuel(d && d.fuel); enter(true) });
       })
       .catch(function(){ lockMsg("Can't reach Esquiffis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
@@ -1332,6 +1363,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
     loadWeather(); var feeds=loadFeeds(); loadMlb(); loadScores(); if(evsOn()) loadEvents(); startMap(); loadMarkets(); camsInit(); paintBrief(); loadSun(); loadAir();
+    paintStocks(); loadStocks(); loadFuel(); paintFuel(); paintIss(Date.now()); issStart();   // stocks and crypto, the fuel prices kept from the last login, the station's passes (rows drawn first: frozen heights)
     if(!platTimer) platTimer=setInterval(feedPlatforms, 1000);   // the ledges follow every move, fold and resize within a second
     if(fresh){
       lastServerTry=Date.now();   // the login call that just happened is the inbox and headlines refresh
@@ -1359,6 +1391,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
     if(now-lastSc>=scMs()) loadScores();   // the league's scores: 15 minutes, 5 while a game is on
     if(evsOn() && now-lastMap>=MAP_MS) loadEvents();   // quakes and disaster alerts only while their layers are on
     if(now-lastMk>=MK_MS) loadMarkets();
+    if(now-lastSt>=stMs()) loadStocks();   // stocks, crypto and the fuel futures: 15 minutes, 5 while the US market is open
+    issTick(now);   // the station's place every minute, its passes every 6 hours
     // the map layers he switched on, while the map exists: radar every 10 minutes, alerts and EONET every 15 - 0 executions
     if(MAP && mapSet.lay.radar && now-lastRadar>=RADAR_MS) radarLoad();
     if(MAP && mapSet.lay.alerts && now-lastNws>=NWS_MS) nwsLoad();
@@ -1455,10 +1489,10 @@ body.carrying{user-select:none;-webkit-user-select:none}
     var btns=[$('h-refresh'), $('ib-refresh')];
     btns.forEach(function(b){ b.disabled=true; b.textContent='Refreshing' });
     loadFeeds();
-    post({action:'login', password:pw}).then(function(r){
+    post(loginFields(pw)).then(function(r){
       if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
       if(!r.ok) throw new Error('http '+r.status);
-      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox) });
+      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setFuel(d && d.fuel) });
     }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.' })
       .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }); if(thenBrief === true) runBrief() });
   }
@@ -1472,7 +1506,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
      move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
   var WIDGETS=[{w:'time', name:'Clock', span:3, minH:104}, {w:'weather', name:'Weather', span:3, minH:90}, {w:'dodgers', name:'Sports', span:3, minH:120, shut:true},
     {w:'inbox', name:'Inbox', span:3, minH:110, shut:true}, {w:'tv', name:'Live news', span:6, minH:200}, {w:'map', name:'World events', span:6, minH:180},
-    {w:'markets', name:'Markets', span:12, minH:90}, {w:'cams', name:'Live cameras', span:6, minH:200}, {w:'news', name:'News', span:6, minH:110, shut:true}];
+    {w:'markets', name:'Markets', span:12, minH:90}, {w:'cams', name:'Live cameras', span:6, minH:200}, {w:'news', name:'News', span:6, minH:110, shut:true},
+    {w:'stocks', name:'Stocks & crypto', span:6, minH:110}, {w:'fuel', name:'Fuel & energy', span:6, minH:110}, {w:'iss', name:'ISS overhead', span:6, minH:110}];   // Hector 2026-09-16
   var K_HUB='esq_hub', SPANS=[3,6,9,12], SPAN_WORD={3:'a quarter', 6:'half', 9:'three quarters', 12:'the full width'},
       LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=3, MAX_H=1400, IB_SHUT=3, HL_SHUT=3;
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
@@ -1624,6 +1659,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
     if(hub.shut.tv || hub.hidden.indexOf('tv')>-1) tvStop();   // a folded or hidden TV does not keep playing out of sight
     if(hub.shut.cams || hub.hidden.indexOf('cams')>-1) camsStop();
     startMap();   // a map that was unfolded, shown or resized redraws to its new box
+    issStart();   // an ISS tile brought back works out its passes
   }
   // arrows: take the place of the nearest widget that is actually on screen
   function hubStep(w, dir){
@@ -1663,7 +1699,13 @@ body.carrying{user-select:none;-webkit-user-select:none}
     // Canal 5's channel-live embed played from the live origin (measured), so it follows restarts by itself.
     {k:'tdep', short:'Telemundo Deportes', name:'Telemundo Deportes Ahora 24/7', vid:'iOdDkZltnJE', page:'https://www.youtube.com/@deportes/live'},
     {k:'c5', short:'Canal 5', name:'Canal 5 · Me Caigo de Risa 24/7', ch:'UCRZSTf9laa2wkHPOaiOoldA', page:'https://www.youtube.com/@canal5_mx/live'},
-    {k:'lomlb', short:'Locked On MLB', name:'Locked On MLB 24/7 (baseball talk, not games)', vid:'BSU7OK-T_LQ', page:'https://www.youtube.com/@LockedOnMLB/live'}];
+    {k:'lomlb', short:'Locked On MLB', name:'Locked On MLB 24/7 (baseball talk, not games)', vid:'BSU7OK-T_LQ', page:'https://www.youtube.com/@LockedOnMLB/live'},
+    // Hector 2026-09-16: "the best space shots, spaceX, nasa" - measured live and embeddable that morning; SpaceX itself streams on X, not YouTube.
+    // Every ISS camera is dark about 40 minutes of each 93-minute orbit (the station is in Earth's shadow), Sen's 4K cameras included.
+    {k:'sen', short:'Sen 4K \u00B7 ISS', name:'Sen \u00B7 live 4K Earth from the ISS', vid:'fO9e9jnhYK8', page:'https://www.youtube.com/@sen/live'},
+    {k:'nasa', short:'NASA ISS', name:'NASA \u00B7 live from the International Space Station', vid:'M3HKLzjvKPc', page:'https://www.youtube.com/@NASA/live'},
+    {k:'starbase', short:'Starbase Live', name:'NASASpaceflight \u00B7 Starbase Live 24/7 (Starship)', vid:'mhJRzQsLZGg', page:'https://www.youtube.com/@NASASpaceflight/live'},
+    {k:'cape', short:'Space Coast Live', name:'NASASpaceflight \u00B7 Space Coast Live 24/7 (the Cape)', vid:'Jm8wRjD3xVA', page:'https://www.youtube.com/@NASASpaceflight/live'}];
   var K_TV='esq_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
   function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0' }   // Hector: the TV starts on his click, muted
@@ -1750,6 +1792,219 @@ body.carrying{user-select:none;-webkit-user-select:none}
       mkItem(fl, f.name, now.toFixed(now>=10 ? 2 : 4), '', yday ? pct(now, f.rate(yday.usd)) : null);
     });
     $('mk-note').textContent=got ? 'Change since yesterday · '+clockText(new Date()) : 'Market data unavailable right now';
+  }
+
+  /* ---------- stocks, crypto and the fuel futures ----------
+     Hector 2026-09-16: "definitely crypto and also stocks" - Bitcoin, Ethereum and Dogecoin from CoinGecko's public API
+     (no key, measured CORS *) and his stocks from CNBC's own quote service: one call for every symbol, real-time for
+     the stocks, measured CORS * with a browser user agent, no key, unofficial. The fuel futures ride the same CNBC call
+     for the Fuel tile. 0 executions: every 15 minutes, every 5 while the US market is open. DOW = the Dow Jones index;
+     SpaceX has been public since 2026-06-12 (Nasdaq SPCX). */
+  var CRYPTO=[{id:'bitcoin', name:'Bitcoin'}, {id:'ethereum', name:'Ethereum'}, {id:'dogecoin', name:'Dogecoin'}];
+  var STOCKS=[{sym:'AAPL', name:'Apple'}, {sym:'AMZN', name:'Amazon'}, {sym:'.DJI', name:'Dow Jones', index:true}, {sym:'BRK.B', name:'Berkshire B'},
+    {sym:'GOOGL', name:'Google'}, {sym:'TSLA', name:'Tesla'}, {sym:'SPCX', name:'SpaceX'}];
+  var FUTURES=[{sym:'@NG.1', name:'Natural gas', unit:'MMBtu'}, {sym:'@RB.1', name:'Gasoline RBOB', unit:'gal'}, {sym:'@HO.1', name:'Diesel ULSD', unit:'gal'}, {sym:'@CL.1', name:'Crude WTI', unit:'bbl'}];
+  var CG_URL='https://api.coingecko.com/api/v3/simple/price?ids='+CRYPTO.map(function(c){ return c.id }).join(',')+'&vs_currencies=usd&include_24hr_change=true';
+  var CNBC_URL='https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols='+encodeURIComponent(STOCKS.concat(FUTURES).map(function(s){ return s.sym }).join('|'))
+    +'&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json';
+  var ST_MS=15*60*1000, ST_OPEN_MS=5*60*1000, lastSt=0, stOpen=false, quotes={}, quotesT=0, crypto=null;
+  function stMs(){ return stOpen ? ST_OPEN_MS : ST_MS }
+  function qnum(v){ var n=parseFloat(String(v==null ? '' : v).replace(/[,%$]/g, '')); return isFinite(n) ? n : null }   // CNBC prints "52,093.11" and "-0.52%"
+  function money(v){ return v>=10000 ? v.toLocaleString('en-US', {maximumFractionDigits:0}) : v>=1 ? v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : v.toFixed(4) }
+  function loadStocks(){
+    lastSt=Date.now();
+    var pc=fetch(CG_URL).then(function(r){ if(!r.ok) throw new Error('coingecko '+r.status); return r.json() })
+      .then(function(d){ return (d && typeof d==='object') ? d : null }).catch(function(){ return null });
+    var pq=fetch(CNBC_URL).then(function(r){ if(!r.ok) throw new Error('cnbc '+r.status); return r.json() })
+      .then(function(d){ var a=d && d.FormattedQuoteResult && d.FormattedQuoteResult.FormattedQuote; return Array.isArray(a) ? a : null }).catch(function(){ return null });
+    return Promise.all([pc, pq]).then(function(r){
+      if(r[0]) crypto=r[0];
+      if(r[1]){ quotes={}; quotesT=Date.now(); r[1].forEach(function(q){ if(q && typeof q==='object' && q.symbol && qnum(q.last)!==null) quotes[q.symbol]=q }) }
+      stOpen=STOCKS.some(function(s){ var q=quotes[s.sym]; return !!q && q.curmktstatus==='REG_MKT' });
+      paintStocks(); paintFuel();
+    });
+  }
+  function paintStocks(){
+    var cl=$('st-crypto'), sl=$('st-stocks'); if(!cl || !sl) return;
+    cl.textContent=''; sl.textContent='';
+    var got=0;
+    // every row is drawn, a dash until its price lands: the tile's frozen height already holds them all
+    CRYPTO.forEach(function(c){ var x=crypto && crypto[c.id], v=(x && num(x.usd) && x.usd>0) ? x.usd : null; if(v) got++; mkItem(cl, c.name, v ? '$'+money(v) : '—', '', (v && num(x.usd_24h_change)) ? x.usd_24h_change : null) });
+    STOCKS.forEach(function(s){ var q=quotes[s.sym], v=q ? qnum(q.last) : null; if(v!==null && v>0) got++; else v=null; mkItem(sl, s.name, v ? (s.index ? '' : '$')+money(v) : '—', '', v ? qnum(q.change_pct) : null) });
+    $('st-note').textContent=got ? 'Crypto: 24 h change · stocks: since the last close, US market '+(stOpen ? 'open' : 'closed')+' · '+clockText(new Date()) : 'Stock and crypto prices unavailable right now';
+  }
+
+  /* ---------- fuel and energy ----------
+     Hector 2026-09-16: "gas prices, and if i can get prices in general, natural gas, propane, gasoline, diesel" and
+     "don't register anything for the propane, get me what's free". At the pump: AAA's California page (the state and the
+     Los Angeles-Long Beach averages, updated daily), read by n8n inside the login call that already happens - no key,
+     0 extra executions - once a day per device: the page asks with fuel=1 only when what it kept is 12 hours old, so
+     the other logins stay quick. Propane: EIA's Mont Belvieu wholesale spot, the free daily page, the same way (no
+     retail propane price exists for California: EIA's residential survey covers 46 areas and none is here, measured).
+     Natural gas, gasoline, diesel and crude: the futures, from the CNBC call above, in the browser. */
+  var K_FUEL='esq_fuel', FUEL_MS=12*60*60*1000, fuel=null, fuelFail=0;
+  function loadFuel(){ if(fuel) return; try{ var f=JSON.parse(localStorage.getItem(K_FUEL)||'null'); if(f && f.ok===true && f.t) fuel=f }catch(e){} }
+  function fuelWanted(){ return !(fuel && fuel.ok===true && Date.now()-fuel.t<FUEL_MS) }
+  function loginFields(v){ var f={action:'login', password:v}; if(fuelWanted()) f.fuel='1'; return f }   // the pump prices ride the login once a day
+  function fnum(v){ return (typeof v==='number' && isFinite(v) && v>0) ? v : null }
+  function setFuel(x){
+    if(!x || typeof x!=='object') return;   // not asked for this time, or an older workflow
+    function pump(p){ return (p && typeof p==='object') ? {reg:fnum(p.reg), dsl:fnum(p.dsl), regWk:fnum(p.regWk), dslWk:fnum(p.dslWk)} : null }
+    var a=(x.ok===true && x.aaa && typeof x.aaa==='object' && x.aaa.ok===true) ? {date:String(x.aaa.date||'').slice(0,10), la:pump(x.aaa.la), ca:pump(x.aaa.ca)} : null;
+    var p=(x.ok===true && x.propane && typeof x.propane==='object' && x.propane.ok===true && fnum(x.propane.usd)) ? {date:String(x.propane.date||'').slice(0,10), usd:x.propane.usd} : null;
+    if(!a && !p){ fuelFail=Date.now(); paintFuel(); return }   // nothing usable: keep what we had, try again at the next login
+    fuel={t:Date.now(), ok:true, aaa:a, propane:p};
+    try{ localStorage.setItem(K_FUEL, JSON.stringify(fuel)) }catch(e){}
+    paintFuel();
+  }
+  function paintFuel(){
+    var pl=$('fu-pump'), wl=$('fu-whole'); if(!pl || !wl) return;
+    pl.textContent=''; wl.textContent='';
+    var got=0, parts=[], n0=0, la=fuel && fuel.aaa && fuel.aaa.la, ca=fuel && fuel.aaa && fuel.aaa.ca;
+    // every row is drawn, a dash until its price lands: the tile's frozen height already holds them all
+    [['Regular · LA', la, 'reg'], ['Diesel · LA', la, 'dsl'], ['Regular · CA', ca, 'reg'], ['Diesel · CA', ca, 'dsl']].forEach(function(r){
+      var p=r[1], v=p ? p[r[2]] : null; if(v){ got++; n0++ }
+      mkItem(pl, r[0], v ? '$'+v.toFixed(2) : '—', 'gal', v ? pct(v, p[r[2]+'Wk']) : null);
+    });
+    if(n0) parts.push('AAA '+fuel.aaa.date+', change vs a week ago');
+    var pp=fuel && fuel.propane; if(pp){ got++; parts.push('EIA propane '+pp.date) }
+    mkItem(wl, 'Propane, wholesale', pp ? '$'+pp.usd.toFixed(3) : '—', 'gal', null);
+    var fut=0;
+    FUTURES.forEach(function(f){ var q=quotes[f.sym], v=q ? qnum(q.last) : null; if(v!==null && v>0){ got++; fut++ } else v=null; mkItem(wl, f.name, v ? '$'+v.toFixed(v>=100 ? 2 : 3) : '—', f.unit, v ? qnum(q.change_pct) : null) });
+    if(fut) parts.push('futures '+clockText(new Date(quotesT)));
+    var stale=fuelFail>((fuel && fuel.t) || 0);
+    $('fu-note').textContent = got ? parts.join(' · ')+(stale ? ' · pump prices did not load' : '') : 'Fuel prices unavailable right now';
+  }
+
+  /* ---------- ISS overhead ----------
+     Hector 2026-09-16 ("what is a ISS overhead?" - "add the tile for the ISS overhead"): when the International Space
+     Station next crosses Santa Clarita's sky where you can see it with your own eyes - a bright, steady star crossing
+     for a few minutes, only while your sky is dark and the station is still in sunlight. All worked out in the browser:
+     satellite.js (SGP4, 23 KB from cdnjs, loaded when the tile is on screen) on the orbit lines from wheretheiss.at
+     (measured CORS *, kept 12 hours), the sun from the Astronomical Almanac approximation, Earth's shadow as a cylinder.
+     0 executions and one small request a day. Checked against an independent SGP4 reference (Python) in the harness. */
+  var SAT_JS='https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js', SAT_SRI='sha384-e6V1JVpc+kVNTxT0gEOla7yL4c92Romsw7itPoipfzHbEjzUwPhTv6oeVDMHHzqT';
+  var TLE_URL='https://api.wheretheiss.at/v1/satellites/25544/tles', K_TLE='esq_tle', TLE_MS=12*60*60*1000, ISS_MS=6*60*60*1000, ISS_DAYS=10, ISS_MIN_S=60;
+  var HOME_LAT=34.3917, HOME_LON=-118.5426, HOME_ALT=0.37;   // Santa Clarita, km above the sea
+  var OBS={latitude:HOME_LAT*Math.PI/180, longitude:HOME_LON*Math.PI/180, height:HOME_ALT};
+  var satLib=0, satWait=[], tleD=null, satrec=null, issList=null, issAt0=0, issBusy=false;
+  function loadSatLib(done){
+    if(window.satellite){ satLib=2; done(true); return }
+    if(satLib===3){ done(false); return }
+    satWait.push(done); if(satLib===1) return; satLib=1;
+    var js=document.createElement('script'); js.src=SAT_JS; js.integrity=SAT_SRI; js.crossOrigin='anonymous';
+    function finish(){ satLib=window.satellite ? 2 : 3; var w=satWait; satWait=[]; w.forEach(function(f){ f(satLib===2) }) }
+    js.onload=finish; js.onerror=finish;
+    document.head.appendChild(js);
+  }
+  function rad(d){ return d*Math.PI/180 }
+  function deg(r){ return r*180/Math.PI }
+  // the sun as a unit vector in the orbit's frame (Astronomical Almanac approximation, good to a hundredth of a degree)
+  function sunEci(ms){
+    var n=ms/864e5-10957.5, L=(280.460+0.9856474*n)%360, g=rad((357.528+0.9856003*n)%360);
+    var lam=rad(L+1.915*Math.sin(g)+0.020*Math.sin(2*g)), eps=rad(23.439-0.0000004*n);
+    var x=Math.cos(lam), y=Math.cos(eps)*Math.sin(lam), z=Math.sin(eps)*Math.sin(lam);
+    return {x:x, y:y, z:z, ra:Math.atan2(y, x), dec:Math.asin(z)};
+  }
+  function sunElev(s, gmst, lat, lon){ var H=gmst+lon-s.ra; return Math.asin(Math.sin(lat)*Math.sin(s.dec)+Math.cos(lat)*Math.cos(s.dec)*Math.cos(H)) }
+  function satLit(p, s){ var d=p.x*s.x+p.y*s.y+p.z*s.z; if(d>=0) return true; var x=p.x-d*s.x, y=p.y-d*s.y, z=p.z-d*s.z; return Math.sqrt(x*x+y*y+z*z)>6371 }
+  function issAt(rec, ms){   // where the station is, seen from Santa Clarita, at that moment
+    var d=new Date(ms), sat=window.satellite, pv;
+    try{ pv=sat.propagate(rec, d) }catch(e){ return null }
+    if(!pv || !pv.position || typeof pv.position!=='object') return null;
+    var g=sat.gstime(d), la=sat.ecfToLookAngles(OBS, sat.eciToEcf(pv.position, g)), s=sunEci(ms);
+    return {el:deg(la.elevation), az:(deg(la.azimuth)%360+360)%360, range:la.rangeSat, lit:satLit(pv.position, s), dark:sunElev(s, g, OBS.latitude, OBS.longitude)<rad(-6), pos:pv.position, vel:pv.velocity, g:g};
+  }
+  function compass(az){ return ['N','NE','E','SE','S','SW','W','NW'][Math.round(az/45)%8] }
+  // the visible passes in the days ahead: a 15-second sweep finds every pass above 10 degrees, a 1-second sweep inside
+  // each one finds the part you can see (station sunlit, your sky dark). Sliced so the page never stalls.
+  function issCompute(rec, fromMs, days, cb){
+    var STEP=15000, t=fromMs, end=fromMs+days*864e5, list=[], up=false, t0=0;
+    function fine(a, b){
+      var n=0, first=0, last=0, maxEl=-90, tMax=0, az0=0, az1=0;
+      for(var s=a; s<=b; s+=1000){
+        var x=issAt(rec, s); if(!x || x.el<=10 || !x.lit || !x.dark) continue;
+        if(!n){ first=s; az0=x.az } n++; last=s; az1=x.az;
+        if(x.el>maxEl){ maxEl=x.el; tMax=s }
+      }
+      if(n>=ISS_MIN_S) list.push({start:first, end:last, max:tMax, maxEl:Math.round(maxEl*10)/10, from:compass(az0), to:compass(az1)});
+    }
+    function slice(){
+      var n=0;
+      while(t<end && n<1200){
+        var x=issAt(rec, t); n++;
+        if(x && x.el>10){ if(!up){ up=true; t0=t-STEP } }
+        else if(up){ up=false; fine(t0, t) }
+        t+=STEP;
+      }
+      if(t<end) setTimeout(slice, 0); else { if(up) fine(t0, t); cb(list) }
+    }
+    slice();
+  }
+  function issShown(){ return !!tile('iss') && shown('iss') }
+  function loadTle(){
+    try{ var s=JSON.parse(localStorage.getItem(K_TLE)||'null'); if(s && s.line1 && s.line2 && s.t && Date.now()-s.t<TLE_MS) return Promise.resolve(s) }catch(e){}
+    var p=fetchJson('tle', TLE_URL); if(!p) return Promise.reject(new Error('busy'));
+    return p.then(function(d){
+      if(!d || typeof d.line1!=='string' || typeof d.line2!=='string') throw new Error('tle shape');
+      var s={line1:d.line1, line2:d.line2, t:Date.now()};
+      try{ localStorage.setItem(K_TLE, JSON.stringify(s)) }catch(e){}
+      return s;
+    });
+  }
+  function issStart(){
+    if(!hubOn || !hub || !issShown() || issBusy || (satrec && Date.now()-issAt0<ISS_MS)) return;
+    issBusy=true;
+    loadSatLib(function(ok){
+      if(!ok){ issBusy=false; $('iss-note').textContent='The orbit library could not load.'; return }
+      loadTle().then(function(t){
+        tleD=t; satrec=window.satellite.twoline2satrec(t.line1, t.line2); issAt0=Date.now();
+        paintIss(Date.now());
+        issCompute(satrec, Date.now(), ISS_DAYS, function(list){ issList=list; issBusy=false; paintIss(Date.now()) });
+      }).catch(function(){ issBusy=false; satrec=null; $('iss-note').textContent='Orbit data unavailable right now.'; $('iss-now').textContent=''; $('iss-list').textContent=''; $('iss-foot').textContent='' });
+    });
+  }
+  function issTick(now){
+    if(!issShown()) return;
+    if(!satrec || now-issAt0>=ISS_MS) issStart(); else paintIss(now);
+  }
+  function dayWord(ms){
+    var d=new Date(ms), t=new Date(); if(d.toDateString()===t.toDateString()) return 'Today';
+    t.setDate(t.getDate()+1); if(d.toDateString()===t.toDateString()) return 'Tomorrow';
+    return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+d.getDate();
+  }
+  function km(v){ return Math.round(v).toLocaleString('en-US') }
+  function paintIss(now){
+    var nowEl=$('iss-now'), ol=$('iss-list'), foot=$('iss-foot'); if(!nowEl || !ol) return;
+    if(!satrec){   // before the orbit lines land: three dashed rows, so the tile's frozen height already holds real ones
+      nowEl.textContent='Finding the station…'; ol.textContent='';
+      for(var i=0; i<3; i++){ var ph=document.createElement('li'); ph.className='iss-p'; var pt=document.createElement('span'); pt.className='iss-t'; pt.textContent='—'; ph.appendChild(pt); var pd=document.createElement('span'); pd.className='iss-d'; pd.textContent='…'; ph.appendChild(pd); ol.appendChild(ph) }
+      foot.textContent='Working out the next passes…'; return;
+    }
+    var x=issAt(satrec, now);
+    if(x){
+      var gd=window.satellite.eciToGeodetic(x.pos, x.g), lat=deg(gd.latitude), lon=deg(gd.longitude), v=x.vel, speed=Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z)*3600;
+      var dLat=rad(lat-HOME_LAT), dLon=rad(lon-HOME_LON), h=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(rad(HOME_LAT))*Math.cos(rad(lat))*Math.sin(dLon/2)*Math.sin(dLon/2), dist=2*6371*Math.asin(Math.sqrt(h));
+      nowEl.textContent='Now over '+Math.abs(lat).toFixed(0)+'°'+(lat<0 ? 'S' : 'N')+' '+Math.abs(lon).toFixed(0)+'°'+(lon<0 ? 'W' : 'E')+' · '+km(gd.height)+' km up · '+km(speed)+' km/h · '
+        +(x.lit ? 'in sunlight' : 'in Earth’s shadow')+' · '+(x.el>0 ? 'above your horizon now, '+Math.round(x.el)+'° up in the '+compass(x.az) : km(dist)+' km from Santa Clarita');
+    }
+    ol.textContent='';
+    var list=(issList||[]).filter(function(p){ return p.end>now }).slice(0,3);
+    list.forEach(function(p){
+      var li=document.createElement('li'); li.className='iss-p';
+      var t=document.createElement('span'); t.className='iss-t'; t.textContent=dayWord(p.start)+' '+clockText(new Date(p.start)); li.appendChild(t);
+      var d=document.createElement('span'); d.className='iss-d';
+      d.textContent='rises '+p.from+' · peaks '+Math.round(p.maxEl)+'° · sets '+p.to+' · '+Math.max(1, Math.round((p.end-p.start)/60000))+' min'; li.appendChild(d);
+      var b=document.createElement('span'); b.className='iss-b '+(p.maxEl>=40 ? 'hi' : p.maxEl>=25 ? 'mid' : 'lo');
+      b.textContent=p.maxEl>=40 ? 'bright, high' : p.maxEl>=25 ? 'good' : 'low on the horizon'; li.appendChild(b);
+      ol.appendChild(li);
+    });
+    var crossing=list.length && list[0].start<=now;
+    foot.textContent = issList===null ? 'Working out the next passes…'
+      : !list.length ? 'No visible pass over Santa Clarita in the next '+ISS_DAYS+' days. They come in runs of a week or two, a few weeks apart.'
+      : crossing ? 'Crossing your sky right now: look from the '+list[0].from+' towards the '+list[0].to+'.'
+      : 'Naked eye: a bright, steady star crossing the sky, no blinking. Local times, next '+ISS_DAYS+' days.';
+    $('iss-note').textContent=tleD ? 'Orbit data '+clockText(new Date(tleD.t)) : '';
   }
 
   /* ---------- the AI news brief ----------
@@ -2478,7 +2733,8 @@ body.carrying{user-select:none;-webkit-user-select:none}
 
   // for the test harness only: read state without touching the DOM contract
   window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
-    popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText };
+    popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
+    issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList } };
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's own Fullscreen API, and while it is on
      the page drops its frame too (body.full) so the hub gets the whole screen. Safari fires webkitfullscreenchange. */
   function fullOn(){ return !!(document.fullscreenElement || document.webkitFullscreenElement) }

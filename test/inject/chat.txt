@@ -139,6 +139,18 @@
   var SUN_RISE=Date.now()-3*3600000, SUN_SET=Date.now()+4*3600000;
   var SUN={daily:{time:['t','t'], sunrise:[isoLocal(SUN_RISE), isoLocal(SUN_RISE+864e5)], sunset:[isoLocal(SUN_SET), isoLocal(SUN_SET+864e5)], uv_index_max:[7.3, 6.1]}};
   var AIR={current:{time:'now', us_aqi:63, pm2_5:15.0}};
+  // Hector 2026-09-16: stocks and crypto (CoinGecko + CNBC's quote feed), the free fuel prices (AAA + EIA read by n8n inside the login), the ISS orbit lines
+  var CG={bitcoin:{usd:75918,usd_24h_change:-1.3216},ethereum:{usd:2401.8,usd_24h_change:-2.9479},dogecoin:{usd:0.079897,usd_24h_change:-3.4546}};
+  function Q(sym,name,last,chg,pct,st){ return {symbol:sym,name:name,last:last,change:chg,change_pct:pct,curmktstatus:st,code:0} }
+  var CNBC={FormattedQuoteResult:{FormattedQuote:[Q('AAPL','Apple Inc.','331.34','-1.74','-0.52%','PRE_MKT'),Q('AMZN','Amazon.com Inc','248.42','-5.12','-2.02%','PRE_MKT'),
+    Q('.DJI','Dow Jones Industrial Average','52,093.11','-328.09','-0.63%','REG_MKT'),Q('BRK.B','Berkshire Hathaway Inc','516.76','+1.81','+0.35%','PRE_MKT'),
+    Q('GOOGL','Alphabet Class A','344.98','-4.41','-1.26%','PRE_MKT'),Q('TSLA','Tesla Inc','356.58','-2.39','-0.67%','PRE_MKT'),Q('SPCX','Space Exploration Technologies Corp','143.49','-4.66','-3.15%','PRE_MKT'),
+    Q('@NG.1','Natural Gas','2.928','+0.009','+0.31%','REG_MKT'),Q('@RB.1','RBOB Gas','3.4355','-0.0297','-0.86%','REG_MKT'),Q('@HO.1','ULSD Heating Oil','5.278','+0.016','+0.30%','REG_MKT'),Q('@CL.1','WTI Crude','103.83','-2.00','-1.89%','REG_MKT'),
+    {symbol:'XAI',code:1,last:null}, null, {symbol:'AAPL'}]}};   // an unknown symbol, a hole and a quote with no price are all skipped
+  var FUEL={ok:true,t:'2026-09-16T13:40:00.000Z',aaa:{ok:true,date:'2026-09-16',la:{reg:6.0894,mid:6.3014,prem:6.4842,dsl:8.2143,regWk:5.9244,dslWk:7.8589},ca:{reg:6.044,mid:6.268,prem:6.4634,dsl:8.2668,regWk:5.8797,dslWk:7.873}},propane:{ok:true,usd:0.833,date:'2026-09-09'}};
+  var TLE={requested_timestamp:1789556823,tle_timestamp:1789506863,id:'25544',name:'iss',header:'ISS (ZARYA)',line1:'1 25544U 98067A   26258.88499338  .00006292  00000+0  12172-3 0  9999',line2:'2 25544  51.6310 211.2092 0004923 144.3133 215.8185 15.49128922585812'};
+  // the visible passes over Santa Clarita for that orbit, 10 days from 2026-09-24T00:00Z, by an independent SGP4 reference (Python sgp4 2.25, 1-second sweep, own sun and shadow maths)
+  var ISS_FROM=1790208000000, ISS_REF=[{"start": 1790305599000, "end": 1790305726000, "max": 1790305726000, "maxEl": 16.0, "from": "N", "to": "NE"}, {"start": 1790389191000, "end": 1790389317000, "max": 1790389254000, "maxEl": 11.1, "from": "N", "to": "NE"}, {"start": 1790394891000, "end": 1790394963000, "max": 1790394963000, "maxEl": 20.5, "from": "NW", "to": "NW"}, {"start": 1790478437000, "end": 1790478627000, "max": 1790478627000, "maxEl": 39.5, "from": "NW", "to": "NE"}, {"start": 1790561992000, "end": 1790562296000, "max": 1790562159000, "maxEl": 23.9, "from": "N", "to": "E"}, {"start": 1790567790000, "end": 1790567874000, "max": 1790567874000, "maxEl": 19.5, "from": "W", "to": "W"}, {"start": 1790651311000, "end": 1790651552000, "max": 1790651508000, "maxEl": 55.3, "from": "NW", "to": "S"}, {"start": 1790734845000, "end": 1790735238000, "max": 1790735046000, "maxEl": 74.0, "from": "NW", "to": "SE"}, {"start": 1790824246000, "end": 1790824495000, "max": 1790824371000, "maxEl": 15.6, "from": "W", "to": "S"}, {"start": 1790907738000, "end": 1790908089000, "max": 1790907914000, "maxEl": 28.6, "from": "W", "to": "S"}];
   // ESPN's scoreboard for whatever league is asked: one live game, one final, two still to come, one malformed
   var ESPN={events:[
     {date:new Date(Date.now()+3*3600000).toISOString(), status:{type:{state:'pre', shortDetail:'9/17 - 8:15 PM EDT'}}, competitions:[{competitors:[{homeAway:'away', team:{abbreviation:'BUF'}, score:'0'}, {homeAway:'home', team:{abbreviation:'DET'}, score:'0'}]}]},
@@ -170,19 +182,23 @@
     if(/api\.rainviewer\.com/.test(url)){ hubCalls.push('radar'); return FAIL_HUB ? res(503,'') : res(200,RADAR) }
     if(/api\.weather\.gov/.test(url)){ hubCalls.push('nws'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,NWS) }
     if(/eonet\.gsfc\.nasa\.gov/.test(url)){ hubCalls.push('eonet'); return FAIL_HUB ? res(503,'') : res(200,EONET) }
+    if(/api\.coingecko\.com/.test(url)){ hubCalls.push('coingecko'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,CG) }
+    if(/quote\.cnbc\.com/.test(url)){ hubCalls.push('cnbc'); return FAIL_HUB ? res(503,'') : res(200,CNBC) }
+    if(/wheretheiss\.at/.test(url)){ hubCalls.push('tle'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,TLE) }
     var mg=url.match(/api\.gold-api\.com\/price\/([A-Z]+)/);
     if(mg){ hubCalls.push('gold'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,{symbol:mg[1], price:METAL[mg[1]]}) }
     if(/currency-api/.test(url)){ hubCalls.push('snap'); if(FAIL_HUB) return Promise.reject(new Error('down'));
       return /latest/.test(url) ? res(200,SNAP_TODAY) : /2026-09-14/.test(url) ? res(200,SNAP_YDAY) : res(404,'') }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
     if(a==='brief'){ briefCalls.push({heads:(b&&b.get)?b.get('headlines'):null}); return pwd==='right' ? res(200, (FAIL_HUB || mode==='guard') ? {ok:false, points:[], n:0} : BRIEF) : res(401,{error:'unauthorized'}) }
-    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, json:!!(o&&o.headers)});
+    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, fuel:(b&&b.get)?b.get('fuel'):null, json:!!(o&&o.headers)});
     if(a==='login'){
       if(pwd!=='right') return res(401,{error:'unauthorized'});
       logins++;
       if(FAIL_HUB) return res(200,{ok:true});   // an older workflow: no headlines, no inbox
       // in hub mode the Refresh finds Gmail down
-      return res(200,{ok:true,headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX});
+      var askFuel=(b&&b.get) ? b.get('fuel')==='1' : false;   // the pump prices ride the login only when the page asks (once a day); guard mode: n8n could not read them
+      return res(200,{ok:true,headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX, fuel:askFuel ? (mode==='guard' ? {ok:true,aaa:{ok:false,why:'test'},propane:{ok:false,why:'test'}} : FUEL) : null});
     }
     if(a==='chat'){
       // never answers - but like a real fetch it REJECTS with AbortError when the page gives up
@@ -317,6 +333,43 @@
       spotsOK(tag, []);
     }
   }
+  // Hector 2026-09-16: "add the tile for the ISS overhead" - where the station is now, and its next visible passes over Santa Clarita
+  function issOK(){
+    var t0=Date.now();
+    (function wait(){
+      var foot=tx('iss-foot'), ready=!!foot && !/Working out/.test(foot);
+      if(!ready && Date.now()-t0<14000) return setTimeout(wait, 100);
+      T(ready, 'ISS: the passes were worked out in the browser ('+foot.slice(0,60)+')');
+      T(hubCalls.filter(function(k){ return k==='tle' }).length===1, 'ISS: one orbit-lines request');
+      T(/^Now over \d+\u00B0[NS] \d+\u00B0[EW] \u00B7 \d{3} km up \u00B7 [\d,]+ km\/h \u00B7 in (sunlight|Earth\u2019s shadow) \u00B7 ([\d,]+ km from Santa Clarita|above your horizon now)/.test(tx('iss-now')), 'ISS: where it is right now, how high, how fast, lit or not ('+tx('iss-now')+')');
+      var ps=qa('iss-list');
+      T(ps.length<=3 && [].every.call(ps, function(li){ return /^(Today|Tomorrow|(Sun|Mon|Tue|Wed|Thu|Fri|Sat) \d+) \d\d:\d\d$/.test(li.querySelector('.iss-t').textContent) && /^rises (N|NE|E|SE|S|SW|W|NW) \u00B7 peaks \d+\u00B0 \u00B7 sets (N|NE|E|SE|S|SW|W|NW) \u00B7 \d+ min$/.test(li.querySelector('.iss-d').textContent) && /bright|good|low/.test(li.querySelector('.iss-b').textContent) }),
+        'ISS: up to three passes, each with a local 24-hour time, where it rises and sets, how high, how long ('+ps.length+')');
+      T(ps.length ? /Naked eye|Crossing your sky/.test(foot) : /No visible pass over Santa Clarita in the next 10 days/.test(foot), 'ISS: the note fits the list ('+foot+')');
+      T(/Orbit data \d\d:\d\d/.test(tx('iss-note')) && !!localStorage.getItem('esq_tle'), 'ISS: says when the orbit lines are from, and keeps them 12 hours');
+      // the maths against an independent reference: the same orbit, the same 10 days, the same visible passes to the second
+      var esq=window.__esq;
+      esq.loadSatLib(function(ok){
+        if(!ok){ T(false, 'ISS: satellite.js loaded'); return T(true, 'iss: all checks ran') }
+        var rec=window.satellite.twoline2satrec(TLE.line1, TLE.line2);
+        esq.issCompute(rec, ISS_FROM, 10, function(list){
+          var same=list.length===ISS_REF.length && list.every(function(p,i){ var r=ISS_REF[i]; return Math.abs(p.start-r.start)<=2000 && Math.abs(p.end-r.end)<=2000 && Math.abs(p.max-r.max)<=5000 && Math.abs(p.maxEl-r.maxEl)<=0.5 && p.from===r.from && p.to===r.to });
+          T(same, 'ISS: '+list.length+' visible passes in 10 days match the Python SGP4 reference to the second ('+JSON.stringify(list.slice(0,2))+')');
+          T(list.length===10 && !!list[7] && list[7].maxEl>=73.5 && list[7].maxEl<=74.5 && list[7].from==='NW' && list[7].to==='SE', 'ISS: the bright 74-degree pass on Sep 29 is there, NW to SE');
+          T(true, 'iss: all checks ran');
+        });
+      });
+    })();
+  }
+  function issFailOK(){
+    var t0=Date.now();
+    (function wait(){
+      var n=tx('iss-note');
+      if(!/unavailable|could not load/.test(n) && Date.now()-t0<7000) return setTimeout(wait, 100);
+      T(/Orbit data unavailable/.test(n) && tx('iss-now')==='' && qa('iss-list').length===0, 'ISS down: it says so, nothing half-drawn ('+n+')');
+      T(true, 'iss: all checks ran');
+    })();
+  }
   function hubOK(){
     // Hector 2026-09-16: "i want the map clean at first" - no event feed is read until its layer is switched on
     if(mode==='arrange') T(hubCalls.indexOf('quakes')>-1 && hubCalls.indexOf('gdacs')<0, 'the saved Quakes layer is read at login, the Disasters feed (off) is not');
@@ -369,6 +422,8 @@
         'no Dodgers data and no ESPN: the Dodgers lines hide, the scores say so ('+tx('sc-note')+')');
       skyOK();
       T(!!$('mk-metals') && qa('mk-metals').length===0 && qa('mk-fx').length===0 && /unavailable/.test(tx('mk-note')), 'markets down: it says so');
+      T(qa('st-crypto').length===3 && qa('st-stocks').length===7 && [].every.call(qa('st-stocks'), function(li){ return li.querySelector('.mk-v').textContent==='\u2014' && !li.querySelector('.mk-c') }) && /unavailable/.test(tx('st-note')), 'stocks down: every row a dash, and it says so');
+      T(qa('fu-pump').length===4 && qa('fu-whole').length===5 && [].every.call(qa('fu-whole'), function(li){ return li.querySelector('.mk-v').textContent==='\u2014' }) && /unavailable/.test(tx('fu-note')), 'fuel down (older workflow, CNBC down): every row a dash, and it says so');
       T(briefCalls.length===0 && /No headlines to summarize yet/.test(tx('brief-meta')), 'news: with no headlines at all, no brief is spent and it says why ('+tx('brief-meta')+')');
       T($('ib-list').children.length===0 && /Refresh/.test($('ib-note').textContent) && $('ib-count').textContent==='', 'no inbox from an older workflow: it says to tap Refresh ('+$('ib-note').textContent+')');
     } else {
@@ -401,6 +456,38 @@
       T(fls.length===3 && /GBP \u2192 USD/.test(fls[1].textContent) && /1\.3484/.test(fls[1].textContent) && /\u22120\.15%/.test(fls[1].textContent), 'markets: the pound in dollars ('+(fls[1]&&fls[1].textContent)+')');
       T(/since yesterday/.test(tx('mk-note')), 'markets: says what the change compares to');
       T(hubCalls.indexOf('gold')>-1 && hubCalls.indexOf('snap')>-1, 'markets come from the browser, not n8n');
+      // Hector 2026-09-16: "crypto only ethereum, bitcoin and dogecoin. Stocks: apple, amazon, DOW, berkshire hathaway Inc, google, tesla, spaceXai"
+      var cr=qa('st-crypto'), stk=qa('st-stocks');
+      T(cr.length===3 && /Bitcoin/.test(cr[0].textContent) && /\$75,918/.test(cr[0].textContent) && /\u22121\.32%/.test(cr[0].textContent) && !!cr[0].querySelector('.mk-c.down'), 'stocks tile: Bitcoin with its 24 h change ('+(cr[0]&&cr[0].textContent)+')');
+      T(cr.length===3 && /Dogecoin/.test(cr[2].textContent) && /\$0\.0799/.test(cr[2].textContent), 'stocks tile: Dogecoin to four decimals ('+(cr[2]&&cr[2].textContent)+')');
+      var stNames=[].map.call(stk, function(li){ return li.querySelector('.mk-n').textContent });
+      T(stNames.join('|')==='Apple|Amazon|Dow Jones|Berkshire B|Google|Tesla|SpaceX', 'stocks tile: his seven, in his order, SpaceX included ('+stNames.join(', ')+')');
+      T(stk.length===7 && /\$331\.34/.test(stk[0].textContent) && /\u22120\.52%/.test(stk[0].textContent) && /52,093/.test(stk[2].textContent) && !/\$52,093/.test(stk[2].textContent) && /\$143\.49/.test(stk[6].textContent) && /\u22123\.15%/.test(stk[6].textContent),
+        'stocks tile: Apple $331.34 down 0.52%, the Dow as an index (no $), SpaceX $143.49 down 3.15%');
+      T(/US market open/.test(tx('st-note')) && /24 h change/.test(tx('st-note')), 'stocks tile: says what the changes mean and that the market is open ('+tx('st-note')+')');
+      var nCg=hubCalls.filter(function(k){ return k==='coingecko' }).length, nCnbc=hubCalls.filter(function(k){ return k==='cnbc' }).length;
+      T(nCg>=1 && nCnbc===nCg, 'stocks and crypto come from the browser: each refresh is one CoinGecko call and ONE CNBC call carrying the stocks and the fuel futures ('+nCg+' / '+nCnbc+')');
+      var rowSpill=[].filter.call(qa('st-stocks').length ? [].concat([].slice.call(qa('st-stocks')), [].slice.call(qa('fu-pump')), [].slice.call(qa('fu-whole'))) : [], function(li){ var n=li.querySelector('.mk-n'); return vis(n) && n.scrollWidth>n.clientWidth+1 && getComputedStyle(n).textOverflow!=='ellipsis' });
+      T(rowSpill.length===0 && [].every.call(qa('st-stocks'), function(li){ return !vis(li) || Math.abs(R(li.querySelector('.mk-n')).t-R(li.querySelector('.mk-v')).t)<6 }), 'stocks and fuel rows stay on one line: the name gives way, the price never drops under it');
+      // Hector 2026-09-16: "gas prices ... natural gas, propane, gasoline, diesel" / "don't register anything for the propane, get me what's free"
+      var pump=qa('fu-pump'), whole=qa('fu-whole');
+      if(mode==='guard'){
+        T(pump.length===4 && [].every.call(pump, function(li){ return li.querySelector('.mk-v').textContent==='\u2014' }) && whole.length===5 && whole[0].querySelector('.mk-v').textContent==='\u2014' && /\$2\.928/.test(whole[1].textContent) && /pump prices did not load/.test(tx('fu-note')) && /futures/.test(tx('fu-note')),
+          'fuel tile: when n8n cannot read AAA and EIA the futures still show, the pump rows are dashes, and it says why ('+tx('fu-note')+')');
+        T(!localStorage.getItem('esq_fuel'), 'fuel tile: a failed read is not kept, so the next login asks again');
+      } else {
+        T(pump.length===4 && /Regular \u00B7 LA/.test(pump[0].textContent) && /\$6\.09/.test(pump[0].textContent) && /\/gal/.test(pump[0].textContent) && /\+2\.79%/.test(pump[0].textContent) && !!pump[0].querySelector('.mk-c.up'),
+          'fuel tile: LA regular from AAA, per gallon, up 2.79% on the week ('+(pump[0]&&pump[0].textContent)+')');
+        T(pump.length===4 && /Diesel \u00B7 LA/.test(pump[1].textContent) && /\$8\.21/.test(pump[1].textContent) && /Regular \u00B7 CA/.test(pump[2].textContent) && /\$6\.04/.test(pump[2].textContent) && /Diesel \u00B7 CA/.test(pump[3].textContent) && /\$8\.27/.test(pump[3].textContent) && /\+5\.00%/.test(pump[3].textContent),
+          'fuel tile: LA diesel, California regular and diesel, each with its week change');
+        T(whole.length===5 && /Propane, wholesale/.test(whole[0].textContent) && /\$0\.833/.test(whole[0].textContent) && /\/gal/.test(whole[0].textContent) && !whole[0].querySelector('.mk-c'), 'fuel tile: EIA propane, wholesale, price only ('+(whole[0]&&whole[0].textContent)+')');
+        T(whole.length===5 && /Natural gas/.test(whole[1].textContent) && /\$2\.928/.test(whole[1].textContent) && /MMBtu/.test(whole[1].textContent) && /\+0\.31%/.test(whole[1].textContent) && /Gasoline/.test(whole[2].textContent) && /\$3\.436/.test(whole[2].textContent) && /Diesel/.test(whole[3].textContent) && /Crude/.test(whole[4].textContent) && /\$103\.83/.test(whole[4].textContent) && /\/bbl/.test(whole[4].textContent),
+          'fuel tile: natural gas, gasoline, diesel and crude futures from the browser');
+        T(/AAA 2026-09-16/.test(tx('fu-note')) && /week ago/.test(tx('fu-note')) && /EIA propane 2026-09-09/.test(tx('fu-note')) && /futures \d\d:\d\d/.test(tx('fu-note')), 'fuel tile: names its sources and dates ('+tx('fu-note')+')');
+        T(!!calls[0] && calls[0].fuel==='1', 'the first login asked n8n for the pump prices (fuel=1)');
+        var kept=null; try{ kept=JSON.parse(localStorage.getItem('esq_fuel')||'null') }catch(e){}
+        T(!!kept && kept.ok===true && kept.aaa && kept.aaa.la && kept.aaa.la.reg===6.0894 && kept.propane && kept.propane.usd===0.833 && !('mid' in kept.aaa.la), 'fuel prices are kept on this device for 12 hours, the figures the tile shows and nothing more');
+      }
       // Hector 2026-09-15: "make it to load once at logging in, and refresh it's manually, maybe an auto-refresh every 2 hrs"
       if(mode==='guard') T(briefCalls.length===1 && qa('brief-list').length===0 && /did not answer/.test(tx('brief-meta')) && /Summarize with Grok/.test(tx('brief-go')) && !$('brief-go').disabled,
         'news: when the login brief fails it says so, and the button is ready ('+tx('brief-meta')+')');
@@ -518,7 +605,7 @@
     T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
     $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
     var saved=JSON.parse(localStorage.getItem('esq_hub')||'{}');
-    T(Array.isArray(saved.order) && saved.order.length===9 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===9 && saved.hidden.join()==='dodgers',
+    T(Array.isArray(saved.order) && saved.order.length===12 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===9 && saved.hidden.join()==='dodgers',
       'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
     T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
     if(WIDE){
@@ -940,7 +1027,10 @@
     var scr=$('tv-screen');
     T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
     var chips=$('tv-ch').querySelectorAll('button'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
-    T(chips.length===9 && !!on && on.textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: nine channels with clear names, FOX first');
+    T(chips.length===13 && !!on && on.textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: thirteen channels with clear names, FOX first');
+    // Hector 2026-09-16: "the best space shots, spaceX, nasa ... add them to the tv"
+    T(['sen','nasa','starbase','cape'].every(function(k){ var c=$('tv-ch').querySelector('[data-k="'+k+'"]'); return !!c && vis(c) }) && /Sen 4K/.test(tx('tv-ch')) && /NASA ISS/.test(tx('tv-ch')) && /Starbase Live/.test(tx('tv-ch')) && /Space Coast Live/.test(tx('tv-ch')),
+      'TV: the four space streams are on the TV (Sen 4K, NASA ISS, Starbase, Space Coast)');
     var mm=$('tv-ch').querySelector('[data-k="mmty"]');
     T(!!mm && mm.textContent==='Multimedios MTY', 'TV: Multimedios Monterrey is on the TV');
     // Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB"
@@ -991,6 +1081,7 @@
     petOK('chat', true);
     floorOK('chat-empty');
     hubOK();
+    if(mode==='hub') issOK(); else if(mode==='hubfail') issFailOK();
     layout('chat-empty');
     tapeOK('chat');
     if(mode==='arrange'){ arrangeOK(); floorOK('arrange'); layout('arrange'); return done(); }
@@ -1000,6 +1091,7 @@
       var nb=briefCalls.length; tap('brief-go');
       var bc=briefCalls[nb], sentHeads=[]; try{ sentHeads=JSON.parse((bc && bc.heads) || '[]') }catch(e){}
       T(calls[n0] && calls[n0].a==='login' && calls.length===n0+1, 'Refresh asks n8n once, through the login call');
+      T(!!calls[n0] && calls[n0].fuel===null, 'Refresh does not ask for the pump prices again: they are kept 12 hours');
       T(!!bc && briefCalls.length===nb+1 && sentHeads.length>=6 && sentHeads.some(function(h){ return h.src==='Fox News' }) && sentHeads.some(function(h){ return h.src==='BBC' })
         && ['Fox US','Fox Politics','DW','Arutz Sheva'].every(function(sn){ return sentHeads.some(function(h){ return h.src===sn }) })
         && sentHeads.every(function(h){ return typeof h.title==='string' && !('link' in h) }), 'Refresh brief sends every headline to the brief path, the new sources included, one call, titles only ('+sentHeads.length+')');
