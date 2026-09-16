@@ -379,9 +379,15 @@
       T(!!hp && !!ha && !!hp.closest('.head') && !!ha.closest('.head') && vis(hp) && vis(ha) && ha.nextElementSibling===null && hp.nextElementSibling===ha && $('head-tools').nextElementSibling===tf && R(ha).r<=R(tf).l && Math.abs(R(ha).t-R(tf).t)<=2,
         'VaderClawd and Arrange sit on the red tape, right before Chat');
       T(!vis($('hub').querySelector('.hub-bar')) && !$('hub-dense'), 'no bar at the top of the hub while not arranging, and no size switch');
-      // Hector 2026-09-16: the map would not shrink - the rightmost tiles' corner sat under the hub's scrollbar (measured in WebKit)
+      // Hector 2026-09-16: "the red corner it's moved and looks weird" - back IN the corner; the hub's stable gutter keeps the scrollbar off it
       var rh=tile('inbox').querySelector('.ht-resize'), rhs=rh && getComputedStyle(rh);
-      T(!!rhs && parseFloat(rhs.right)>=14 && parseFloat(rhs.width)>=24 && getComputedStyle($('hub')).scrollbarGutter==='stable', 'the corner handle sits in from the edge, clear of the hub\'s scrollbar, which keeps its own gutter ('+(rhs&&rhs.right)+', '+(rhs&&rhs.width)+')');
+      T(!!rhs && parseFloat(rhs.right)<=2 && parseFloat(rhs.bottom)<=2 && parseFloat(rhs.width)===20 && parseFloat(rhs.height)===20 && getComputedStyle($('hub')).scrollbarGutter==='stable',
+        'the red corner sits in the corner (20px), and the hub keeps a gutter for its scrollbar ('+(rhs&&rhs.right)+', '+(rhs&&rhs.width)+')');
+      // Hector 2026-09-16: "look at all the space wasted between the name and price"
+      var stL=[].slice.call($('st-stocks').querySelectorAll('.mk')), spreadSt=0, gapSt=99, byCol={};
+      stL.forEach(function(li){ var k=Math.round(R(li).l); (byCol[k]=byCol[k]||[]).push(R(li.querySelector('.mk-v')).l); gapSt=Math.min(gapSt, Math.round(R(li.querySelector('.mk-v')).l-R(li.querySelector('.mk-n')).r)) });
+      Object.keys(byCol).forEach(function(k){ spreadSt=Math.max(spreadSt, Math.max.apply(null, byCol[k])-Math.min.apply(null, byCol[k])) });
+      T(stL.length===7 && spreadSt<=1 && gapSt>=2 && gapSt<=12, 'stocks: the prices line up in a column, right after the longest name ('+gapSt+'px, spread '+Math.round(spreadSt)+', '+Object.keys(byCol).length+' columns)');
       var firstTop=Math.min.apply(null, [].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).map(function(t){ return R(t).t }));
       T(firstTop-R($('hub')).t<=8, 'the first tiles start right at the top of the hub ('+Math.round(firstTop-R($('hub')).t)+'px)');
       var stRow=$('st-stocks').querySelector('.mk-n');
@@ -645,8 +651,10 @@
       // Hector 2026-09-15: "i need to have free range so i can arrange the HUB how i like it"
       if(freeHub()){
         var clockCell=[col('time'), gs(tile('time'),'gridRowStart')];
-        var hb=R($('hub')), fx=Math.round(hb.l+(hb.r-hb.l)*0.74), fy=Math.round(hb.t+60);
-        var wx=tile('weather'), wr=R(wx);                      // a quarter wide: a full-width widget can only start at column 1
+        var wx=tile('weather'); wx.scrollIntoView({block:'center'});
+        var wr=R(wx), hcs=getComputedStyle($('hub')), hpl=parseFloat(hcs.paddingLeft)||0, hcw=($('hub').clientWidth-hpl-(parseFloat(hcs.paddingRight)||0)-66)/12;
+        // the far right of its own row: a drop onto other widgets pushes them down now, so this one lands where nothing is
+        var fx=Math.round(R($('hub')).l+hpl+10*(hcw+6)+4), fy=Math.round(wr.t+5);
         wx.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((wr.l+wr.r)/2), clientY:Math.round(wr.t+8), pointerId:11}));
         document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:fx, clientY:fy, pointerId:11}));
         document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:11}));
@@ -656,6 +664,21 @@
         var svc=JSON.parse(localStorage.getItem('esq_hub')||'{}');
         T(!!svc.col && typeof svc.col.weather==='number' && !!svc.row && typeof svc.row.weather==='number',
           'free range: the cell is remembered (col '+(svc.col&&svc.col.weather)+', row '+(svc.row&&svc.row.weather)+')');
+        // Hector 2026-09-16: "why always i open the HUB everything it's unorganized?" - a drop landed ON the widgets there, and the overlap was saved
+        var clashes=function(){ var ps=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis), c=''; ps.forEach(function(a,i){ ps.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) c=a.getAttribute('data-w')+' / '+b.getAttribute('data-w') }) }); return c };
+        tile('time').scrollIntoView({block:'center'});
+        var ib=tile('inbox'), ibr=R(ib), tmr0=R(tile('time'));
+        ib.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((ibr.l+ibr.r)/2), clientY:Math.round(ibr.t+8), pointerId:12}));
+        document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tmr0.l+6), clientY:Math.round(tmr0.t+6), pointerId:12}));
+        document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:12}));
+        var ibr2=R(ib), tmr2=R(tile('time')), cl=clashes();
+        T(!cl && Math.abs(ibr2.t-tmr0.t)<=11 && tmr2.t>=ibr2.b-1, 'a widget dropped on another takes the spot, and the one it covered moves down: no overlap ('+(cl||'inbox top '+Math.round(ibr2.t)+', clock top '+Math.round(tmr2.t))+')');
+        var E1=window.__esq, hd=E1.hub;
+        if(typeof E1.hubSettle!=='function') T(false, 'a layout saved with tiles on top of each other opens untangled (no settle)');
+        else {
+          hd.col.fuel=hd.col.stocks; hd.row.fuel=hd.row.stocks; E1.hubSettle(null); E1.applyHub();   // what the page does with a saved layout at every open
+          T(!clashes() && hd.row.fuel!==hd.row.stocks, 'a layout saved with tiles on top of each other opens untangled ('+(clashes()||'rows '+hd.row.stocks+' / '+hd.row.fuel)+')');
+        }
       }
       var nb=tile('time').querySelector('[data-act="next"]');
       T(!!nb, 'the widget tools are still there while arranging');
@@ -707,6 +730,24 @@
       $('news-h').click();
       T(nT.classList.contains('shut') && Math.abs((R(nT).b-R(nT).t)-(n1.b-n1.t))<=1, 'folded again, it is back to the short folded height');
       $('news-h').click();   // leave it open, as the checks above left it
+      if(freeHub()){
+        // the corner of a tile in the rightmost column takes the press (the scrollbar sat on it once, measured in WebKit)
+        var rightT=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).sort(function(a,b){ return R(b).r-R(a).r })[0];
+        if(rightT){ rightT.scrollIntoView({block:'center'}); var rhh=R(rightT.querySelector('.ht-resize')), at=document.elementFromPoint((rhh.l+rhh.r)/2, (rhh.t+rhh.b)/2);
+          T(!!at && !!at.closest && at.closest('.ht-resize')===rightT.querySelector('.ht-resize'), 'the red corner of a tile in the rightmost column takes the press ('+rightT.getAttribute('data-w')+')') }
+        // Hector 2026-09-16: "now it just goes smaller but it covers the data ... WHAT PART OF FREE RANGE" - a small tile scales what it holds
+        var E2=window.__esq, stT=tile('stocks'), sp0=E2.hub.span.stocks;
+        stT.scrollIntoView({block:'center'});
+        E2.hub.span.stocks=2; E2.hub.h.stocks=90; E2.applyHub();
+        var sr=R(stT), rowsSt=[].slice.call(stT.querySelectorAll('.mk')), outR=rowsSt.filter(function(li){ var r=R(li); return r.b>sr.b+1 || r.r>sr.r+1 || r.t<sr.t-1 }).length,
+            cutN=[].filter.call(stT.querySelectorAll('.mk-n'), function(n){ return n.scrollWidth>n.clientWidth+1 }).length, fitV=parseFloat(stT.style.getPropertyValue('--fit'))||1;
+        T(Math.abs((sr.b-sr.t)-90)<=1 && rowsSt.length===10 && !outR && !cutN && fitV<1,
+          'a small tile keeps the size it was given and still shows every row: its content scales down ('+Math.round(sr.r-sr.l)+'x'+Math.round(sr.b-sr.t)+', fit '+fitV+', '+outR+' rows outside, '+cutN+' names cut)');
+        var rzr=R(stT.querySelector('.ht-resize'));
+        T(Math.abs(rzr.r-sr.r)<=2 && Math.abs(rzr.b-sr.b)<=2 && Math.abs((rzr.r-rzr.l)-20)<=1, 'a scaled tile keeps its red corner full size, in the corner ('+Math.round(rzr.r-rzr.l)+'px)');
+        E2.hub.span.stocks=sp0; E2.hub.h.stocks=160; E2.applyHub();
+        T(!stT.classList.contains('fit') || (parseFloat(stT.style.getPropertyValue('--fit'))||1)>fitV, 'given its room back, the content grows back');
+      }
     }
     $('hub-reset').click();
     T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('markets') && ord('markets')<ord('cams') && ord('cams')<ord('news')
