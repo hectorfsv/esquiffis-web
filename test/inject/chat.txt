@@ -213,7 +213,7 @@
       if(FAIL_HUB) return res(200,{ok:true});   // an older workflow: no headlines, no inbox
       // in hub mode the Refresh finds Gmail down
       var askFuel=(b&&b.get) ? b.get('fuel')==='1' : false;   // the pump prices ride the login only when the page asks (once a day); guard mode: n8n could not read them
-      return res(200,{ok:true,headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX, reminders:(mode==='hub' && logins>1) ? {ok:false, items:[]} : REMS, fuel:askFuel ? (mode==='guard' ? {ok:true,aaa:{ok:false,why:'test'},propane:{ok:false,why:'test'}} : FUEL) : null});
+      return res(200,{ok:true,history:(mode==='persist' ? HIST : {ok:true, items:[]}),headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX, reminders:(mode==='hub' && logins>1) ? {ok:false, items:[]} : REMS, fuel:askFuel ? (mode==='guard' ? {ok:true,aaa:{ok:false,why:'test'},propane:{ok:false,why:'test'}} : FUEL) : null});
     }
     // Hector 2026-09-17: his iPhone dropped a real turn while n8n answered it. `action=last` reads the answer back.
     if(a==='last'){
@@ -241,6 +241,12 @@
     return Promise.reject(new Error('no net'));
   };
   var lastCalls=[], LOSTANS='Selichot runs until Yom Kippur, so the plaza fills up most nights.';
+  // what n8n returns as `history`: his Lounge turns from the OTHER device (Telegram and the pet are tagged and never sent),
+  // one of them already in the persist fixture's local transcript so the merge has a duplicate to refuse
+  var HIST={ok:true, items:[
+    {r:'me', m:'what did I ask yesterday', t:'2026-09-14T10:00:00Z'},
+    {r:'me', m:'set the smoker to 250 when I leave', t:'2026-09-16T17:04:00Z'},
+    {r:'jarvis', m:'Done - 250F, and I will remind you at 16:30.', t:'2026-09-16T17:04:06Z'}]};
   function layout(tag){
     var d=document.documentElement;
     T(d.scrollWidth<=innerWidth, tag+': no horizontal overflow ('+d.scrollWidth+'<='+innerWidth+')');
@@ -1586,16 +1592,26 @@
     }
     if(mode==='persist'){
       var ms=document.querySelectorAll('#col .m');
-      T(ms.length===4, 'the remembered transcript is on screen ('+ms.length+')');
+      T(ms.length===6, 'the remembered transcript is on screen, the other device\'s turns merged in ('+ms.length+')');
       T(/brisket/.test(ms[1].textContent), 'with its words');
       // Hector 2026-09-17: "I still haven't gotten my answer, do i have to ask?" - a turn lost by an OLDER page ends
       // with its note; opening the chat picks it up, asks the server once and puts the real answer in its place
-      T(lastCalls.length===1 && !document.querySelector('#col .m.note') && ms[3].classList.contains('jarvis') && /plaza fills up/.test(ms[3].textContent) && /Fetched back/.test(ms[3].textContent),
+      var got=[].filter.call(document.querySelectorAll('#col .m.jarvis'), function(m){ return /plaza fills up/.test(m.textContent) })[0];
+      T(lastCalls.length===1 && !document.querySelector('#col .m.note') && !!got && /Fetched back/.test(got.textContent),
         'a turn an older page lost is picked up when the chat opens, without asking Jarvis again ('+lastCalls.length+' call)');
       // Hector 2026-09-16: Esquiffis is Jarvis now - a chat saved under the old names comes back as his
       var byOld=ms[1] && ms[1].querySelector('.by');
       T(!!ms[1] && ms[1].classList.contains('jarvis') && !!byOld && byOld.textContent==='Jarvis' && localStorage.getItem('esq_log')===null && /"r":"jarvis"/.test(localStorage.getItem('lounge_log')||''),
         'a chat saved before the rename moves to the new names and reads as Jarvis ('+(byOld && byOld.textContent)+')');
+      // Hector 2026-09-17: "it's that possible? to keep a single session on both instances, mobile and web?"
+      var txts=[].map.call(document.querySelectorAll('#col .m'), function(m){ return m.querySelector('.body').textContent });
+      T(txts.filter(function(t){ return /what did I ask yesterday/.test(t) }).length===1,
+        'the shared history never duplicates a turn this device already had ('+txts.length+' messages)');
+      T(/set the smoker to 250/.test(txts.join('|')) && /250F, and I will remind you/.test(txts.join('|')),
+        'what he said in the Lounge on the other device is here too');
+      var order=txts.map(function(t){ return /brisket/.test(t) ? 'brisket' : /smoker/.test(t) ? 'smoker' : /remind you/.test(t) ? 'reply' : /western wall/.test(t) ? 'wall' : /plaza fills up/.test(t) ? 'answer' : '' }).filter(Boolean);
+      T(order.join(',')==='brisket,smoker,reply,wall,answer', 'merged in time order, his own transcript kept ('+order.join(' > ')+')');
+      T(/set the smoker to 250/.test(localStorage.getItem('lounge_log')||''), 'and the merged conversation is remembered on this device');
       T(!document.querySelector('#col .m .used'), 'a reply saved before receipts existed shows none');
       T($('empty').hidden, 'and no empty state over it');
       $('clear').click();

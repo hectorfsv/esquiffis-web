@@ -1128,6 +1128,26 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     try{ var a=JSON.parse(localStorage.getItem(K_LOG)||'[]'); if(Array.isArray(a)) log=a.filter(function(m){return m&&m.r&&typeof m.m==='string'}); }catch(e){ log=[] }
   }
 
+  /* ---------- one conversation on every device ----------
+     Hector 2026-09-17: "it's that possible? to keep a since session on both instances, mobile and web?" - and, asked
+     which turns: "Yes, but only what I said in the Lounge". n8n tags every turn with the door it came through and the
+     LOGIN reply carries the last 24 Lounge lines (0 extra executions, it rides a call that already happens). A device
+     merges in what it does not have; nothing is ever removed, so his own transcript, his notes and anything older than
+     the tagging stay exactly where they are. Turns from Telegram and VaderClawd are tagged too and never asked for. */
+  var pendingHistory=null;
+  function logKey(m){ return (m && m.r)+'|'+String((m && m.m) || '').replace(/\s+/g,' ').trim().slice(0,120) }
+  function setHistory(h){
+    if(!h || h.ok!==true || !Array.isArray(h.items) || !h.items.length) return;
+    var seen={};
+    log.forEach(function(m){ seen[logKey(m)]=1 });
+    var add=h.items.filter(function(m){
+      return m && (m.r==='me' || m.r==='jarvis') && typeof m.m==='string' && m.m.trim() && m.t && !seen[logKey(m)];
+    }).map(function(m){ return {r:m.r, m:String(m.m), t:String(m.t)} });
+    if(!add.length) return;
+    log=log.concat(add).sort(function(a,b){ return (Date.parse(a.t||'')||0)-(Date.parse(b.t||'')||0) }).slice(-LOG_MAX);
+    saveLog(); render();
+  }
+
   /* ---------- the transport ---------- */
   function post(fields, signal){
     var fd=new FormData();
@@ -1148,7 +1168,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
         if(!r.ok){ lockMsg('Jarvis did not answer ('+r.status+'). Try again.', true); return }
         pw=v; savePw(v);
         // the login answer also carries the hub's headlines (fetched by n8n in this same call)
-        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); enter(true) });
+        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); pendingHistory=(d && d.history) || null; enter(true) });
       })
       .catch(function(){ lockMsg("Can't reach Jarvis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
@@ -1168,7 +1188,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     placePet();
   }
   function enter(fresh){
-    moveOldNames(); show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub(fresh);
+    moveOldNames(); show('scr-chat'); loadLog(); render(); setStatus('Ready','ok');
+    if(pendingHistory){ setHistory(pendingHistory); pendingHistory=null }   // what he said in the Lounge on his other device
+    startHub(fresh);
     // On a phone the hub IS the Lounge: unlocking lands there, not in the chat (Hector 2026-09-17: "once i login i go
     // straight to the lounge? Don't open jarvis first"). The clock still swaps back to the conversation.
     if(!isWide()) hubView(true);
@@ -1888,7 +1910,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     post(loginFields(pw)).then(function(r){
       if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
       if(!r.ok) throw new Error('http '+r.status);
-      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel) });
+      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); setHistory(d && d.history) });
     }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.'; $('rm-note').textContent='Could not refresh. Try again.' })
       .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }); if(thenBrief === true) runBrief() });
   }
