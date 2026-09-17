@@ -65,9 +65,39 @@ button{cursor:pointer}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
 
 .frame{position:relative;z-index:1;flex:1;min-height:0;display:flex;gap:12px;width:100%}
-.rail{display:none}
+/* The tape must still fill the rail at the END of a cycle, and a cycle must travel exactly one copy. Two copies and
+   -50% left a ~200px hole at the bottom of a 1037px-tall window (Hector, 2026-09-15). sizeTape() measures one copy
+   after the webfont lands, adds copies until the rail is covered and sets --shift; the duration comes from the pitch
+   so the SPEED stays constant. Two boxes, as in the Render Rig: .tape moves, .tape-in turns. */
+.rail{display:none;width:24px;flex:0 0 24px;position:relative;overflow:hidden;border-left:1px solid var(--rule);
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent)}
+.tape{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;animation:tape 46s linear infinite}
+.tape-in{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+  white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg)}
+@keyframes tape{from{transform:translateY(0)}to{transform:translateY(calc(-1 * var(--shift,800px)))}}
 .panel{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;background:var(--panel-lo);border-bottom:1px solid var(--rule)}
-.brk{display:none}
+.brk{display:none;position:absolute;width:16px;height:16px;pointer-events:none;z-index:5}
+.brk.tr{top:6px;right:6px;border-top:2px solid var(--red);border-right:2px solid var(--red)}
+.brk.bl{bottom:6px;left:6px;border-bottom:2px solid var(--red);border-left:2px solid var(--red)}
+
+/* ---------- the lock screen is a card, like the Render Rig's ----------
+   Hector 2026-09-17: "can you make the logging screen seem like the one of the rig? The rig one looks more
+   aesthetically pleasing. Keep the same design, just scale it and add the strip tape loop." Same design - the red
+   strip, the wordmark, Vader, the passphrase - scaled into a portrait card floating on the dark ground, with the
+   running tape beside it at EVERY width (the phone never had the rail). Measured off the rig's own lock screen:
+   rail 24 + a 13px gap + a panel 327x558 on his phone, 454x717 on his desktop, the whole card centred. */
+.app:not(.chatting){--cardw:min(454px, calc(100vw - 66px)); --cardh:min(717px, calc(100dvh - 104px))}
+.app:not(.chatting) .frame{padding:0;gap:13px;align-items:center;justify-content:center}
+.app:not(.chatting) .rail{display:block;height:var(--cardh)}
+.app:not(.chatting) .panel{flex:0 0 auto;width:var(--cardw);height:var(--cardh);border:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  box-shadow:0 30px 90px rgba(0,0,0,.6);background:linear-gradient(180deg,var(--panel-hi) 0%,var(--panel) 26%,var(--panel-lo) 100%);
+  clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
+.app:not(.chatting) .brk{display:block}
+/* the full-window lock layouts do not apply inside a card: a phone on its side gave the gate 46% of the WINDOW,
+   which inside a 454px card left the passphrase field with nothing, and pushed Vader off to one side */
+.app:not(.chatting) .gate{max-width:100%;margin:0 auto}
+.app:not(.chatting) .mark{text-align:center}
+.app:not(.chatting) .art img{left:50%;top:-28%}   /* the card is short: Vader sits a little higher so the passphrase and VaderClawd stay off his face */
 
 /* ---------- header ---------- */
 .head{position:relative;flex:none;display:flex;align-items:center;gap:10px;
@@ -654,22 +684,11 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 @media (min-width:760px){
   :root{--pet:168px}
   .frame{padding:22px 26px 0;justify-content:center}
-  .rail{display:block;width:24px;flex:0 0 24px;position:relative;overflow:hidden;border-left:1px solid var(--rule);
-    -webkit-mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(180deg,transparent,#000 8%,#000 92%,transparent)}
-  /* The tape must still fill the rail at the END of a cycle, and a cycle must travel exactly one copy. Two copies
-     and -50% left a ~200px hole at the bottom of a 1037px-tall window (Hector, 2026-09-15). sizeTape() measures
-     one copy after the webfont lands, adds copies until the rail is covered and sets --shift; the duration comes
-     from the pitch so the speed stays constant. Two boxes, as in the Render Rig: .tape moves, .tape-in turns. */
-  .tape{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;animation:tape 46s linear infinite}
-  .tape-in{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
-    white-space:nowrap;writing-mode:vertical-rl;transform:rotate(180deg)}
-  @keyframes tape{from{transform:translateY(0)}to{transform:translateY(calc(-1 * var(--shift,800px)))}}
+  .rail{display:block}
   .panel{flex:1 1 auto;border:1px solid var(--rule);box-shadow:0 30px 90px rgba(0,0,0,.6);
     background:linear-gradient(180deg,var(--panel-hi) 0%,var(--panel) 26%,var(--panel-lo) 100%);
     clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch))}
-  .brk{display:block;position:absolute;width:16px;height:16px;pointer-events:none;z-index:5}
-  .brk.tr{top:6px;right:6px;border-top:2px solid var(--red);border-right:2px solid var(--red)}
-  .brk.bl{bottom:6px;left:6px;border-bottom:2px solid var(--red);border-left:2px solid var(--red)}
+  .brk{display:block}
   .head{padding:5px 18px;min-height:57px}   /* the strip keeps the height it had before the identity grew (Hector 2026-09-17: "i did not tell you to make the red strip bigger") */
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): only the browser's chrome goes. The page keeps its whole frame -
      border, shadow, tape rail, notch, brackets - and the frame reaches the screen edges (Hector 2026-09-17: "dont make the frame
@@ -693,6 +712,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   .chat-art{opacity:.12}
 }
 @media (min-width:760px) and (min-height:501px){ :root{--petc:120px} }
+/* a phone on its side: the lock card takes nearly the whole height, or the art is too short to keep Vader's face clear */
+@media (max-height:500px){ .app:not(.chatting){--cardh:min(717px, calc(100dvh - 34px))} }
 /* a short window (a phone on its side): the card and the strip give up height */
 @media (min-width:760px) and (max-height:500px){
   .art img{height:150%;top:-30%;left:22%}
@@ -1143,6 +1164,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     $('talk-fold').hidden=locked || !isWide(); $('full').hidden=$('talk-fold').hidden;
     app.classList.toggle('chatting', !locked);
     if(locked){ hubView(false); setStatus('Locked'); fitMark(); }
+    setTimeout(function(){ sizeTape(); if(locked) fitMark() }, 0);   // the rail only exists on a phone while locked: fill it once it is there
     placePet();
   }
   function enter(fresh){

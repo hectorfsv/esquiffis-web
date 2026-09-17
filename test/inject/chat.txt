@@ -265,6 +265,18 @@
   // free placement needs 12 columns, and that is the HUB's width, not the window's: at 1300 the chat takes its
   // quarter and the hub only gets 6, where widgets still pack and the arrows still reorder
   function freeHub(){ var g=gs($('hub'),'gridTemplateColumns'); return !!g && g!=='none' && g.split(' ').filter(Boolean).length>=12 }
+  // what VaderClawd actually DRAWS, not his canvas: the strip is mostly empty above his head (measured 84 of 120 px)
+  function petInk(){
+    var st=$('vc-stage'), c=st && st.querySelector('canvas'), r=R(st);
+    if(!c || !c.width) return r;
+    try{
+      var g=c.getContext('2d'), d=g.getImageData(0,0,c.width,c.height).data, top=-1, bot=-1, left=-1, right=-1;
+      for(var y=0;y<c.height;y++) for(var x=0;x<c.width;x++){ if(d[(y*c.width+x)*4+3]>12){ if(top<0) top=y; bot=y; if(left<0||x<left) left=x; if(x>right) right=x } }
+      if(top<0) return {l:r.l, r:r.l, t:r.t, b:r.t};
+      var sx=(r.r-r.l)/c.width, sy=(r.b-r.t)/c.height;
+      return {l:r.l+left*sx, r:r.l+(right+1)*sx, t:r.t+top*sy, b:r.t+(bot+1)*sy};
+    }catch(e){ return r }
+  }
   function art(){
     // Hector: Vader behind the letters, never his face covered
     var img=$('art'); T(!!img && img.naturalWidth>0, 'the Vader art is loaded on the lock screen');
@@ -278,28 +290,28 @@
     T(!hit(m,face), 'the letters do not cover his face');
     T(hit(m,a), 'the letters sit over the art (Vader behind the letters)');
     T(!hit(R($('pw')),face) && !hit(R($('unlock')),face), 'the passphrase and Unlock do not cover his face');
-    var st=$('vc-stage'), pb=R(st), pn=R(document.querySelector('.panel'));
+    var st=$('vc-stage'), pb=R(st), ink=petInk(), pn=R(document.querySelector('.panel'));
     T(!document.querySelector('video'), 'no video anywhere on the page (Gargantua is a still)');
     T(!document.querySelector('iframe'), 'no YouTube player on the lock screen');
-    if(WIDE){
-      T(st.parentNode===$('scr-lock') && Math.abs(pb.b-scr.b)<=1, 'VaderClawd walks the bottom of the lock screen, inside the card');
-      var p=R($('pw')), mid=document.elementFromPoint(Math.round((p.l+p.r)/2), Math.round((p.t+p.b)/2));
-      T(mid===$('pw'), 'he walks behind the passphrase, never over it');
-    } else {
-      // Hector 2026-09-15: "put the passphrase space all the way to the bottom of the screen, put vaderclawd inside the box"
-      var gate=document.querySelector('.gate'), gr=R(gate), ub=innerHeight-R($('unlock')).b;
-      T(Math.abs(pn.b-innerHeight)<=1, 'no strip under the card: the lock screen reaches the bottom of the screen ('+Math.round(pn.b)+' of '+innerHeight+')');
-      T(ub<=64, 'the passphrase is all the way down: under Unlock only the message line and the edge ('+Math.round(ub)+'px)');
-      T(pb.t>=pn.t && pb.b<=pn.b+1 && pb.l>=pn.l-1 && pb.r<=pn.r+1, 'VaderClawd is inside the box');
-      T(!hit(pb,face), 'VaderClawd stays clear of Vader\'s face');
-      if(innerWidth<760 && innerHeight>500) T(st.parentNode===gate && Math.abs(pb.b-gr.t)<=1 && pb.l>=gr.l-1 && pb.r<=gr.r+1, 'phone upright: he stands on the passphrase box, its width');
-      else if(st.parentNode===gate) T(Math.abs(pb.b-gr.t)<=1, 'he stands on the passphrase box');
-      else {
-        T(st.parentNode===$('scr-lock') && Math.abs(pb.b-scr.b)<=1, 'he walks the bottom of the lock screen, beside the passphrase');
-        var p2=R($('pw')), mid2=document.elementFromPoint(Math.round((p2.l+p2.r)/2), Math.round((p2.t+p2.b)/2));
-        T(mid2===$('pw'), 'he walks behind the passphrase, never over it');
-      }
-    }
+    // Hector 2026-09-17: "can you make the logging screen seem like the one of the rig? ... Keep the same design, just
+    // scale it and add the strip tape loop" - a portrait card on the dark ground, the running tape beside it, at EVERY width
+    var rail=document.querySelector('.rail'), rr=R(rail), tp=$('tape'), tin=tp.firstElementChild;
+    T(pn.t>8 && pn.b<innerHeight-8 && Math.abs(pn.t-(innerHeight-pn.b))<=4 && pn.r<innerWidth-8 && (pn.r-pn.l)<=460,
+      'the lock screen is a card floating on the ground, centred ('+Math.round(pn.r-pn.l)+'x'+Math.round(pn.b-pn.t)+', '+Math.round(pn.t)+' above, '+Math.round(innerHeight-pn.b)+' below)');
+    T(vis(rail) && Math.round(rr.r-rr.l)===24 && Math.abs(rr.t-pn.t)<=1 && Math.abs(rr.b-pn.b)<=1 && rr.r<=pn.l+1 && rr.l>4,
+      'the tape rail runs the height of the card, beside it ('+Math.round(rr.r-rr.l)+'x'+Math.round(rr.b-rr.t)+', '+Math.round(pn.l-rr.r)+'px of gap)');
+    // (the harness kills every animation, so the LOOP is asserted the way sizeTape sets it: one copy per cycle at a fixed speed)
+    T(tin.children.length>=3 && parseFloat(tp.style.getPropertyValue('--shift'))>10 && parseFloat(tp.style.animationDuration)>0,
+      'the tape loops beside the card: copies enough to fill it, one copy per cycle, the speed set ('+tin.children.length+' copies, '+tp.style.getPropertyValue('--shift')+' every '+tp.style.animationDuration+')');
+    T(vis(document.querySelector('.brk.tr')) && vis(document.querySelector('.brk.bl')) && /polygon/.test(getComputedStyle(document.querySelector('.panel')).clipPath),
+      'the card keeps the brackets and the notched corner at every width');
+    var gate=document.querySelector('.gate'), gr=R(gate), ub=pn.b-R($('unlock')).b;
+    T(ub<=64, 'the passphrase sits at the bottom of the card: under Unlock only the message line and the edge ('+Math.round(ub)+'px)');
+    T(pb.t>=pn.t && pb.b<=pn.b+1 && pb.l>=pn.l-1 && pb.r<=pn.r+1, 'VaderClawd is inside the card');
+    T(!hit(ink,face), 'VaderClawd stays clear of Vader\'s face (his ink, not his empty canvas)');
+    T(st.parentNode===gate && Math.abs(pb.b-gr.t)<=1 && pb.l>=gr.l-1 && pb.r<=gr.r+1, 'he stands on the passphrase box, its width');
+    var p2=R($('pw')), mid2=document.elementFromPoint(Math.round((p2.l+p2.r)/2), Math.round((p2.t+p2.b)/2));
+    T(mid2===$('pw'), 'he stands behind the passphrase, never over it');
   }
   function petOK(tag, sized){
     var p=window.pet; T(!!p && !!p.state, tag+': VaderClawd is running');
@@ -1479,6 +1491,9 @@
       T(!$('scr-chat').classList.contains('hubview') && vis($('log')) && !vis($('hub')), 'and the clock swaps to the conversation');
     }
     T(calls.length===1 && calls[0].a==='login', 'login is its own call, no chat turn behind it');
+    var pnl=R(document.querySelector('.panel'));
+    T(pnl.r-pnl.l >= innerWidth-(innerWidth<760 ? 2 : 120) && (innerWidth<760 ? !vis(document.querySelector('.rail')) : vis(document.querySelector('.rail'))),
+      'unlocked, the card is gone: the panel takes the window again ('+Math.round(pnl.r-pnl.l)+' of '+innerWidth+')');
     T(!calls[0].json, 'sent as form data, not JSON (no CORS preflight)');
     petOK('chat', true);
     floorOK('chat-empty');
