@@ -30,7 +30,7 @@
   if(mode==='hub') window.PET_FIGHT='always';   // the swarm comes the moment he lands on a widget edge (the fight is checked in edgesOK)
   // a map setting saved on the device, with junk in it: the retired 3D/Globe views, an unknown layer, a layer that is not exactly true; a saved league
   if(mode==='arrange'){ localStorage.setItem('lounge_map', JSON.stringify({base:'sat', view:{'3d':true, globe:true, bogus:true}, lay:{radar:true, quakes:true, bogus:true, alerts:'yes'}})); localStorage.setItem('lounge_scores', 'mx') }
-  if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([   // saved by the page before Esquiffis became Jarvis (old key, old role)
+  if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([   // saved by the page under the OLD key and role names, before the rename
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
   // a layout saved on the device, with junk in it: a duplicate, unknown names, a bad size
