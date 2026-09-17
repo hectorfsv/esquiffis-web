@@ -434,9 +434,18 @@
         'the hub open: VaderClawd and Arrange sit in the header, and the first widget starts right under it ('+Math.round(firstT-hdr.b)+'px)');
       if(mode==='hub' || mode==='hubfail') setTimeout(function(){
         // what a phone does: the prices land while the hub is folded away (every width reads 0 then), and he opens it later
-        if($('scr-chat').classList.contains('hubview')) $('now').click();   // folded away, whatever state it was in
+        var wasOpen=$('scr-chat').classList.contains('hubview');
+        if(wasOpen) $('now').click();   // folded away, whatever state it was in
         if(window.__lounge && window.__lounge.alignAll) window.__lounge.alignAll();
+        var fedP=null, origP=window.pet && window.pet.platforms; if(origP) window.pet.platforms=function(l){ fedP=l; return origP.apply(this, arguments) };
         $('now').click();   // and open
+        if(!WIDE){   // Hector 2026-09-17: on the phone he could be picked up but only landed back in his strip; the open hub is his stage now
+          var stg=$('vc-stage'), sr=R(stg), scr=R($('scr-chat')); window.__lounge.feedPlatforms();
+          T(stg.parentNode===$('hub-floor') && vis(stg) && Math.abs(sr.t-scr.t)<=2 && Math.abs(sr.b-scr.b)<=2 && Math.abs(sr.l-scr.l)<=2 && Math.abs(sr.r-scr.r)<=2, 'phone hub: his stage is the whole open hub screen ('+Math.round(sr.r-sr.l)+'x'+Math.round(sr.b-sr.t)+' = the chat screen '+Math.round(scr.r-scr.l)+'x'+Math.round(scr.b-scr.t)+')');
+          T(Array.isArray(fedP) && fedP.length>=2 && fedP.every(function(pl){ return pl.y>0 && pl.y<sr.b-sr.t && pl.x2-pl.x1>=60 }), 'phone hub: the widget edges on screen are fed to him as ledges ('+(fedP ? fedP.length : 'none')+')');
+          T(window.pet.state().act!==undefined && !!window.pet.act, 'phone hub: the engine is the same one that climbs and fights on the wide screen');
+        }
+        if(origP) window.pet.platforms=origP;
         setTimeout(function(){
           var bad=[];
           ['st-crypto','st-stocks','fu-pump','fu-whole'].forEach(function(id){ [].forEach.call($(id).querySelectorAll('.mk'), function(li){
@@ -445,6 +454,7 @@
             else if(rv.l<rn.r-1) why='price over name'; else if(rv.r>rl.r+1) why='price past row '+Math.round(rv.r)+'>'+Math.round(rl.r);
             if(why) bad.push(id+':'+n.textContent+' '+why);
           }) });
+          if(!WIDE && $('scr-chat').classList.contains('hubview')!==wasOpen) $('now').click();   // back to the view the flow had: his home follows it now
           T(!bad.length && $('st-stocks').querySelectorAll('.mk').length===7, 'phone: every stock, crypto and fuel row shows its whole name and its price beside it, nothing on top of anything ('+(bad.slice(0,3).join(', ')||'ok')+')');
         }, 120);
       }, 60);
@@ -588,6 +598,17 @@
   // Hector 2026-09-15, after WorldMonitor: "you can move and rearrange the hub"
   // Hector 2026-09-16: "when i click arrange i cant scroll down, if i touch any widget immediately tries to move it". A finger
   // scrolls over a widget; holding it still picks the widget up; a mouse still picks up at once (the checks above).
+  // Hector 2026-09-17: "on the news you can add emojis if applies, not too many, kinda subtle"
+  function emojiOK(){
+    var E=window.__lounge, te=E && E.topicEmoji;
+    if(typeof te!=='function'){ T(false, 'news: topic emojis exist'); return }
+    T(te('Dodgers beat the Giants in ten innings')==='\u26BE' && te('Israel strikes Hezbollah targets')==='\uD83C\uDDEE\uD83C\uDDF1' && te('SpaceX launches Starship again')==='\uD83D\uDE80' && te('Wildfire spreads north of Santa Clarita')==='\uD83D\uDD25',
+      'news: a plain topic gets its one subtle mark (baseball, Israel, space, wildfire)');
+    T(te('BBC one')==='' && te('Council debates the budget for next year')==='' && te('')==='', 'news: no topic, no emoji ("not too many")');
+    var lis=[].slice.call($('h-list').querySelectorAll('li.hl')), many=lis.filter(function(li){ return li.querySelectorAll('.hl-e').length>1 }), marked=lis.filter(function(li){ return li.querySelector('.hl-e') });
+    T(many.length===0 && marked.length<=Math.ceil(lis.length/2) && [].every.call(document.querySelectorAll('.hl-e'), function(e){ return e.getAttribute('aria-hidden')==='true' && parseFloat(getComputedStyle(e).opacity)<1 }),
+      'news: at most one mark per headline, on at most half of them, hidden from a screen reader, faded ('+marked.length+' of '+lis.length+')');
+  }
   function holdOK(){
     if(!WIDE) $('now').click();
     if($('hub-arrange').getAttribute('aria-pressed')!=='true') $('hub-arrange').click();
@@ -621,6 +642,8 @@
     T(prs(mb)==='Satellite' && prs(ml)==='Quakes,Radar' && !$('map-view') && !document.querySelector('[data-view]'), 'a saved map setting comes back: Satellite + Quakes + Radar; 3D and Globe are gone, junk ignored ('+prs(mb)+' / '+prs(ml)+')');
     if(mcs.map) setTimeout(function(){   // on a phone the map was just created: the style, the quakes and the radar index answer a tick later
       var st=mcs.style;
+      var bo=mcs.opts && mcs.opts.bounds;
+      T(!!bo && bo[0][0]<=-160 && bo[1][0]>=-55 && bo[0][1]>=5 && bo[1][1]<=75 && !mcs.opts.center, 'the map opens on North America (Hector 2026-09-17; bounds '+JSON.stringify(bo)+')');
       T(!!st && !!st.sources.esri && !mcs.terrain && mcs.projection==='mercator' && mcs.pitch===0 && !mcs.sources.dem && !!mcs.sources.radar && hubCalls.indexOf('radar')>-1 && hubCalls.indexOf('nws')<0,
         'the map opens on Satellite, flat, no terrain source; the radar fetched and drawn, alerts not fetched ('+(st && Object.keys(st.sources).join(','))+' / terrain '+!!mcs.terrain+' / '+mcs.projection+')');
       T(hubCalls.indexOf('quakes')>-1 && hubCalls.indexOf('gdacs')<0 && mcs.markers.length===(FAIL_HUB ? 0 : 2) && /2 earthquakes/.test(tx('map-note')) && !/disaster/.test(tx('map-note')),
@@ -1046,7 +1069,14 @@
     var sc=tile('weather').querySelector('.hb-scorch');
     T(tile('weather').classList.contains('hb-hit') && !!sc && parseFloat(sc.style.left)>=8 && parseFloat(sc.style.left)<=wr.r-wr.l-8 && parseFloat(sc.style.top)>=6 && document.querySelectorAll('.hb-scorch').length===n0+1,
       'boom: a blast against a widget jolts it and leaves a scorch inside it ('+(sc && sc.style.left)+','+(sc && sc.style.top)+')');
+    T(!!sc && sc.classList.contains('big') && R(sc).r-R(sc).l>=40, 'boom: the widget he stands on takes the big scorch (Hector 2026-09-17: "increase the damage")');
     window.PET_POST({type:'boom', x:10, y:10, on:'nope'}); T(document.querySelectorAll('.hb-scorch').length===n0+1, 'boom: an unknown widget is ignored');
+    // the widget behind him: a blast whose point is inside the clock while he stands on the weather scorches the clock too
+    var tmr=R(tile('time')), n1=document.querySelectorAll('.hb-scorch').length;
+    window.PET_POST({type:'boom', x:(tmr.l+tmr.r)/2-r.left, y:(tmr.t+tmr.b)/2-r.top, on:'weather'});
+    var scT=tile('time').querySelector('.hb-scorch');
+    T(document.querySelectorAll('.hb-scorch').length===n1+2 && !!scT && !scT.classList.contains('big') && tile('time').classList.contains('hb-hit') && tile('weather').querySelectorAll('.hb-scorch.big').length===2,
+      'boom: the widget behind him takes a hit too - a scorch and a jolt on the clock, the big one on the weather ('+document.querySelectorAll('.hb-scorch').length+' marks)');
     // the switch: Off hides him and stops the engine, On brings him back
     b.click(); var so=window.pet.state();
     T(b.getAttribute('aria-pressed')==='false' && /VaderClawd: Off/.test(b.textContent) && $('vc-stage').hidden && !vis($('vc-stage')) && so.paused===true && localStorage.getItem('lounge_pet')==='0' && !window.__lounge.petBox,
@@ -1337,6 +1367,7 @@
       // Hector 2026-09-16: "get rid of the one right below the title, i clicked by mistake trying to unfold the news" - one Refresh, the brief comes with it
       var nw=tile('news'), nh=nw.querySelector('.hb-h'), below=[].filter.call(nw.querySelectorAll('button'), function(b){ return vis(b) && !nh.contains(b) && !b.closest('.brief-list') && !b.closest('.h-list') && b.id!=='h-more' });
       T(!$('brief-go') && below.length===0, 'news: no button under the title - Refresh in the header is the one ('+below.map(function(b){ return b.id||b.textContent }).join(',')+')');
+      emojiOK();
       var n0=calls.length, nb=briefCalls.length; $('h-refresh').click();
       T(calls[n0] && calls[n0].a==='login' && calls.length===n0+1, 'Refresh asks n8n once, through the login call');
       T(!!calls[n0] && calls[n0].fuel===null, 'Refresh does not ask for the pump prices again: they are kept 12 hours');
@@ -1479,7 +1510,10 @@
       T(chips.join('|')==='Gmail|Weather|Some New Tool', 'the tools he used show under the reply: plain names, once each, Think hidden ('+chips.join('|')+')');
       var sv=JSON.parse(localStorage.getItem('lounge_log')||'[]'); T(!!sv[1] && Array.isArray(sv[1].k) && sv[1].k.length===5, 'and they are remembered with the transcript');
       var ps=petOK('reply', true);
-      if(ps) T(ps.act==='celebrate' || !!ps.bubble, 'VaderClawd reacts to the reply ('+(ps.act||ps.bubble)+')');
+      // he may still be walking onto his floor (the phone hub just closed): the twirl is queued and comes when he arrives, so wait for it
+      if(ps) (function waitReact(n){ var st=window.pet.state(), ok=st.act==='celebrate' || !!st.bubble;
+        if(ok || n>=25) T(ok, 'VaderClawd reacts to the reply ('+(st.act||st.bubble||('nothing: '+st.mode+' at x '+st.x))+(n ? ', '+n*200+' ms after it landed' : '')+')');
+        else setTimeout(function(){ waitReact(n+1) }, 200) })(0);
     }
     T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'the page is ready again');
     var l=$('log'); T(Math.abs(l.scrollTop+l.clientHeight-l.scrollHeight)<=2 || l.scrollHeight<=l.clientHeight, 'the conversation is scrolled to the newest message');

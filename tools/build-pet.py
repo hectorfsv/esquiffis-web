@@ -100,15 +100,21 @@ js = once(js, "    celebrate:['Task complete. Impressive.','The Force is strong 
 
 # the page's hook
 js = once(js, "  window.pet={\n",
+    "  var pendingReact=null;   // WEB: a reaction asked for while he was still walking onto a new floor (the phone hub closing brings him back to his strip)\n"
     "  window.pet={\n"
     "    // WEB: the page makes him react. A reply gets the victory twirl (at most every 20 s), the rest a line.\n"
     "    react:function(kind){\n"
     "      if(paused||sceneKey!=='roam'||!roam) return;\n"
-    "      var now=performance.now();\n"
+    "      var now=performance.now(), m=roam.mode();\n"
+    "      if(roam.V.hidden||m==='travel'||m==='gone'||m==='exit'||m==='tie'){ pendingReact={kind:kind, at:now}; wake(); return; }   // still walking in (a new floor): react once he is on screen\n"
     "      if(kind==='reply'&&now-lastCelebrate>20000&&roam.act('celebrate')) lastCelebrate=now;\n"
     "      else say(kind,null,kind==='thinking'?5:3.4);\n"
     "      wake();\n"
     "    },\n")
+
+# a reaction held while he walked in fires once he is on screen (2026-09-17)
+js = once(js, "  function postHit(now){\n    var s='0';\n",
+              "  function postHit(now){\n    if(pendingReact){ if(now-pendingReact.at>15000) pendingReact=null; else if(sceneKey==='roam'&&roam&&!roam.V.hidden&&['travel','gone','exit','tie'].indexOf(roam.mode())<0){ var pk=pendingReact.kind; pendingReact=null; window.pet.react(pk); } }   // WEB: a reaction held while he walked in\n    var s='0';\n")
 
 # start the loop on a timer
 js = once(js, "running=true; last=lastDraw=performance.now(); requestAnimationFrame(frame);",

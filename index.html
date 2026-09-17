@@ -263,6 +263,7 @@ button{cursor:pointer}
 .hb-btn:disabled{opacity:.6;cursor:default}
 .h-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
 .hl-t{display:block;color:var(--ink);text-decoration:none;font-size:var(--fl);line-height:1.35;overflow-wrap:anywhere}
+.hl-e{margin-right:.35em;font-size:.9em;opacity:.8}   /* a subtle topic mark (Hector 2026-09-17) */
 .hl-t:hover{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
 .hl-m{display:flex;align-items:center;gap:10px;margin-top:5px;font-family:var(--mono);font-size:var(--fx);letter-spacing:.04em;color:var(--ink-faint)}
 .hl-s{color:var(--red);font-weight:600}
@@ -431,10 +432,11 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .hub:not(.arranging) .hub-bar{display:none}
 /* a drone he cut down from a widget's edge blows up against it (Hector 2026-09-16): the tile jolts and keeps a scorch for a while */
 .hb-hit{animation:hbhit .5s ease-out}
-@keyframes hbhit{0%{transform:translate(0,0);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 60px rgba(255,90,31,.35)}15%{transform:translate(-3px,2px)}30%{transform:translate(3px,-2px)}45%{transform:translate(-2px,1px)}60%{transform:translate(2px,-1px);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 40px rgba(255,90,31,.18)}100%{transform:translate(0,0);box-shadow:none}}
+@keyframes hbhit{0%{transform:translate(0,0);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 70px rgba(255,90,31,.5)}15%{transform:translate(-5px,3px)}30%{transform:translate(5px,-3px)}45%{transform:translate(-3px,2px)}60%{transform:translate(3px,-2px);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 40px rgba(255,90,31,.18)}100%{transform:translate(0,0);box-shadow:none}}
 .hb-scorch{position:absolute;z-index:2;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;pointer-events:none;
   background:radial-gradient(circle,rgba(0,0,0,.9) 0 26%,rgba(70,24,12,.75) 42%,rgba(255,90,31,.25) 52%,transparent 70%);animation:scorch 16s linear forwards}
 @keyframes scorch{0%{opacity:1}55%{opacity:.85}100%{opacity:0}}
+.hb-scorch.big{width:44px;height:44px;margin:-22px 0 0 -22px;animation-duration:24s}   /* the widget he stands on takes the harder hit */
 body.carrying,body.carrying *{cursor:grabbing!important}
 body.carrying{user-select:none;-webkit-user-select:none}
 .hb{position:relative}
@@ -585,6 +587,10 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 /* below 1100px these wrappers do not exist as boxes: the hub is one column, exactly as before */
 .side{display:contents}
 .garg,.hub-floor{display:none}
+/* a phone with the hub open: his stage is the whole hub (Hector 2026-09-17), as on the wide screen */
+.chat.hubview .hub-floor{display:block;position:absolute;inset:0;z-index:4;pointer-events:none}
+.chat.hubview .hub-floor .petbar{position:absolute;left:0;right:0;top:0;bottom:0;width:auto;height:auto;pointer-events:none}
+.chat.hubview .hub-floor .petbar::after{display:none}
 
 /* ---------- VaderClawd ----------
    He always lives INSIDE the card. Lock screen (Hector 2026-09-15: "put the passphrase space all the way to the
@@ -958,7 +964,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   // lock screen = on the passphrase box when it spans the screen (a phone held upright), otherwise the bottom of the
   // lock screen behind it - measured, not another breakpoint
   function petHome(){
-    if($('scr-chat').classList.contains('on')) return isWide() ? $('hub-floor') : $('dock');
+    // the open hub on a phone is his stage too (Hector 2026-09-17: "make it able to land on each edge of each widget"): before, he lived
+    // in a strip above the chat box and vanished behind the hub while carried
+    if($('scr-chat').classList.contains('on')) return (isWide() || $('scr-chat').classList.contains('hubview')) ? $('hub-floor') : $('dock');
     var scr=$('scr-lock'), gate=scr.querySelector('.gate');
     return gate && gate.getBoundingClientRect().width>=scr.clientWidth*.7 ? gate : scr;
   }
@@ -1304,6 +1312,27 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(serverNews) return;
     try{ var s=JSON.parse(localStorage.getItem(K_NEWS)||'null'); if(s && Array.isArray(s.items)) serverNews=s }catch(e){}
   }
+  // Hector 2026-09-17: "on the news you can add emojis if applies, not too many, kinda subtle" - one small mark before a headline,
+  // only when its topic is plain from the words; most headlines get none
+  var TOPIC_EMOJI=[[/\b(Israel|Israeli|Gaza|IDF|Netanyahu|Hamas|Hezbollah|Jerusalem|Tel Aviv)\b/i,'\uD83C\uDDEE\uD83C\uDDF1'],
+    [/\b(Ukraine|Ukrainian|Kyiv|Zelensky)\b/i,'\uD83C\uDDFA\uD83C\uDDE6'],[/\b(Russia|Russian|Putin|Kremlin|Moscow)\b/i,'\uD83C\uDDF7\uD83C\uDDFA'],
+    [/\b(Iran|Iranian|Tehran)\b/i,'\uD83C\uDDEE\uD83C\uDDF7'],[/\b(China|Chinese|Beijing|Taiwan|Xi Jinping)\b/i,'\uD83C\uDDE8\uD83C\uDDF3'],
+    [/\b(Mexico|M\u00E9xico|Mexican|Sheinbaum|cartel)\b/i,'\uD83C\uDDF2\uD83C\uDDFD'],
+    [/\b(Dodgers|MLB|baseball|World Series|Yankees)\b/i,'\u26BE'],[/\b(NFL|Super Bowl|quarterback|Rams|Chargers)\b/i,'\uD83C\uDFC8'],
+    [/\b(NBA|Lakers|Clippers|basketball)\b/i,'\uD83C\uDFC0'],[/\b(soccer|Liga MX|World Cup|FIFA|Champions League)\b/i,'\u26BD'],
+    [/\b(SpaceX|NASA|Starship|rocket|astronauts?|orbit|Artemis)\b/i,'\uD83D\uDE80'],
+    [/\b(wildfires?|brush fires?|blaze)\b/i,'\uD83D\uDD25'],[/\b(hurricane|typhoon|cyclone|tropical storm)\b/i,'\uD83C\uDF00'],
+    [/\b(earthquake|quake|tsunami)\b/i,'\uD83C\uDF0E'],[/\b(floods?|flooding)\b/i,'\uD83C\uDF0A'],[/\b(blizzard|snowstorm)\b/i,'\u2744\uFE0F'],
+    [/\b(heat wave|heatwave)\b/i,'\uD83C\uDF21\uFE0F'],
+    [/\b(Wall Street|Nasdaq|Dow|S&P|stocks?|shares|rally)\b/i,'\uD83D\uDCC8'],[/\b(recession|plunge|selloff|sell-off|crash)\b/i,'\uD83D\uDCC9'],
+    [/\b(tariffs?|inflation|Federal Reserve|the Fed|interest rates?)\b/i,'\uD83D\uDCB5'],[/\b(oil|OPEC|crude|gasoline|gas prices)\b/i,'\uD83D\uDEE2\uFE0F'],
+    [/\b(AI|artificial intelligence|OpenAI|ChatGPT|Nvidia|xAI|Grok|chatbot)\b/,'\uD83E\uDD16'],
+    [/\b(election|ballot|voters?|polls?|primary|midterms?)\b/i,'\uD83D\uDDF3\uFE0F'],[/\b(Supreme Court|court|judge|lawsuit|trial|indict\w*|verdict)\b/i,'\u2696\uFE0F'],
+    [/\b(police|shooting|arrested|murder|homicide|stabbing)\b/i,'\uD83D\uDEA8'],[/\b(hospital|virus|outbreak|vaccine|FDA|measles|flu)\b/i,'\uD83E\uDE7A'],
+    [/\b(airlines?|flights?|Boeing|airport|plane)\b/i,'\u2708\uFE0F'],[/\b(Hollywood|Oscars?|Netflix|box office|Emmys?)\b/i,'\uD83C\uDFAC'],
+    [/\b(Grammys?|album|concert|tour dates)\b/i,'\uD83C\uDFB5']];
+  function topicEmoji(text){ var t=String(text||''); for(var i=0;i<TOPIC_EMOJI.length;i++) if(TOPIC_EMOJI[i][0].test(t)) return TOPIC_EMOJI[i][1]; return '' }
+  function emojiMark(text){ var e=topicEmoji(text); if(!e) return null; var sp=document.createElement('span'); sp.className='hl-e'; sp.setAttribute('aria-hidden', 'true'); sp.textContent=e; return sp }
   function paintNews(){
     var all=((serverNews&&serverNews.items)||[]).concat(webItems()), per={}, pick=[];
     function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }   // future-dated stories count as now
@@ -1312,7 +1341,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var ol=$('h-list'); ol.textContent='';
     pick.forEach(function(h){
       var li=document.createElement('li'); li.className='hl';
-      var a=document.createElement('a'); a.className='hl-t'; a.href=h.link; a.target='_blank'; a.rel='noopener'; a.textContent=h.title; li.appendChild(a);
+      var a=document.createElement('a'); a.className='hl-t'; a.href=h.link; a.target='_blank'; a.rel='noopener'; var em=emojiMark(h.title); if(em) a.appendChild(em); a.appendChild(document.createTextNode(h.title)); li.appendChild(a);
       var meta=document.createElement('div'); meta.className='hl-m';
       var s=document.createElement('span'); s.className='hl-s'; s.textContent=h.src; meta.appendChild(s);
       var age=ago(h.t); if(age){ var w=document.createElement('span'); w.textContent=age; meta.appendChild(w) }
@@ -1537,6 +1566,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(on) setTimeout(function(){ alignAll() }, 0);   // the widgets are drawn now: measure what could not be measured folded away
     $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
     if(on) startMap(); else toBottom();
+    placePet();   // his home changes with the view: the whole hub, or the strip above the chat box
   }
 
   /* ---------- the inbox: a glance at Primary ----------
@@ -2266,7 +2296,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(t) t.classList.toggle('has-brief', pts.length>0);
     pts.forEach(function(p){
       var li=document.createElement('li'); li.className='bp';
-      var tx=document.createElement('div'); tx.textContent=p.text; li.appendChild(tx);
+      var tx=document.createElement('div'); var pe=emojiMark(p.text); if(pe) tx.appendChild(pe); tx.appendChild(document.createTextNode(p.text)); li.appendChild(tx);
       var m=document.createElement('div'); m.className='bp-m';
       p.sources.forEach(function(sn){ var sp=document.createElement('span'); sp.className='bp-s'; sp.textContent=sn; m.appendChild(sp) });
       var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask'; b.setAttribute('data-text', p.text); m.appendChild(b);
@@ -2530,7 +2560,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function mapMake(){
     if(MAP || !mapShown() || !window.maplibregl) return;
     try{
-      MAP=new maplibregl.Map({container:$('map-box'), style:styleFor(mapSet.base), center:[10,22], zoom:.6, minZoom:0, maxZoom:12,
+      MAP=new maplibregl.Map({container:$('map-box'), style:styleFor(mapSet.base), bounds:[[-168,12],[-52,72]], fitBoundsOptions:{padding:6}, minZoom:0, maxZoom:12,   // opens on North America (Hector 2026-09-17)
         attributionControl:{compact:true}, cooperativeGestures:true, dragRotate:false, pitchWithRotate:false, touchPitch:false});
       MAP.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-left');
       MAP.on('style.load', mapStyled);   // the first style, and every basemap change (which wipes the sources)
@@ -3013,13 +3043,20 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(o.type==='hit') petBox=o.w ? o : null;
     else if(o.type==='boom') petBoom(o);   // a drone he cut down blew up against a widget (Hector 2026-09-16: "damage some stuff")
   };
-  // the blast lands on the widget he is standing on: a jolt, and a scorch mark where it hit, fading over 16 s
+  // the blast lands on the widget he is standing on: a hard jolt and a big scorch (24 s); and the widget BEHIND him - the one the
+  // drone blew up in front of - takes a hit too (Hector 2026-09-17: "increase the damage a lil bit more ... make damage on the widget behind him too")
   function petBoom(o){
     var t=o.on ? tile(String(o.on)) : null, cv=petCanvas(); if(!t || t.hidden || !cv || !num(o.x) || !num(o.y)) return;
-    var r=t.getBoundingClientRect(), cr=cv.getBoundingClientRect(), x=cr.left+o.x-r.left, y=cr.top+o.y-r.top;
-    var m=document.createElement('i'); m.className='hb-scorch';
+    var cr=cv.getBoundingClientRect(), px=cr.left+o.x, py=cr.top+o.y;
+    petScorch(t, px, py, true);
+    var under=document.elementFromPoint(px, py), b=(under && under.closest) ? under.closest('#hub .hb[data-w]') : null;
+    if(b && b!==t && !b.hidden) petScorch(b, px, py, false);
+  }
+  function petScorch(t, px, py, big){
+    var r=t.getBoundingClientRect(), x=px-r.left, y=py-r.top;
+    var m=document.createElement('i'); m.className='hb-scorch'+(big ? ' big' : '');
     m.style.left=Math.round(Math.max(8, Math.min(r.width-8, x)))+'px'; m.style.top=Math.round(Math.max(6, Math.min(r.height-8, y)))+'px';
-    t.appendChild(m); setTimeout(function(){ if(m.parentNode) m.parentNode.removeChild(m) }, 16500);
+    t.appendChild(m); setTimeout(function(){ if(m.parentNode) m.parentNode.removeChild(m) }, big ? 24500 : 16500);
     t.classList.remove('hb-hit'); void t.offsetWidth; t.classList.add('hb-hit');
     setTimeout(function(){ t.classList.remove('hb-hit') }, 700);
   }
@@ -3103,7 +3140,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
-    get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll };
+    get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll, topicEmoji:topicEmoji };
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's own Fullscreen API, and while it is on
      the page drops its frame too (body.full) so the hub gets the whole screen. Safari fires webkitfullscreenchange. */
   function fullOn(){ return !!(document.fullscreenElement || document.webkitFullscreenElement) }
@@ -4924,6 +4961,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     play('roam');   // WEB: never a show
   }
   function postHit(now){
+    if(pendingReact){ if(now-pendingReact.at>15000) pendingReact=null; else if(sceneKey==='roam'&&roam&&!roam.V.hidden&&['travel','gone','exit','tie'].indexOf(roam.mode())<0){ var pk=pendingReact.kind; pendingReact=null; window.pet.react(pk); } }   // WEB: a reaction held while he walked in
     var s='0';
     if(sceneKey==='roam'&&roam){
       var m=roam.mode(),V=roam.V;
@@ -5022,11 +5060,13 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function wake(){ if(!running&&!paused){running=true; last=lastDraw=performance.now(); if(opts.sched==='timer') setTimeout(tick,16); else requestAnimationFrame(frame);} }
 
   // what the menu bar app calls
+  var pendingReact=null;   // WEB: a reaction asked for while he was still walking onto a new floor (the phone hub closing brings him back to his strip)
   window.pet={
     // WEB: the page makes him react. A reply gets the victory twirl (at most every 20 s), the rest a line.
     react:function(kind){
       if(paused||sceneKey!=='roam'||!roam) return;
-      var now=performance.now();
+      var now=performance.now(), m=roam.mode();
+      if(roam.V.hidden||m==='travel'||m==='gone'||m==='exit'||m==='tie'){ pendingReact={kind:kind, at:now}; wake(); return; }   // still walking in (a new floor): react once he is on screen
       if(kind==='reply'&&now-lastCelebrate>20000&&roam.act('celebrate')) lastCelebrate=now;
       else say(kind,null,kind==='thinking'?5:3.4);
       wake();
