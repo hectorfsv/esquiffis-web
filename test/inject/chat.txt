@@ -1018,7 +1018,12 @@
     pickBtn(1).click();
     var chips=lib.querySelectorAll('.lib-c'), regions=[].map.call(lib.querySelectorAll('.lib-r'), function(x){ return x.textContent });
     T(vis(lib) && /frame 2/.test(tx('cams-lib-t')) && pickBtn(1).getAttribute('aria-expanded')==='true', 'cameras: tapping a frame opens the camera list for that frame');
-    T(chips.length===16 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 16 camera buttons grouped by region ('+regions.join(', ')+')');
+    T(chips.length===18 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 18 camera buttons grouped by region ('+regions.join(', ')+')');
+    // Hector 2026-09-17: "i want live cameras from space stations, i want to see earth or space from up there"
+    var space=[].filter.call(lib.querySelectorAll('.lib-g'), function(g){ return g.querySelector('.lib-r').textContent==='Space' })[0];
+    var sp=space ? [].map.call(space.querySelectorAll('.lib-c'), function(b){ return b.getAttribute('data-k') }) : [];
+    T(sp.join(',')==='iss,sen4k,issnasa' && /Sen, 4K/.test(space.textContent) && /NASA/.test(space.textContent),
+      'cameras: three cameras looking down at Earth from the station ('+sp.join(', ')+')');
     // Hector 2026-09-17: "for tulum any camera with ruins view?" - there is none on YouTube; the pyramids of Teotihuacán are the one live ruins camera
     var teo=lib.querySelector('[data-k="teoti"]');
     T(!!teo && /Teotihuac/.test(teo.textContent) && /Pyramids/.test(teo.textContent) && teo.closest('.lib-g').querySelector('.lib-r').textContent==='México',
@@ -1411,19 +1416,19 @@
     var mR=R($('tv-ch'));
     T(!$('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='true' && Math.abs(mR.t-scrR.t)<=2 && Math.abs(mR.b-scrR.b)<=2 && Math.abs(mR.l-scrR.l)<=2, 'TV: the channel list opens over the screen, not under it');
     var chips=$('tv-ch').querySelectorAll('.lib-c'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
-    T(chips.length===16 && !!on && on.querySelector('b').textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: sixteen channels with clear names, FOX first ('+chips.length+')');
+    T(chips.length===12 && !!on && on.querySelector('b').textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: twelve channels with clear names, FOX first ('+chips.length+')');
     // Hector 2026-09-17: "can you arrange the channels the same way you have the live cameras?"
     var tvg=[].map.call($('tv-ch').querySelectorAll('.lib-g .lib-r'), function(e){ return e.textContent });
-    T(tvg.join('|')==='United States|World|México|Sports|Space' && $('tv-ch').querySelectorAll('.lib-g').length===5
+    T(tvg.join('|')==='United States|World|México|Sports' && $('tv-ch').querySelectorAll('.lib-g').length===4
       && [].every.call(chips, function(b){ return !!b.querySelector('b') && !!b.querySelector('span') && b.querySelector('span').textContent.length>3 }),
       'TV: the channels are grouped and named like the cameras ('+tvg.join(', ')+')');
     // Hector 2026-09-17: "channels add as well, DW news, try to find and add CNN and MSNBC news. azteca noticias to the mexican section"
     function tvIn(k){ var b=$('tv-ch').querySelector('[data-k="'+k+'"]'); return b ? b.closest('.lib-g').querySelector('.lib-r').textContent+': '+b.querySelector('b').textContent : 'missing' }
     T(tvIn('cnn')==='United States: CNN' && tvIn('dw')==='World: DW News' && tvIn('azteca')==='México: Azteca Noticias',
       'TV: CNN with the US channels, DW News with the world ones, Azteca Noticias in the Mexican section ('+[tvIn('cnn'),tvIn('dw'),tvIn('azteca')].join(' / ')+')');
-    // Hector 2026-09-16: "the best space shots, spaceX, nasa ... add them to the tv"
-    T(['sen','nasa','starbase','cape'].every(function(k){ var c=$('tv-ch').querySelector('[data-k="'+k+'"]'); return !!c && vis(c) }) && /Sen 4K/.test(tx('tv-ch')) && /NASA ISS/.test(tx('tv-ch')) && /Starbase Live/.test(tx('tv-ch')) && /Space Coast Live/.test(tx('tv-ch')),
-      'TV: the four space streams are on the TV (Sen 4K, NASA ISS, Starbase, Space Coast)');
+    // Hector 2026-09-17: "the space channels i was asking you for i wanted on the live cameras widget ... take em out of tv"
+    T(['sen','nasa','starbase','cape'].every(function(k){ return !$('tv-ch').querySelector('[data-k="'+k+'"]') }) && !/Space/.test(tx('tv-ch')),
+      'TV: the space streams are gone from the channels - they are cameras now');
     var mm=$('tv-ch').querySelector('[data-k="mmty"]');
     T(!!mm && mm.querySelector('b').textContent==='Multimedios MTY', 'TV: Multimedios Monterrey is on the TV');
     // Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB"

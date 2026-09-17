@@ -2227,13 +2227,10 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {k:'c5', group:'M\u00E9xico', short:'Canal 5', note:'Me Caigo de Risa 24/7', name:'Canal 5 \u00B7 Me Caigo de Risa 24/7', ch:'UCRZSTf9laa2wkHPOaiOoldA', page:'https://www.youtube.com/@canal5_mx/live'},
     // Sports (Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB" - no league streams live on YouTube)
     {k:'tdep', group:'Sports', short:'Telemundo Deportes', note:'Deportes 24/7, en espa\u00F1ol', name:'Telemundo Deportes Ahora 24/7', vid:'iOdDkZltnJE', page:'https://www.youtube.com/@deportes/live'},
-    {k:'lomlb', group:'Sports', short:'Locked On MLB', note:'Baseball talk, not games', name:'Locked On MLB 24/7 (baseball talk, not games)', vid:'BSU7OK-T_LQ', page:'https://www.youtube.com/@LockedOnMLB/live'},
-    // Space (Hector 2026-09-16: "the best space shots, spaceX, nasa"; SpaceX itself streams on X, not YouTube).
-    // Every ISS camera is dark about 40 minutes of each 93-minute orbit (the station is in Earth's shadow), Sen's 4K cameras included.
-    {k:'sen', group:'Space', short:'Sen 4K \u00B7 ISS', note:'Live 4K Earth from orbit', name:'Sen \u00B7 live 4K Earth from the ISS', vid:'fO9e9jnhYK8', page:'https://www.youtube.com/@sen/live'},
-    {k:'nasa', group:'Space', short:'NASA ISS', note:'Live from the station', name:'NASA \u00B7 live from the International Space Station', vid:'M3HKLzjvKPc', page:'https://www.youtube.com/@NASA/live'},
-    {k:'starbase', group:'Space', short:'Starbase Live', note:'Starship, 24/7', name:'NASASpaceflight \u00B7 Starbase Live 24/7 (Starship)', vid:'mhJRzQsLZGg', page:'https://www.youtube.com/@NASASpaceflight/live'},
-    {k:'cape', group:'Space', short:'Space Coast Live', note:'The Cape, 24/7', name:'NASASpaceflight \u00B7 Space Coast Live 24/7 (the Cape)', vid:'Jm8wRjD3xVA', page:'https://www.youtube.com/@NASASpaceflight/live'}];
+    {k:'lomlb', group:'Sports', short:'Locked On MLB', note:'Baseball talk, not games', name:'Locked On MLB 24/7 (baseball talk, not games)', vid:'BSU7OK-T_LQ', page:'https://www.youtube.com/@LockedOnMLB/live'}];
+    // The four space streams moved to the LIVE CAMERAS widget on 2026-09-17 (Hector: "the space channels i was asking you
+    // for i wanted on the live cameras widget ... take em out of tv, and add to live cameras just the ones with space view").
+    // Only the ones looking down at Earth went with them; Starbase Live and Space Coast Live are pad cameras on the ground.
   var K_TV='lounge_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
   function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1'
@@ -2633,7 +2630,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {k:'acuna1', region:'US–Mexico border', city:'Del Rio – Ciudad Acuña', place:'International Bridge 1', vid:'M2OrL8XFrMA'},
     {k:'acuna2', region:'US–Mexico border', city:'Del Rio – Ciudad Acuña', place:'International Bridge 2', vid:'_Icedwkezwc'},
     {k:'london', region:'Europe', city:'London', place:'Abbey Road', vid:'zMCea32gpmg'},
-    {k:'iss', region:'Space', city:'International Space Station', place:'Earth from orbit', vid:'awQzjn72bI0'}];
+    {k:'iss', region:'Space', city:'International Space Station', place:'NASA HD Earth views', vid:'awQzjn72bI0'},
+    /* Hector 2026-09-17: "i want live cameras from space stations, i want to see earth or space from up there" - the two
+       that look DOWN at Earth came over from the TV, both measured live and embeddable that day. Every ISS camera is dark
+       about 40 minutes of each 93-minute orbit: the station is in Earth's shadow. */
+    {k:'sen4k', region:'Space', city:'International Space Station', place:'Sen, 4K Earth and space', vid:'fO9e9jnhYK8'},
+    {k:'issnasa', region:'Space', city:'International Space Station', place:'NASA live stream', vid:'M3HKLzjvKPc'}];
   var K_CAMS='lounge_cams', cams={n:2, picks:['wall','wh','nyc','la']}, camsOn=false, camsReady=false;
   function camBy(k){ for(var i=0;i<CAMS.length;i++) if(CAMS[i].k===k) return CAMS[i]; return null }
   try{
