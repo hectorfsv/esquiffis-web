@@ -410,11 +410,15 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .head-tools{display:contents}
 .tool-btn{position:relative}
 .tool-btn .ico{display:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* VaderClawd's switch is the helmet at every width, left of the clock in the header strip (Hector 2026-09-17: "make it as the mobile hub, the helmet") */
+#hub-pet{padding:5px 7px;line-height:0}
+#hub-pet .ico{display:block}
+#hub-pet .lbl{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* Hector 2026-09-16: "move the vaderclawd and arrange buttons, i want the widgets to be all the way up, right below the header strip".
    On a narrower screen they are icons in the header, shown while the hub is open (Done stays a word while arranging); the
    connection light steps aside for them, it is about the chat. The hub's own bar only exists while arranging. */
 @media (max-width:1099px){
-  body:not(.hubbing) .head-tools>.tool-btn{display:none}
+  body:not(.hubbing) .head-tools>.tool-btn,body:not(.hubbing) #hub-pet{display:none}
   .tool-btn{padding:5px 7px;line-height:0}
   .tool-btn .ico{display:block}
   .tool-btn .lbl{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -493,7 +497,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 .hb-tv.playing .tv-screen{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(224,27,27,.4)}
 .hb-tv.playing .hb-link{color:#fff;border-color:var(--red);background:rgba(224,27,27,.24);box-shadow:0 0 12px rgba(224,27,27,.55)}
 /* markets: metals and currencies, each with its change since yesterday */
-.mk-note{font-family:var(--mono);font-size:var(--fxs);font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--ink-faint)}
+.mk-note{font-family:var(--mono);font-size:var(--fxs);font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--ink-faint)}   /* only when something failed (Hector 2026-09-17: no text beside the titles) */
+.mk-note:empty{display:none}
 .mk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--hm) 28px}
 .mk-cap{font-family:var(--mono);font-size:var(--fxs);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:var(--rgs)}
 .mk-list{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:var(--rgs) 18px}
@@ -619,11 +624,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   .brk.tr{top:6px;right:6px;border-top:2px solid var(--red);border-right:2px solid var(--red)}
   .brk.bl{bottom:6px;left:6px;border-bottom:2px solid var(--red);border-left:2px solid var(--red)}
   .head{padding:14px 18px}
-  /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's chrome goes, and so does the page's own
-     frame - no padding, rail, notch, brackets or shadow - so the hub gets every pixel */
-  body.full .frame{padding:0;gap:0}
-  body.full .panel{border:0;box-shadow:none}   /* the tape rail, the notched corners and the brackets stay (Hector 2026-09-16: "squeeze it in there") */
-  body.full .head{padding-top:6px;padding-bottom:6px}
+  /* Full screen (Hector 2026-09-15, after WorldMonitor's button): only the browser's chrome goes. The page keeps its whole frame -
+     padding, border, shadow, tape rail, notch, brackets - at the size of the screen (Hector 2026-09-17: "dont make the frame smaller,
+     just scale it to real fullscreen"; the thinner frame of 2026-09-16 looked smaller to him) */
   .name{font-size:18px}
   .model{display:inline}
   .gbtn .more{display:inline}
@@ -706,8 +709,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 @container (min-width:1100px){
   /* free range (Hector 2026-09-15): every widget is pinned to a column and a row, so nothing reflows and a gap
      stays where he leaves one. A 10px row grain with the gap moved onto the tile keeps vertical placement fine. */
-  .hub,.chat.hubview .hub{grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:row;grid-auto-rows:10px;column-gap:var(--tg);row-gap:0}
-  .hub .hb{margin-bottom:var(--tg)}
+  .hub,.chat.hubview .hub{grid-template-columns:repeat(96,minmax(0,1fr));grid-auto-flow:row;grid-auto-rows:10px;column-gap:0;row-gap:0;padding-right:0}   /* 96ths: free-range widths (Hector 2026-09-17); the tracks touch, a tile's own margin is the gap */
+  .hub .hb,.hub .hb-drop{margin-bottom:var(--tg);margin-right:var(--tg)}
   .hb-news[data-size="M"] .h-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--rg) 24px}
   .hb-news[data-size="L"] .h-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--rg) 24px}
   .hb-inbox[data-size="L"]:not(.shut) .ib-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--rg) 24px}
@@ -732,10 +735,11 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
           <span class="name">The Lounge</span><span class="model">Jarvis</span>
         </div>
         <div class="head-r">
+          <button id="hub-pet" class="gbtn tool-btn" type="button" aria-pressed="true" title="Switch VaderClawd off" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c-4.3 0-7 3.1-7 7.2v3.1L3 19.5h6.2l1-2.2h3.6l1 2.2H21l-2-5.7v-3.1c0-4.1-2.7-7.2-7-7.2z"/><path d="M7.5 11.2h9M12 11.2v3.6"/></svg><span class="lbl">VaderClawd: On</span></button>
           <button id="now" class="now" type="button" aria-controls="hub" aria-expanded="false" hidden><span id="now-time">--:--</span><span id="now-temp" class="nt"></span></button>
           <span id="status" class="chip" aria-live="polite">Locked</span>
-          <button id="full" class="gbtn gbtn-ico" type="button" aria-pressed="false" aria-label="Full screen" hidden title="Full screen: The Lounge on the whole screen, no browser chrome and no frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f-in" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"/><path class="f-out" d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M3 15h4a2 2 0 0 1 2 2v4M15 21v-4a2 2 0 0 1 2-2h4"/></svg></button>
-          <span id="head-tools" class="head-tools"><button id="hub-pet" class="gbtn tool-btn" type="button" aria-pressed="true" title="Switch VaderClawd off" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c-4.3 0-7 3.1-7 7.2v3.1L3 19.5h6.2l1-2.2h3.6l1 2.2H21l-2-5.7v-3.1c0-4.1-2.7-7.2-7-7.2z"/><path d="M7.5 11.2h9M12 11.2v3.6"/></svg><span class="lbl">VaderClawd: On</span></button><button id="hub-arrange" class="gbtn tool-btn" type="button" aria-pressed="false" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span class="lbl">Arrange</span></button></span>
+          <button id="full" class="gbtn gbtn-ico" type="button" aria-pressed="false" aria-label="Full screen" hidden title="Full screen: The Lounge on the whole screen, no browser chrome"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f-in" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"/><path class="f-out" d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M3 15h4a2 2 0 0 1 2 2v4M15 21v-4a2 2 0 0 1 2-2h4"/></svg></button>
+          <span id="head-tools" class="head-tools"><button id="hub-arrange" class="gbtn tool-btn" type="button" aria-pressed="false" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span class="lbl">Arrange</span></button></span>
           <button id="talk-fold" class="gbtn" type="button" aria-controls="scr-chat" aria-expanded="true" hidden>Chat</button>
         </div>
         <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
@@ -761,7 +765,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
         <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
         <div class="side">
           <aside id="hub" class="hub" aria-label="The Lounge">
-            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-tidy" class="hb-btn" type="button" hidden title="Close the gaps: every tile packs up in reading order, widths kept">Tidy</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button></div>
+            <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span></div>
             <section class="hb hb-time" data-w="time" aria-label="Clock">
               <div class="tm"><div id="h-time" class="h-time">--:--</div><div id="h-date" class="h-date"></div></div>
               <div id="sky" class="sky" hidden>
@@ -802,11 +806,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               <p id="ib-note" class="h-note"></p>
             </section>
             <section class="hb hb-markets" data-w="markets" aria-labelledby="mk-h">
-              <div class="hb-h"><span id="mk-h">Markets</span><span id="mk-note" class="mk-note"></span></div>
+              <div class="hb-h"><span id="mk-h">Markets</span></div>
               <div class="mk-grid">
                 <div><div class="mk-cap">Metals</div><ul id="mk-metals" class="mk-list"></ul></div>
                 <div><div class="mk-cap">Currencies</div><ul id="mk-fx" class="mk-list"></ul></div>
               </div>
+              <p id="mk-note" class="h-note mk-note"></p>
             </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
               <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><span id="tv-yt" class="hb-link tv-ico tv-air" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></span></span></div>
@@ -837,21 +842,24 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               <p id="h-note" class="h-note"></p>
             </section>
             <section class="hb hb-stocks" data-w="stocks" aria-labelledby="st-h">
-              <div class="hb-h"><span id="st-h">Stocks &amp; crypto</span><span id="st-note" class="mk-note"></span></div>
+              <div class="hb-h"><span id="st-h">Stocks &amp; crypto</span></div>
               <div class="mk-grid">
                 <div><div class="mk-cap">Crypto</div><ul id="st-crypto" class="mk-list"></ul></div>
                 <div><div class="mk-cap">Stocks</div><ul id="st-stocks" class="mk-list"></ul></div>
               </div>
+              <p id="st-note" class="h-note mk-note"></p>
             </section>
             <section class="hb hb-fuel" data-w="fuel" aria-labelledby="fu-h">
-              <div class="hb-h"><span id="fu-h">Fuel &amp; energy</span><span id="fu-note" class="mk-note"></span></div>
+              <div class="hb-h"><span id="fu-h">Fuel &amp; energy</span></div>
               <div class="mk-grid">
                 <div><div class="mk-cap">At the pump</div><ul id="fu-pump" class="mk-list"></ul></div>
                 <div><div class="mk-cap">Wholesale</div><ul id="fu-whole" class="mk-list"></ul></div>
               </div>
+              <p id="fu-note" class="h-note mk-note"></p>
             </section>
             <section class="hb hb-iss" data-w="iss" aria-labelledby="iss-h">
-              <div class="hb-h"><span id="iss-h">ISS overhead</span><span id="iss-note" class="mk-note"></span></div>
+              <div class="hb-h"><span id="iss-h">ISS overhead</span></div>
+              <p id="iss-note" class="h-note mk-note"></p>
               <p id="iss-now" class="iss-now"></p>
               <ol id="iss-list" class="iss-list"></ol>
               <p id="iss-foot" class="h-note"></p>
@@ -1610,16 +1618,17 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {w:'inbox', name:'Inbox', span:3, minH:40, shut:true}, {w:'tv', name:'Live news', span:6, minH:40}, {w:'map', name:'World events', span:6, minH:40},
     {w:'markets', name:'Markets', span:12, minH:40}, {w:'cams', name:'Live cameras', span:6, minH:40}, {w:'news', name:'News', span:6, minH:40, shut:true},
     {w:'stocks', name:'Stocks & crypto', span:6, minH:40}, {w:'fuel', name:'Fuel & energy', span:6, minH:40}, {w:'iss', name:'ISS overhead', span:6, minH:40}];   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
-  // widths are twelfths, down to a single twelfth; the button cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full (Hector 2026-09-16)
-  var K_HUB='lounge_hub', SPANS=[1,2,3,4,6,8,9,12], SPAN_WORD={1:'a twelfth', 2:'a sixth', 3:'a quarter', 4:'a third', 6:'half', 8:'two thirds', 9:'three quarters', 12:'the full width'},
-      SPAN_GLYPH={1:'1/12', 2:'\u2159', 3:'\u00BC', 4:'\u2153', 6:'\u00BD', 8:'\u2154', 9:'\u00BE', 12:'1'},
-      LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=1, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=2;   // GAP mirrors the CSS --tg for the grid maths; LOOK stamps a layout measured under the current look
+  // widths are 96ths of the hub (Hector 2026-09-17: "FREE RANGEEEE" - in twelfths a sixth-wide Sports jumped straight to a twelfth, measured),
+  // down to a 24th; the width button still cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full. U = one twelfth.
+  var K_HUB='lounge_hub', COLS=96, U=8, SPANS=[8,16,24,32,48,64,72,96], SPAN_WORD={8:'a twelfth', 16:'a sixth', 24:'a quarter', 32:'a third', 48:'half', 64:'two thirds', 72:'three quarters', 96:'the full width'},
+      SPAN_GLYPH={8:'1/12', 16:'\u2159', 24:'\u00BC', 32:'\u2153', 48:'\u00BD', 64:'\u2154', 72:'\u00BE', 96:'1'},
+      LEGACY_SPAN={S:24, M:48, L:96}, MIN_SPAN=4, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=2;   // GAP mirrors the CSS --tg (a tile's right and bottom margin on the 96-grid); LOOK stamps a layout measured under the current look
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
   function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
   function wname(w){ var x=winfo(w); return x ? x.name : w }
   function hubDefault(){
-    var d={order:[], span:{}, h:{}, hs:{}, col:{}, row:{}, hidden:[], shut:{}, look:LOOK};
-    WIDGETS.forEach(function(x){ d.order.push(x.w); d.span[x.w]=x.span; d.shut[x.w]=!!x.shut });
+    var d={order:[], span:{}, h:{}, hs:{}, col:{}, row:{}, hidden:[], shut:{}, back:{}, look:LOOK, u:COLS};   // u: the width unit this layout is saved in; back: what an unfold pushed down
+    WIDGETS.forEach(function(x){ d.order.push(x.w); d.span[x.w]=x.span*U; d.shut[x.w]=!!x.shut });
     return d;
   }
   function hubLoad(){
@@ -1631,9 +1640,13 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
         d.order.forEach(function(w){ if(order.indexOf(w)<0) order.push(w) });   // a widget added later still shows up
         d.order=order;
         if(sv.size && typeof sv.size==='object') Object.keys(sv.size).forEach(function(w){ if(winfo(w) && LEGACY_SPAN[sv.size[w]]) d.span[w]=LEGACY_SPAN[sv.size[w]] });   // saved before free sizes
-        if(sv.span && typeof sv.span==='object') Object.keys(sv.span).forEach(function(w){ var n=sv.span[w]; if(winfo(w) && typeof n==='number' && n===Math.round(n) && n>=MIN_SPAN && n<=12) d.span[w]=n });
+        var old=sv.u!==COLS;   // saved in twelfths (before 2026-09-17): a twelfth is U units, a column starts U units later
+        if(sv.span && typeof sv.span==='object') Object.keys(sv.span).forEach(function(w){ var n=sv.span[w]; if(typeof n==='number' && old) n=n*U; if(winfo(w) && typeof n==='number' && n===Math.round(n) && n>=MIN_SPAN && n<=COLS) d.span[w]=n });
         if(sv.h && typeof sv.h==='object') Object.keys(sv.h).forEach(function(w){ var n=sv.h[w], x=winfo(w); if(x && typeof n==='number' && n>=x.minH && n<=MAX_H) d.h[w]=Math.round(n) });
-        if(sv.col && typeof sv.col==='object') Object.keys(sv.col).forEach(function(w){ var n=sv.col[w]; if(winfo(w) && typeof n==='number' && n>=1 && n<=12) d.col[w]=Math.round(n) });
+        if(sv.col && typeof sv.col==='object') Object.keys(sv.col).forEach(function(w){ var n=sv.col[w]; if(typeof n==='number' && old) n=(n-1)*U+1; if(winfo(w) && typeof n==='number' && n>=1 && n<=COLS) d.col[w]=Math.round(n) });
+        if(!old && sv.back && typeof sv.back==='object') Object.keys(sv.back).forEach(function(w){ var m=sv.back[w]; if(!winfo(w) || !m || typeof m!=='object') return; var o={};
+          Object.keys(m).forEach(function(k){ var e=m[k]; if(winfo(k) && e && typeof e.from==='number' && typeof e.to==='number' && typeof e.col==='number') o[k]={from:Math.round(e.from), to:Math.round(e.to), col:Math.round(e.col)} });
+          if(Object.keys(o).length) d.back[w]=o });
         if(sv.row && typeof sv.row==='object') Object.keys(sv.row).forEach(function(w){ var n=sv.row[w]; if(winfo(w) && typeof n==='number' && n>=0 && n<=2000) d.row[w]=Math.round(n) });
         if(Array.isArray(sv.hidden)) d.hidden=sv.hidden.filter(function(w,i,a){ return !!winfo(w) && a.indexOf(w)===i });
         if(sv.shut && typeof sv.shut==='object') Object.keys(sv.shut).forEach(function(w){ if(winfo(w)) d.shut[w]=sv.shut[w]===true });
@@ -1699,7 +1712,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     list.sort(function(a,b){ if(a===fixed) return -1; if(b===fixed) return 1; return (hub.row[a]-hub.row[b]) || (hub.col[a]-hub.col[b]) });
     var placed=[], moved=false;
     list.forEach(function(w){
-      var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN)), c0=Math.max(1, Math.min(13-sp, hub.col[w])), c1=c0+sp, n=tileRows(w), r=hub.row[w], guard=0;
+      var sp=Math.max(MIN_SPAN, Math.min(COLS, hub.span[w]||MIN_SPAN)), c0=Math.max(1, Math.min(COLS+1-sp, hub.col[w])), c1=c0+sp, n=tileRows(w), r=hub.row[w], guard=0;
       for(;;){
         var hit=null;
         for(var i=0;i<placed.length;i++){ var p=placed[i]; if(c0<p.c1 && p.c0<c1 && r<p.r1 && p.r0<r+n){ hit=p; break } }
@@ -1719,19 +1732,19 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      neighbour instead of pushing it. */
   function hubBoxes(except){   // every placed widget on screen as the cells it fills
     return hub.order.filter(function(w){ return w!==except && shown(w) && hub.col[w] && hub.row[w]!=null }).map(function(w){
-      var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN)), c0=Math.max(1, Math.min(13-sp, hub.col[w]));
+      var sp=Math.max(MIN_SPAN, Math.min(COLS, hub.span[w]||MIN_SPAN)), c0=Math.max(1, Math.min(COLS+1-sp, hub.col[w]));
       return {w:w, c0:c0, c1:c0+sp, r0:hub.row[w], r1:hub.row[w]+tileRows(w)};
     });
   }
   function hubHit(boxes, c0, c1, r0, r1){   // the widgets a box would cover
     return boxes.filter(function(b){ return c0<b.c1 && b.c0<c1 && r0<b.r1 && b.r0<r1 }).map(function(b){ return b.w });
   }
-  function hubColUnit(){ var host=$('hub'), cs=getComputedStyle(host); return (host.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-11*hubGap())/12+hubGap() }
+  function hubColUnit(){ var host=$('hub'), cs=getComputedStyle(host); return (host.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0))/COLS }   // one 96th: the tracks have no gap, a tile's margin makes it
   function hubFreeNear(w, col, row){   // the nearest cell (in pixels) where the widget fits without covering another; below everything is always free
-    var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN)), n=tileRows(w), boxes=hubBoxes(w), unit=hubColUnit(), best=null, maxR=row;
+    var sp=Math.max(MIN_SPAN, Math.min(COLS, hub.span[w]||MIN_SPAN)), n=tileRows(w), boxes=hubBoxes(w), unit=hubColUnit(), best=null, maxR=row;
     boxes.forEach(function(b){ maxR=Math.max(maxR, b.r1) });
-    col=Math.max(1, Math.min(13-sp, col)); row=Math.max(0, row);
-    for(var r=0;r<=maxR;r++) for(var c=1;c<=13-sp;c++){
+    col=Math.max(1, Math.min(COLS+1-sp, col)); row=Math.max(0, row);
+    for(var r=0;r<=maxR;r++) for(var c=1;c<=COLS+1-sp;c++){
       if(hubHit(boxes, c, c+sp, r, r+n).length) continue;
       var d=Math.pow((c-col)*unit, 2)+Math.pow((r-row)*ROWU, 2);
       if(!best || d<best.d) best={col:c, row:r, d:d};
@@ -1774,8 +1787,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     });
     var x=0, rowH=0, rowStart=null;
     need.forEach(function(w){
-      var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN));
-      if(x+sp>12){ rowTop=rowStart+rowH+hubGap(); x=0; rowH=0; rowStart=null }
+      var sp=Math.max(MIN_SPAN, Math.min(COLS, hub.span[w]||MIN_SPAN));
+      if(x+sp>COLS){ rowTop=rowStart+rowH+hubGap(); x=0; rowH=0; rowStart=null }
       // the row starts on the grid line it lands on, and the next row counts from THERE: counting from the unrounded
       // top let a row start up to 9px early (a 1px overlap under the 6px gap, 2026-09-16; the old 14px gap hid it)
       if(rowStart===null) rowStart=Math.ceil(rowTop/ROWU)*ROWU;
@@ -1785,30 +1798,24 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     });
     hubSettle(null); hubSave(); applyHub();
   }
-  // Tidy (Hector 2026-09-16, "more space on the HUB"): every shown tile is measured again and packed up in reading order,
-  // widths kept, so the gaps close. A change of size does the same, since every height changes with it.
-  function hubTidy(){
-    if(!hub) return;
-    hub.order=visualOrder();
-    hub.order.forEach(function(w){ if(shown(w)){ delete hub.h[w]; delete hub.hs[w]; delete hub.col[w]; delete hub.row[w] } });
-    hubSave(); applyHub();   // unsized, the tiles take their natural height; the next tick measures and packs them (hubFreeze)
-  }
+
   // VaderClawd and Arrange sit in the header beside Chat (Hector 2026-09-16: "put those on the red tape, next to chat"), on a phone too
   // as icons ("i want the widgets to be all the way up, right below the header strip")
   function placeTools(){
     var host=$('head-tools'), locked=$('scr-lock').classList.contains('on');
-    [$('hub-pet'), $('hub-arrange')].forEach(function(b){ if(b.parentNode!==host) host.appendChild(b); b.hidden=locked });   // hidden until the hub is open (they start hidden in the markup: the lock screen's header has no room)
+    if($('hub-arrange').parentNode!==host) host.appendChild($('hub-arrange'));
+    [$('hub-pet'), $('hub-arrange')].forEach(function(b){ b.hidden=locked });   // the helmet stays left of the clock (Hector 2026-09-17)   // hidden until the hub is open (they start hidden in the markup: the lock screen's header has no room)
   }
   // the cell under the pointer, clamped so a widget can never start past the right edge
   function hubCellAt(x, y, w){
     var host=$('hub'), hr=host.getBoundingClientRect(), cs=getComputedStyle(host);
     var padL=parseFloat(cs.paddingLeft)||0, padR=parseFloat(cs.paddingRight)||0;
-    var gap=hubGap(), colW=(host.clientWidth-padL-padR-11*gap)/12;
+    var gap=hubGap(), colW=(host.clientWidth-padL-padR)/COLS;
     if(!(colW>0)) return null;
     var bar=host.querySelector('.hub-bar');
     var top=(bar ? bar.getBoundingClientRect().bottom-hr.top : parseFloat(cs.paddingTop)||0)+host.scrollTop+gap;
     var span=hub.span[w]||MIN_SPAN;
-    return {col:Math.max(1, Math.min(13-span, Math.round((x-hr.left-padL)/(colW+gap))+1)),
+    return {col:Math.max(1, Math.min(COLS+1-span, Math.round((x-hr.left-padL)/colW)+1)),
             row:Math.max(0, Math.round((y-hr.top+host.scrollTop-top)/ROWU))};
   }
   // the stock and fuel columns are measured again whenever a tile is drawn, resized or filled (a small tile keeps its type: nothing scales)
@@ -1835,15 +1842,13 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   }
   function applyHub(){
     if(!hub) return;
-    var cols=gridCols(), free=cols>=12, bar=$('hub').querySelector('.hub-bar'), ROW0=1, gap=hubGap();
+    var cols=gridCols(), free=cols>=COLS, bar=$('hub').querySelector('.hub-bar'), ROW0=1, gap=hubGap();
     $('hub').classList.toggle('arranging', arranging);   // first: the bar only exists on the wide grid while arranging
     var add=$('hub-add'); add.textContent='';
     hub.hidden.forEach(function(w){
       var b=document.createElement('button'); b.type='button'; b.className='hb-btn'; b.setAttribute('data-show', w); b.textContent='+ '+wname(w); add.appendChild(b);
     });
     add.hidden=!arranging || !hub.hidden.length;
-    $('hub-reset').hidden=!arranging;
-    $('hub-tidy').hidden=!arranging;
     // the bar is measured with its buttons already showing: measured empty the first time after Arrange, it counted 4 rows,
     // then 3 at the next change, and the whole hub jumped up 10px at his first drop (measured 2026-09-16)
     if(bar) bar.style.gridRow='';
@@ -1853,17 +1858,17 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     } else if(bar) bar.style.gridRow='';
     (free ? hub.order : visualOrder()).forEach(function(w, i){
       var t=tile(w); if(!t) return;
-      var span=hub.span[w], eff=cols>=12 ? span : Math.max(1, Math.round(span*cols/12)), H=tileH(w);
+      var span=hub.span[w], eff=free ? span : Math.max(1, Math.round(span*cols/COLS)), H=tileH(w);
       t.style.order=String(i+1);
       if(free && hub.col[w] && hub.row[w]!=null){
-        var col=Math.max(1, Math.min(13-span, hub.col[w]));
+        var col=Math.max(1, Math.min(COLS+1-span, hub.col[w]));
         t.style.gridColumn=col+' / span '+span;
         t.style.gridRow=(ROW0+hub.row[w])+' / span '+(H ? Math.max(1, Math.ceil((H+gap)/ROWU)) : 1);   // no height yet: one row until the next tick measures it
       } else {
         t.style.gridColumn=cols>1 ? 'span '+Math.min(cols, eff) : '';
         t.style.gridRow='';
       }
-      t.setAttribute('data-size', span<=4 ? 'S' : span<=8 ? 'M' : 'L');
+      t.setAttribute('data-size', span<=4*U ? 'S' : span<=8*U ? 'M' : 'L');
       t.style.height=(free && H) ? H+'px' : '';
       t.classList.toggle('sized', !!(free && H));
       t.classList.toggle('off', hub.hidden.indexOf(w)>-1);
@@ -1874,14 +1879,14 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       if(nxb) nxb.setAttribute('aria-label', (free ? 'Move right: ' : 'Move later: ')+wname(w));
       var sz=t.querySelector('.ht-size');
       if(sz){
-        sz.textContent=SPAN_GLYPH[span] || span+'/12';
-        sz.setAttribute('aria-label', 'Width of '+wname(w)+': '+(SPAN_WORD[span] || span+' twelfths')+'. Tap to change');
+        sz.textContent=SPAN_GLYPH[span] || Math.round(span/COLS*100)+'%';
+        sz.setAttribute('aria-label', 'Width of '+wname(w)+': '+(SPAN_WORD[span] || Math.round(span/COLS*100)+'% of the width')+'. Tap to change');
       }
     });
     $('hub-arrange').setAttribute('aria-pressed', arranging ? 'true' : 'false');
     $('hub-arrange').querySelector('.lbl').textContent=arranging ? 'Done' : 'Arrange';
     // a widget with no cell yet (first run, Reset, or one added later) gets today's layout frozen as its starting point
-    if(gridCols()>=12 && !freezing && hub.order.some(function(w){ return shown(w) && (!hub.col[w] || hub.row[w]==null || !tileH(w)) })){
+    if(gridCols()>=COLS && !freezing && hub.order.some(function(w){ return shown(w) && (!hub.col[w] || hub.row[w]==null || !tileH(w)) })){
       freezing=true;
       setTimeout(function(){ freezing=false; hubFreeze() }, 0);   // a virtual-time harness never fires rAF
     }
@@ -1893,9 +1898,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   }
   // arrows: take the place of the nearest widget that is actually on screen
   function hubStep(w, dir){
-    if(gridCols()>=12){
+    if(gridCols()>=COLS){
       var sp=hub.span[w]||MIN_SPAN;
-      hub.col[w]=Math.max(1, Math.min(13-sp, (hub.col[w]||1)+dir));
+      hub.col[w]=Math.max(1, Math.min(COLS+1-sp, (hub.col[w]||1)+dir*U));   // a twelfth per press
       hubSettle(w); applyHub(); hubSave(); return;
     }
     var o=hub.order, i=o.indexOf(w), j=i+dir;
@@ -2024,7 +2029,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var now=f.rate(today.usd); if(!num(now)) return; got++;
       mkItem(fl, f.name, now.toFixed(now>=10 ? 2 : 4), '', yday ? pct(now, f.rate(yday.usd)) : null);
     });
-    $('mk-note').textContent=got ? 'Change since yesterday · '+clockText(new Date()) : 'Market data unavailable right now';
+    $('mk-note').textContent=got ? '' : 'Market data unavailable right now';
   }
 
   /* ---------- stocks, crypto and the fuel futures ----------
@@ -2064,7 +2069,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     // every row is drawn, a dash until its price lands: the tile's frozen height already holds them all
     CRYPTO.forEach(function(c){ var x=crypto && crypto[c.id], v=(x && num(x.usd) && x.usd>0) ? x.usd : null; if(v) got++; mkItem(cl, c.name, v ? '$'+money(v) : '—', '', (v && num(x.usd_24h_change)) ? x.usd_24h_change : null) });
     STOCKS.forEach(function(s){ var q=quotes[s.sym], v=q ? qnum(q.last) : null; if(v!==null && v>0) got++; else v=null; mkItem(sl, s.name, v ? (s.index ? '' : '$')+money(v) : '—', '', v ? qnum(q.change_pct) : null) });
-    $('st-note').textContent=got ? 'Crypto: 24 h change · stocks: since the last close, US market '+(stOpen ? 'open' : 'closed')+' · '+clockText(new Date()) : 'Stock and crypto prices unavailable right now';
+    $('st-note').textContent=got ? '' : 'Stock and crypto prices unavailable right now';
   }
 
   /* ---------- fuel and energy ----------
@@ -2106,7 +2111,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     FUTURES.forEach(function(f){ var q=quotes[f.sym], v=q ? qnum(q.last) : null; if(v!==null && v>0){ got++; fut++ } else v=null; mkItem(wl, f.name, v ? '$'+v.toFixed(v>=100 ? 2 : 3) : '—', f.unit, v ? qnum(q.change_pct) : null) });
     if(fut) parts.push('futures '+clockText(new Date(quotesT)));
     var stale=fuelFail>((fuel && fuel.t) || 0);
-    $('fu-note').textContent = got ? parts.join(' · ')+(stale ? ' · pump prices did not load' : '') : 'Fuel prices unavailable right now';
+    $('fu-note').textContent = got ? (stale ? 'Pump prices did not load' : '') : 'Fuel prices unavailable right now';
   }
 
   /* ---------- ISS overhead ----------
@@ -2237,7 +2242,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       : !list.length ? 'No visible pass over Santa Clarita in the next '+ISS_DAYS+' days. They come in runs of a week or two, a few weeks apart.'
       : crossing ? 'Crossing your sky right now: look from the '+list[0].from+' towards the '+list[0].to+'.'
       : 'Naked eye: a bright, steady star crossing the sky, no blinking. Local times, next '+ISS_DAYS+' days.';
-    $('iss-note').textContent=tleD ? 'Orbit data '+clockText(new Date(tleD.t)) : '';
+    $('iss-note').textContent='';
   }
 
   /* ---------- the AI news brief ----------
@@ -2789,16 +2794,29 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   $('hub').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button') : null; if(!b || !hub) return;
     var t=b.closest('.hb[data-w]'), w=t && t.getAttribute('data-w');
-    if(b.id==='hub-reset'){ hub=hubDefault(); applyHub(); hubSave(); return }
-    if(b.id==='hub-tidy'){ hubTidy(); return }
     if(b.hasAttribute('data-show')){ var sw=b.getAttribute('data-show'); hub.hidden=hub.hidden.filter(function(x){ return x!==sw }); hubSettle(sw); applyHub(); hubSave(); return }
     if(w && (b.classList.contains('hb-fold') || b.classList.contains('hb-more'))){
-      hub.shut[w]=b.classList.contains('hb-more') ? false : !hub.shut[w]; applyHub(); if(gridCols()>=12 && hubSettle(w)) applyHub(); hubSave(); return;   // drawn at its new height first, then what it reaches moves down
+      // Hector 2026-09-17: unfolding moves the widgets under it to make room ("which i like"), and folding it back brings them
+      // back the way they were - unless he moved one of them himself in between (it stays where he put it)
+      var wasShut=!!hub.shut[w];
+      hub.shut[w]=b.classList.contains('hb-more') ? false : !hub.shut[w]; applyHub();   // drawn at its new height first
+      if(gridCols()>=COLS){
+        if(!hub.shut[w]){
+          var before=Object.assign({}, hub.row);
+          if(hubSettle(w)){ var pushed={}; Object.keys(hub.row).forEach(function(k){ if(hub.row[k]!==before[k]) pushed[k]={from:before[k], to:hub.row[k], col:hub.col[k]} }); if(wasShut) hub.back[w]=pushed; applyHub() }
+          else if(wasShut) delete hub.back[w];
+        } else if(hub.back[w]){
+          var bk=hub.back[w], any=false; delete hub.back[w];
+          Object.keys(bk).forEach(function(k){ var e=bk[k]; if(shown(k) && hub.row[k]===e.to && hub.col[k]===e.col && hub.row[k]>e.from){ hub.row[k]=e.from; any=true } });
+          if(any){ hubSettle(null); applyHub() }   // back where they were; anything that would now overlap moves down, never up
+        }
+      }
+      hubSave(); return;
     }
     var act=b.getAttribute('data-act'); if(!act || !w || !arranging) return;
     if(act==='prev') hubStep(w, -1);
     else if(act==='next') hubStep(w, 1);
-    else if(act==='size'){ var cur=hub.span[w], nx=SPANS.filter(function(x){ return x>cur })[0] || SPANS[0]; hub.span[w]=nx; hub.col[w]=Math.min(hub.col[w]||1, 13-nx); hubSettle(w); applyHub(); hubSave() }
+    else if(act==='size'){ var cur=hub.span[w], nx=SPANS.filter(function(x){ return x>cur })[0] || SPANS[0]; hub.span[w]=nx; hub.col[w]=Math.min(hub.col[w]||1, COLS+1-nx); hubSettle(w); applyHub(); hubSave() }
     else if(act==='hide'){ if(hub.hidden.indexOf(w)<0) hub.hidden.push(w); applyHub(); hubSave() }
   });
   $('hub-arrange').addEventListener('click', function(){ if(!hub) return; arranging=!arranging; applyHub() });   // lives in the header on a wide screen, in the hub's bar on a phone
@@ -2816,7 +2834,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var r=t.getBoundingClientRect(), cs=getComputedStyle($('hub')), tr=(cs.gridTemplateColumns || '').split(' ').filter(Boolean);
       e.preventDefault();
       resizing={w:t.getAttribute('data-w'), el:t, x0:e.clientX, y0:e.clientY, w0:r.width, h0:r.height, cols:gridCols(),
-        colw:parseFloat(tr[0]) || r.width, gap:parseFloat(cs.columnGap) || 14};
+        colw:parseFloat(tr[0]) || r.width, gap:hubGap()};
       t.classList.add('resizing'); document.body.classList.add('hub-resizing');
       // Hector 2026-09-16: "it gets to a certain size and doesn't go smaller" - shrinking drags the corner INTO the tile, over its
       // own player or map, which then swallowed the moves. The handle keeps the pointer, and nothing under it takes events meanwhile.
@@ -2842,7 +2860,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var r=tt.getBoundingClientRect(), w=tt.getAttribute('data-w');
     drag={w:w, el:tt, last:'', x0:x, y0:y, st0:$('hub').scrollTop, left0:r.left, top0:r.top, to:null, ph:null};
     tt.classList.add('dragging'); document.body.classList.add('hub-dragging');
-    if(gridCols()>=12 && hub.col[w] && hub.row[w]!=null){   // the dashed outline where it will land: its own spot until it moves
+    if(gridCols()>=COLS && hub.col[w] && hub.row[w]!=null){   // the dashed outline where it will land: its own spot until it moves
       var ph=document.createElement('div'); ph.className='hb-drop'; ph.setAttribute('aria-hidden', 'true'); $('hub').appendChild(ph);
       drag.ph=ph; dropAt({col:hub.col[w], row:hub.row[w]});
     }
@@ -2852,7 +2870,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function dropAt(cell){   // the outline moves to the cell the widget would land in
     var d=drag; if(!d || !d.ph) return;
     d.to=cell;
-    var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[d.w]||MIN_SPAN)), bar=$('hub').querySelector('.hub-bar'), m=bar ? /span (\d+)/.exec(bar.style.gridRow||'') : null, ROW0=m ? +m[1]+1 : 1;
+    var sp=Math.max(MIN_SPAN, Math.min(COLS, hub.span[d.w]||MIN_SPAN)), bar=$('hub').querySelector('.hub-bar'), m=bar ? /span (\d+)/.exec(bar.style.gridRow||'') : null, ROW0=m ? +m[1]+1 : 1;
     d.ph.style.gridColumn=cell.col+' / span '+sp; d.ph.style.gridRow=(ROW0+cell.row)+' / span '+tileRows(d.w);
     var H=tileH(d.w); d.ph.style.height=H ? H+'px' : '';
   }
@@ -2864,19 +2882,20 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var z=resizing, x=winfo(z.w), nw=z.w0+(e.clientX-z.x0), sp=hub.span[z.w]||MIN_SPAN, floor=hub.shut[z.w] ? MIN_HS : x.minH;
       var nh=Math.max(floor, Math.round(Math.min(MAX_H, z.h0+(e.clientY-z.y0))));
       if(z.cols>1){
-        var eff=Math.max(1, Math.min(z.cols, Math.round((nw+z.gap)/(z.colw+z.gap))));
-        sp=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // down to a single twelfth (Hector 2026-09-16: "however i want")
+        var unit=z.colw+(z.cols>=COLS ? 0 : z.gap);   // on the 96-grid the tracks touch and the tile's own margin is the gap
+        var eff=Math.max(1, Math.min(z.cols, Math.round((nw+z.gap)/unit)));
+        sp=Math.max(MIN_SPAN, Math.min(COLS, Math.round(eff*COLS/z.cols)));   // one 96th at a time, down to a 24th (Hector 2026-09-17: "FREE RANGE")
       }
-      if(z.cols>=12 && hub.row[z.w]!=null){   // the corner stops at a neighbour; the neighbour never moves (Hector 2026-09-16: "it moves others below it")
+      if(z.cols>=COLS && hub.row[z.w]!=null){   // the corner stops at a neighbour; the neighbour never moves (Hector 2026-09-16: "it moves others below it")
         var boxes=hubBoxes(z.w), r0=hub.row[z.w], rowsNow=tileRows(z.w), wantSp=sp, wantRows=Math.max(1, Math.ceil((nh+hubGap())/ROWU)), c0, rows=wantRows;
-        for(; sp>MIN_SPAN; sp--){ c0=Math.max(1, Math.min(13-sp, hub.col[z.w]||1)); if(!hubHit(boxes, c0, c0+sp, r0, r0+rowsNow).length) break }   // the widest that fits at today's height
-        c0=Math.max(1, Math.min(13-sp, hub.col[z.w]||1));
+        for(; sp>MIN_SPAN; sp--){ c0=Math.max(1, Math.min(COLS+1-sp, hub.col[z.w]||1)); if(!hubHit(boxes, c0, c0+sp, r0, r0+rowsNow).length) break }   // the widest that fits at today's height
+        c0=Math.max(1, Math.min(COLS+1-sp, hub.col[z.w]||1));
         for(; rows>1; rows--) if(!hubHit(boxes, c0, c0+sp, r0, r0+rows).length) break;   // the tallest that fits at that width
         var maxH=rows*ROWU-hubGap();
         if(nh>maxH) nh=maxH>=floor ? maxH : (tileH(z.w)||floor);   // a neighbour closer than the floor: the height stays as it is
         blockMark(hubHit(boxes, c0, c0+wantSp, r0, r0+wantRows));
       }
-      hub.span[z.w]=sp; hub.col[z.w]=Math.min(hub.col[z.w]||1, 13-sp);
+      hub.span[z.w]=sp; hub.col[z.w]=Math.min(hub.col[z.w]||1, COLS+1-sp);
       if(hub.shut[z.w]) hub.hs[z.w]=nh; else hub.h[z.w]=nh;   // the folded and the open height are each their own
       applyHub();
       return;
@@ -2885,7 +2904,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     // near the top or bottom edge of the hub, scroll it, so a widget can be carried to a spot that is out of view
     var hr=$('hub').getBoundingClientRect();
     if(e.clientY<hr.top+48) $('hub').scrollTop-=24; else if(e.clientY>hr.bottom-48) $('hub').scrollTop+=24;
-    if(gridCols()>=12){
+    if(gridCols()>=COLS){
       var dx=e.clientX-drag.x0, dy=e.clientY-drag.y0;
       drag.el.style.translate=dx+'px '+(dy+$('hub').scrollTop-drag.st0)+'px';   // the widget rides in his hand, from where he took it
       var cell=hubCellAt(drag.left0+dx, drag.top0+dy, drag.w); if(!cell) return;   // the cell under the widget's own corner, not under the pointer
@@ -3084,7 +3103,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
-    get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubTidy:hubTidy, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll };
+    get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll };
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's own Fullscreen API, and while it is on
      the page drops its frame too (body.full) so the hub gets the whole screen. Safari fires webkitfullscreenchange. */
   function fullOn(){ return !!(document.fullscreenElement || document.webkitFullscreenElement) }

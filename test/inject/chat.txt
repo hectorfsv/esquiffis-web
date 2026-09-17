@@ -339,7 +339,7 @@
       T(ps.length<=3 && [].every.call(ps, function(li){ return /^(Today|Tomorrow|(Sun|Mon|Tue|Wed|Thu|Fri|Sat) \d+) \d\d:\d\d$/.test(li.querySelector('.iss-t').textContent) && /^rises (N|NE|E|SE|S|SW|W|NW) \u00B7 peaks \d+\u00B0 \u00B7 sets (N|NE|E|SE|S|SW|W|NW) \u00B7 \d+ min$/.test(li.querySelector('.iss-d').textContent) && /bright|good|low/.test(li.querySelector('.iss-b').textContent) }),
         'ISS: up to three passes, each with a local 24-hour time, where it rises and sets, how high, how long ('+ps.length+')');
       T(ps.length ? /Naked eye|Crossing your sky/.test(foot) : /No visible pass over Santa Clarita in the next 10 days/.test(foot), 'ISS: the note fits the list ('+foot+')');
-      T(/Orbit data \d\d:\d\d/.test(tx('iss-note')) && !!localStorage.getItem('lounge_tle'), 'ISS: says when the orbit lines are from, and keeps them 12 hours');
+      T(tx('iss-note')==='' && !tile('iss').querySelector('.hb-h .mk-note') && !!localStorage.getItem('lounge_tle'), 'ISS: no text beside the title when the orbit lines came (kept 12 hours)');
       // the maths against an independent reference: the same orbit, the same 10 days, the same visible passes to the second
       var lg=window.__lounge;
       lg.loadSatLib(function(ok){
@@ -376,8 +376,10 @@
       T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
       // Hector 2026-09-16: "the top section has some dead space ... put those on the red tape, next to chat"
       var hp=$('hub-pet'), ha=$('hub-arrange'), tf=$('talk-fold');
-      T(!!hp && !!ha && !!hp.closest('.head') && !!ha.closest('.head') && vis(hp) && vis(ha) && ha.nextElementSibling===null && hp.nextElementSibling===ha && $('head-tools').nextElementSibling===tf && R(ha).r<=R(tf).l && Math.abs(R(ha).t-R(tf).t)<=2,
-        'VaderClawd and Arrange sit on the red tape, right before Chat');
+      var hpl=hp && hp.querySelector('.lbl');
+      T(!!hp && !!ha && !!hp.closest('.head') && !!ha.closest('.head') && vis(hp) && vis(ha) && hp.nextElementSibling===$('now') && R(hp).r<=R($('now')).l && vis(hp.querySelector('.ico')) && !!hpl && R(hpl).r-R(hpl).l<=1
+        && ha.nextElementSibling===null && $('head-tools').nextElementSibling===tf && R(ha).r<=R(tf).l && Math.abs(R(ha).t-R(tf).t)<=2,
+        'the helmet switch sits left of the clock on the red tape (Hector 2026-09-17), Arrange right before Chat');
       T(!vis($('hub').querySelector('.hub-bar')) && !$('hub-dense'), 'no bar at the top of the hub while not arranging, and no size switch');
       // Hector 2026-09-16: "the red corner it's moved and looks weird" - back IN the corner; the hub's stable gutter keeps the scrollbar off it
       var rh=tile('inbox').querySelector('.ht-resize'), rhs=rh && getComputedStyle(rh);
@@ -391,8 +393,8 @@
       var firstTop=Math.min.apply(null, [].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).map(function(t){ return R(t).t }));
       T(firstTop-R($('hub')).t<=8, 'the first tiles start right at the top of the hub ('+Math.round(firstTop-R($('hub')).t)+'px)');
       var stRow=$('st-stocks').querySelector('.mk-n');
-      T(getComputedStyle(tile('news')).paddingTop==='7px' && !!stRow && getComputedStyle(stRow).fontSize==='12.5px' && getComputedStyle($('st-h')).fontSize==='11px' && getComputedStyle($('hub')).columnGap==='6px',
-        'one look: dense padding and gaps, compact type, roomy headers (7px, 12.5px, 11px, gap 6px)');
+      T(getComputedStyle(tile('news')).paddingTop==='7px' && !!stRow && getComputedStyle(stRow).fontSize==='12.5px' && getComputedStyle($('st-h')).fontSize==='11px' && (getComputedStyle($('hub')).columnGap==='6px' || (getComputedStyle($('hub')).columnGap==='0px' && getComputedStyle(tile('news')).marginRight==='6px')),
+        'one look: dense padding and gaps, compact type, roomy headers (7px, 12.5px, 11px, gap 6px - on the 96-grid the tile\'s own margin)');
       // Hector 2026-09-15: "the chat can be half that size, in the right corner of the whole window. and center the vader image to the chat"
       var sc=R($('scr-chat')), tk=R(document.querySelector('.talk')), sd=R(document.querySelector('.side')), want=Math.min(640, Math.max(400, .25*(sc.r-sc.l)));
       T(Math.abs((tk.r-tk.l)-want)<=2 && Math.abs(tk.r-sc.r)<=1, 'the conversation is the right quarter of the window ('+Math.round(tk.r-tk.l)+' of '+Math.round(sc.r-sc.l)+')');
@@ -489,7 +491,7 @@
       T(fls.length===3 && /USD \u2192 MXN/.test(fls[0].textContent) && /17\.15/.test(fls[0].textContent) && /\+0\.88%/.test(fls[0].textContent) && fls[0].querySelector('.mk-c.up'),
         'markets: the dollar in pesos, up since yesterday ('+(fls[0]&&fls[0].textContent)+')');
       T(fls.length===3 && /GBP \u2192 USD/.test(fls[1].textContent) && /1\.3484/.test(fls[1].textContent) && /\u22120\.15%/.test(fls[1].textContent), 'markets: the pound in dollars ('+(fls[1]&&fls[1].textContent)+')');
-      T(/since yesterday/.test(tx('mk-note')), 'markets: says what the change compares to');
+      T(tx('mk-note')==='' && !vis($('mk-note')) && !tile('markets').querySelector('.hb-h .mk-note'), 'markets: no text beside the title, no note when the data is fine (Hector 2026-09-17)');
       T(hubCalls.indexOf('gold')>-1 && hubCalls.indexOf('snap')>-1, 'markets come from the browser, not n8n');
       // Hector 2026-09-16: "crypto only ethereum, bitcoin and dogecoin. Stocks: apple, amazon, DOW, berkshire hathaway Inc, google, tesla, spaceXai"
       var cr=qa('st-crypto'), stk=qa('st-stocks');
@@ -499,7 +501,7 @@
       T(stNames.join('|')==='Apple|Amazon|Dow Jones|Berkshire B|Google|Tesla|SpaceX', 'stocks tile: his seven, in his order, SpaceX included ('+stNames.join(', ')+')');
       T(stk.length===7 && /\$331\.34/.test(stk[0].textContent) && /\u22120\.52%/.test(stk[0].textContent) && /52,093/.test(stk[2].textContent) && !/\$52,093/.test(stk[2].textContent) && /\$143\.49/.test(stk[6].textContent) && /\u22123\.15%/.test(stk[6].textContent),
         'stocks tile: Apple $331.34 down 0.52%, the Dow as an index (no $), SpaceX $143.49 down 3.15%');
-      T(/US market open/.test(tx('st-note')) && /24 h change/.test(tx('st-note')), 'stocks tile: says what the changes mean and that the market is open ('+tx('st-note')+')');
+      T(tx('st-note')==='' && !vis($('st-note')) && !tile('stocks').querySelector('.hb-h .mk-note'), 'stocks tile: no text beside the title, no note when the data is fine');
       var nCg=hubCalls.filter(function(k){ return k==='coingecko' }).length, nCnbc=hubCalls.filter(function(k){ return k==='cnbc' }).length;
       T(nCg>=1 && nCnbc===nCg, 'stocks and crypto come from the browser: each refresh is one CoinGecko call and ONE CNBC call carrying the stocks and the fuel futures ('+nCg+' / '+nCnbc+')');
       var rowSpill=[].filter.call(qa('st-stocks').length ? [].concat([].slice.call(qa('st-stocks')), [].slice.call(qa('fu-pump')), [].slice.call(qa('fu-whole'))) : [], function(li){ var n=li.querySelector('.mk-n'); return vis(n) && n.scrollWidth>n.clientWidth+1 && getComputedStyle(n).textOverflow!=='ellipsis' });
@@ -507,8 +509,8 @@
       // Hector 2026-09-16: "gas prices ... natural gas, propane, gasoline, diesel" / "don't register anything for the propane, get me what's free"
       var pump=qa('fu-pump'), whole=qa('fu-whole');
       if(mode==='guard'){
-        T(pump.length===4 && [].every.call(pump, function(li){ return li.querySelector('.mk-v').textContent==='\u2014' }) && whole.length===5 && whole[0].querySelector('.mk-v').textContent==='\u2014' && /\$2\.928/.test(whole[1].textContent) && /pump prices did not load/.test(tx('fu-note')) && /futures/.test(tx('fu-note')),
-          'fuel tile: when n8n cannot read AAA and EIA the futures still show, the pump rows are dashes, and it says why ('+tx('fu-note')+')');
+        T(pump.length===4 && [].every.call(pump, function(li){ return li.querySelector('.mk-v').textContent==='\u2014' }) && whole.length===5 && whole[0].querySelector('.mk-v').textContent==='\u2014' && /\$2\.928/.test(whole[1].textContent) && /pump prices did not load/i.test(tx('fu-note')) && !/futures|AAA|EIA/.test(tx('fu-note')) && vis($('fu-note')) && !tile('fuel').querySelector('.hb-h .mk-note'),
+          'fuel tile: when n8n cannot read AAA and EIA the futures still show, the pump rows are dashes, and a line under the rows says why, nothing more ('+tx('fu-note')+')');
         T(!localStorage.getItem('lounge_fuel'), 'fuel tile: a failed read is not kept, so the next login asks again');
       } else {
         T(pump.length===4 && /Regular \u00B7 LA/.test(pump[0].textContent) && /\$6\.09/.test(pump[0].textContent) && /\/gal/.test(pump[0].textContent) && /\+2\.79%/.test(pump[0].textContent) && !!pump[0].querySelector('.mk-c.up'),
@@ -518,7 +520,7 @@
         T(whole.length===5 && /Propane, wholesale/.test(whole[0].textContent) && /\$0\.833/.test(whole[0].textContent) && /\/gal/.test(whole[0].textContent) && !whole[0].querySelector('.mk-c'), 'fuel tile: EIA propane, wholesale, price only ('+(whole[0]&&whole[0].textContent)+')');
         T(whole.length===5 && /Natural gas/.test(whole[1].textContent) && /\$2\.928/.test(whole[1].textContent) && /MMBtu/.test(whole[1].textContent) && /\+0\.31%/.test(whole[1].textContent) && /Gasoline/.test(whole[2].textContent) && /\$3\.436/.test(whole[2].textContent) && /Diesel/.test(whole[3].textContent) && /Crude/.test(whole[4].textContent) && /\$103\.83/.test(whole[4].textContent) && /\/bbl/.test(whole[4].textContent),
           'fuel tile: natural gas, gasoline, diesel and crude futures from the browser');
-        T(/AAA 2026-09-16/.test(tx('fu-note')) && /week ago/.test(tx('fu-note')) && /EIA propane 2026-09-09/.test(tx('fu-note')) && /futures \d\d:\d\d/.test(tx('fu-note')), 'fuel tile: names its sources and dates ('+tx('fu-note')+')');
+        T(tx('fu-note')==='' && !vis($('fu-note')) && !tile('fuel').querySelector('.hb-h .mk-note'), 'fuel tile: no sources, dates or times beside the title (Hector 2026-09-17: "get rid of it")');
         T(!!calls[0] && calls[0].fuel==='1', 'the first login asked n8n for the pump prices (fuel=1)');
         var kept=null; try{ kept=JSON.parse(localStorage.getItem('lounge_fuel')||'null') }catch(e){}
         T(!!kept && kept.ok===true && kept.aaa && kept.aaa.la && kept.aaa.la.reg===6.0894 && kept.propane && kept.propane.usd===0.833 && !('mid' in kept.aaa.la), 'fuel prices are kept on this device for 12 hours, the figures the tile shows and nothing more');
@@ -625,9 +627,10 @@
         'the saved Quakes layer fetched USGS and drew its 2 quakes; GDACS was not asked for ('+tx('map-note')+')'); }, 60);
     T(!vis(tile('dodgers')) && !tile('inbox').classList.contains('shut') && tile('news').classList.contains('shut'), 'hidden and unfolded as saved; unknown names ignored');
     var tools=tile('tv').querySelector('.hb-tools');
-    T(!vis(tools) && !vis($('hub-reset')), 'the move / size / hide tools stay out of sight until Arrange');
+    T(!vis(tools) && !vis($('hub-add')), 'the move / size / hide tools stay out of sight until Arrange');
     $('hub-arrange').click();
-    T($('hub-arrange').getAttribute('aria-pressed')==='true' && /Done/.test($('hub-arrange').textContent) && vis(tools) && vis($('hub-reset')), 'Arrange shows the tools on every widget');
+    T($('hub-arrange').getAttribute('aria-pressed')==='true' && /Done/.test($('hub-arrange').textContent) && vis(tools) && vis($('hub-add')), 'Arrange shows the tools on every widget');
+    T(!$('hub-reset') && !$('hub-tidy') && $('hub').querySelectorAll('.hub-bar button').length===1, 'Tidy and Reset layout are gone (Hector 2026-09-17); the bar only offers the hidden widget back');
     var add=$('hub-add').querySelectorAll('button');
     T(add.length===1 && /Sports/.test(add[0].textContent), 'a hidden widget waits under Arrange ('+(add[0]&&add[0].textContent)+')');
     var espn=hubCalls.filter(function(k){ return /^espn:/.test(k) });   // scoresOK has already switched to NFL by now: judge by the FIRST fetch
@@ -635,16 +638,16 @@
     // the TV keeps playing while it moves: the very same player, never re-created or moved in the page
     $('tv-play').click();
     var f=$('tv-screen').querySelector('iframe'), src=f && f.src;
-    var tvSpan=parseInt(String(gs(tile('tv'),'gridColumnEnd')).replace(/\D+/g,''),10)||6, tvC0=col('tv');
+    var tvSpan=parseInt(String(gs(tile('tv'),'gridColumnEnd')).replace(/\D+/g,''),10)||48, tvC0=col('tv');
     tile('tv').querySelector('[data-act="prev"]').click();
-    T(freeHub() ? (col('tv')===Math.max(1, tvC0-1)) : ord('tv')<ord('map'),
+    T(freeHub() ? (col('tv')===Math.max(1, tvC0-8)) : ord('tv')<ord('map'),
       freeHub() ? 'the arrow moves the TV one column left ('+tvC0+' -> '+col('tv')+')' : 'the arrow moves the TV ahead of the map');
     T(!!f && $('tv-screen').querySelector('iframe')===f && f.isConnected && f.src===src, 'the TV kept playing through the move (same player)');
     tile('tv').querySelector('[data-act="next"]').click();
-    T(freeHub() ? (col('tv')===Math.min(13-tvSpan, Math.max(1, tvC0-1)+1)) : ord('map')<ord('tv'), 'and the other arrow moves it back ('+col('tv')+')');
+    T(freeHub() ? (col('tv')===Math.min(97-tvSpan, Math.max(1, tvC0-8)+8)) : ord('map')<ord('tv'), 'and the other arrow moves it back ('+col('tv')+')');
     // an arrow skips a widget that is not on screen
     var ibC0=col('inbox'), before=ord('weather'); tile('inbox').querySelector('[data-act="prev"]').click();
-    T(freeHub() ? (col('inbox')===Math.max(1, ibC0-1)) : (ord('inbox')<ord('weather') && ord('inbox')>ord('time')),
+    T(freeHub() ? (col('inbox')===Math.max(1, ibC0-8)) : (ord('inbox')<ord('weather') && ord('inbox')>ord('time')),
       freeHub() ? 'the arrow moves the inbox one column left ('+ibC0+' -> '+col('inbox')+')' : 'moving the inbox earlier passes the hidden Dodgers and lands before Weather');
     var sz=tile('map').querySelector('[data-act="size"]');
     // Hector 2026-09-16: "i need to be able to get smaller tiles" - the width button cycles a sixth, a quarter, a third, half, two thirds, three quarters, full
@@ -666,6 +669,25 @@
     T(!vis(tile('weather')) && !!wb, 'hide takes Weather off and keeps it under Arrange');
     if(wb) wb.click();
     T(vis(tile('weather')) && !$('hub-add').querySelector('[data-show="weather"]'), 'and + Weather brings it back');
+    if(WIDE && freeHub()){
+      // Hector 2026-09-17: unfolding moves the widgets under it to make room ("which i like"); folding it back brings them back the way they were
+      function foldRows(){ var o={}; [].forEach.call($('hub').querySelectorAll('.hb[data-w]'), function(t){ if(vis(t)) o[t.getAttribute('data-w')]=t.style.gridRow }); return o }
+      var EF=window.__lounge; if(!tile('news').classList.contains('shut')) $('news-h').click();
+      var fr0=foldRows(), rowsBefore=Object.assign({}, EF.hub.row);
+      $('news-h').click();   // unfold
+      var fr1=foldRows(), pushed=Object.keys(fr0).filter(function(w){ return w!=='news' && fr1[w]!==fr0[w] });
+      T(pushed.length>0 && !tile('news').classList.contains('shut'), 'unfolding News moves the widgets under it down to make room ('+pushed.join(',')+')');
+      $('news-h').click();   // fold back
+      var fr2=foldRows(), notBack=Object.keys(fr0).filter(function(w){ return w!=='news' && fr2[w]!==fr0[w] });
+      T(tile('news').classList.contains('shut') && notBack.length===0, 'folding it back brings them back exactly where they were ('+(notBack.join(',')||'all back')+')');
+      var mv=pushed[0];
+      if(mv){   // one of them moved by hand in between stays where he put it
+        $('news-h').click(); var toRow=EF.hub.row[mv]; EF.hub.row[mv]=toRow+20; EF.applyHub();
+        $('news-h').click();
+        T(tile('news').classList.contains('shut') && EF.hub.row[mv]===toRow+20, 'a pushed widget he moved himself in between stays where he put it ('+mv+' at row '+EF.hub.row[mv]+')');
+        EF.hub.row[mv]=rowsBefore[mv]; EF.applyHub();   // put it back for the checks that follow
+      }
+    }
     // folding
     $('news-h').click();
     T(!tile('news').classList.contains('shut') && $('news-h').getAttribute('aria-expanded')==='true' && vis($('h-list').querySelectorAll('li')[2]), 'the news unfolds to show its headlines');
@@ -673,7 +695,7 @@
     T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
     $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
     var saved=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
-    T(Array.isArray(saved.order) && saved.order.length===12 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===9 && saved.hidden.join()==='dodgers',
+    T(Array.isArray(saved.order) && saved.order.length===12 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===72 && saved.u===96 && saved.hidden.join()==='dodgers',
       'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
     T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
     if(WIDE){
@@ -687,10 +709,10 @@
       function nearestFree(w, wantC, wantR){
         var me=boxOf(tile(w)); if(!me) return null;
         var sp=me.c1-me.c0, n=me.r1-me.r0, others=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), function(t){ return vis(t) && t!==tile(w) }).map(boxOf).filter(Boolean);
-        var hcs=getComputedStyle($('hub')), unit=($('hub').clientWidth-(parseFloat(hcs.paddingLeft)||0)-(parseFloat(hcs.paddingRight)||0)-66)/12+6;
+        var hcs=getComputedStyle($('hub')), unit=($('hub').clientWidth-(parseFloat(hcs.paddingLeft)||0)-(parseFloat(hcs.paddingRight)||0))/96;
         var bar=/span (\d+)/.exec(($('hub').querySelector('.hub-bar')||{style:{}}).style.gridRow||''), ROW0=bar ? +bar[1]+1 : 1, maxR=wantR, best=null;
         others.forEach(function(b){ maxR=Math.max(maxR, b.r1) });
-        for(var r=ROW0;r<=maxR;r++) for(var c=1;c<=13-sp;c++){
+        for(var r=ROW0;r<=maxR;r++) for(var c=1;c<=97-sp;c++){
           if(others.some(function(b){ return c<b.c1 && b.c0<c+sp && r<b.r1 && b.r0<r+n })) continue;
           var d=Math.pow((c-wantC)*unit,2)+Math.pow((r-wantR)*10,2); if(!best || d<best.d) best={c:c, r:r, d:d};
         }
@@ -735,11 +757,11 @@
       if(freeHub()){
         var clockCell=[col('time'), gs(tile('time'),'gridRowStart')];
         var wx=tile('weather'); wx.scrollIntoView({block:'center'});
-        var wr=R(wx), hcs=getComputedStyle($('hub')), hpl=parseFloat(hcs.paddingLeft)||0, hcw=($('hub').clientWidth-hpl-(parseFloat(hcs.paddingRight)||0)-66)/12;
-        // the far right of its own row, grabbed near its corner so the corner is what lands there
-        var fx=Math.round(R($('hub')).l+hpl+10*(hcw+6)+4), fy=Math.round(wr.t+5);
+        var wr=R(wx), hcs=getComputedStyle($('hub')), hpl=parseFloat(hcs.paddingLeft)||0, hcw=($('hub').clientWidth-hpl-(parseFloat(hcs.paddingRight)||0))/96;
+        // the far right of its own row (the 81st of 96 units), grabbed near its corner so the corner is what lands there
+        var fx=Math.round(R($('hub')).l+hpl+80*hcw+4), fy=Math.round(wr.t+5);
         pd(wx, 11, wr.l+8, wr.t+8); pm(11, fx+8, fy+8); pu(11);
-        T(col('weather')>=7, 'free range: a widget dropped on the right side stays on the right (column '+col('weather')+')');
+        T(col('weather')>=49, 'free range: a widget dropped on the right side stays on the right (unit '+col('weather')+' of 96)');
         T(col('time')===clockCell[0] && gs(tile('time'),'gridRowStart')===clockCell[1],
           'free range: nothing reflows - the clock stayed put when the weather moved away');
         var svc=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
@@ -803,9 +825,10 @@
       T((r1.r-r1.l)<(r0.r-r0.l)*.75 && (Math.abs((r1.b-r1.t)-((r0.b-r0.t)+120))<=3 || (!!stopper && (r1.b-r1.t)>(r0.b-r0.t)+20)) && !tvT.classList.contains('resizing'),
         'dragging the corner makes the TV narrower and taller ('+Math.round(r0.r-r0.l)+'x'+Math.round(r0.b-r0.t)+' -> '+Math.round(r1.r-r1.l)+'x'+Math.round(r1.b-r1.t)+(stopper ? ', stopped at '+stopper.getAttribute('data-w') : '')+')');
       T(ts.b<=r1.b+1 && ts.b-ts.t>150, 'the player grows to fill the taller window ('+Math.round(ts.b-ts.t)+'px)');
-      T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/12-16 && (r1.r-r1.l)<(R($('hub')).r-R($('hub')).l)/4, 'a drag snaps to twelfths, down to a single one ('+Math.round(r1.r-r1.l)+'px)');
+      var u96=($('hub').clientWidth-(parseFloat(getComputedStyle($('hub')).paddingLeft)||0)-(parseFloat(getComputedStyle($('hub')).paddingRight)||0))/96, wantW=(r0.r-r0.l)*.4;
+      T(Math.abs((r1.r-r1.l)-wantW)<=u96 && (r1.r-r1.l)<(R($('hub')).r-R($('hub')).l)/4, 'free range: the width follows the hand to the nearest 96th of the hub ('+Math.round(r1.r-r1.l)+'px, asked '+Math.round(wantW)+', a 96th is '+Math.round(u96)+'px; Hector 2026-09-17: twelfths "cut it in half")');
       var sv2=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
-      T(!!sv2.h && Math.abs(sv2.h.tv-(r1.b-r1.t))<=1 && typeof sv2.span.tv==='number' && sv2.span.tv<6, 'the free size is remembered ('+JSON.stringify(sv2.h)+', width '+(sv2.span&&sv2.span.tv)+'/12)');
+      T(!!sv2.h && Math.abs(sv2.h.tv-(r1.b-r1.t))<=1 && typeof sv2.span.tv==='number' && sv2.span.tv<48 && sv2.u===96, 'the free size is remembered ('+JSON.stringify(sv2.h)+', width '+(sv2.span&&sv2.span.tv)+'/96)');
       rz.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}));
       T(!tvT.style.height && !tvT.classList.contains('sized'), 'double-clicking the handle fits the height to the content again');
       // Hector 2026-09-16: "size down the widgets when are compacted, not only when they are open. i need to be able to fill up small spaces"
@@ -856,9 +879,6 @@
         T(getComputedStyle(stT.querySelector('.mk-n')).fontSize===fs0, 'given its room back, the type is still the same size');
       }
     }
-    $('hub-reset').click();
-    T(ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('dodgers')<ord('inbox') && ord('inbox')<ord('tv') && ord('tv')<ord('map') && ord('map')<ord('markets') && ord('markets')<ord('cams') && ord('cams')<ord('news')
-      && tile('news').classList.contains('shut') && tile('inbox').classList.contains('shut') && tile('dodgers').classList.contains('shut') && tile('map').getAttribute('data-size')==='M' && vis(tile('dodgers')) && !tile('tv').style.height, 'Reset layout puts everything back');
     $('hub-arrange').click();
     T($('hub-arrange').getAttribute('aria-pressed')==='false' && !vis(tools), 'Done hides the tools again');
     if(!WIDE) $('now').click();
@@ -992,11 +1012,12 @@
     var fin=b.querySelector('.f-in'), fout=b.querySelector('.f-out');
     T(vis(b) && b.getAttribute('aria-pressed')==='false' && b.textContent.trim()==='' && !!b.querySelector('svg') && !!fin && !!fout && vis(fin) && !vis(fout) && b.getAttribute('aria-label')==='Full screen' && !document.body.classList.contains('full'),
       'full: an icon-only button in the header - the four frame corners, named for a screen reader - off');
+    var frB=getComputedStyle(document.querySelector('.frame')), pnB=getComputedStyle(document.querySelector('.panel')); window.__frameBefore={paddingTop:frB.paddingTop, paddingLeft:frB.paddingLeft, border:pnB.borderTopWidth, shadow:pnB.boxShadow};
     b.click(); T(asked.join()==='in', 'full: it asks the browser for full screen');
     fake=de; document.dispatchEvent(new Event('fullscreenchange'));
-    var fr=getComputedStyle(document.querySelector('.frame'));
-    T(document.body.classList.contains('full') && b.getAttribute('aria-pressed')==='true' && b.getAttribute('aria-label')==='Exit full screen' && !vis(fin) && vis(fout) && b.textContent.trim()==='' && fr.paddingTop==='0px' && fr.paddingLeft==='0px' && vis(document.querySelector('.brk.tr')) && vis(document.querySelector('.rail')) && getComputedStyle(document.querySelector('.panel')).clipPath!=='none' && getComputedStyle(document.querySelector('.panel')).borderTopWidth==='0px',
-      'full: in full screen the corners turn inward and the page drops its padding, border and shadow but keeps the tape rail, the notch and the brackets (Hector: "squeeze it in there")');
+    var fr=getComputedStyle(document.querySelector('.frame')), pn=getComputedStyle(document.querySelector('.panel')), fr0=window.__frameBefore||{};
+    T(document.body.classList.contains('full') && b.getAttribute('aria-pressed')==='true' && b.getAttribute('aria-label')==='Exit full screen' && !vis(fin) && vis(fout) && b.textContent.trim()==='' && fr.paddingTop===fr0.paddingTop && fr.paddingLeft===fr0.paddingLeft && pn.borderTopWidth===fr0.border && pn.boxShadow===fr0.shadow && vis(document.querySelector('.brk.tr')) && vis(document.querySelector('.brk.bl')) && vis(document.querySelector('.rail')),
+      'full: in full screen the corners turn inward and the page keeps its whole frame - padding '+fr.paddingTop+'/'+fr.paddingLeft+', border '+pn.borderTopWidth+', shadow, rail, notch, brackets (Hector 2026-09-17: "dont make the frame smaller")');
     b.click(); T(asked.join()==='in,out', 'full: pressed again it asks to leave');
     fake=null; document.dispatchEvent(new Event('fullscreenchange'));
     T(!document.body.classList.contains('full') && b.getAttribute('aria-label')==='Full screen' && vis(fin) && !vis(fout) && getComputedStyle(document.querySelector('.frame')).paddingTop!=='0px', 'full: and the frame comes back');
