@@ -433,7 +433,7 @@
       if(mode==='hub' || mode==='hubfail') setTimeout(function(){
         // what a phone does: the prices land while the hub is folded away (every width reads 0 then), and he opens it later
         if($('scr-chat').classList.contains('hubview')) $('now').click();   // folded away, whatever state it was in
-        if(window.__lounge && window.__lounge.fitAll) window.__lounge.fitAll(true);
+        if(window.__lounge && window.__lounge.alignAll) window.__lounge.alignAll();
         $('now').click();   // and open
         setTimeout(function(){
           var bad=[];
@@ -677,48 +677,93 @@
       'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
     T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
     if(WIDE){
-      // drag Headlines by its grip onto the left half of the clock
+      // Hector 2026-09-16: "some get stuck each other, or when i tried to move one it moves others below it!" - a drag moves ONLY the
+      // widget in hand: it rides from where it was grabbed, a dashed outline shows the nearest spot where it fits, it lands there
+      function boxOf(t){ var c=/^(\d+) \/ span (\d+)$/.exec(t.style.gridColumn||''), r=/^(\d+) \/ span (\d+)$/.exec(t.style.gridRow||''); return (c&&r) ? {c0:+c[1], c1:+c[1]+ +c[2], r0:+r[1], r1:+r[1]+ +r[2]} : null }
+      function cellsNow(){ var o={}; [].forEach.call($('hub').querySelectorAll('.hb[data-w]'), function(t){ if(vis(t)) o[t.getAttribute('data-w')]=(t.style.gridColumn||'')+' @ '+(t.style.gridRow||'') }); return o }
+      function othersMoved(a, skip){ var b=cellsNow(); return Object.keys(a).filter(function(w){ return w!==skip && b[w]!==undefined && b[w]!==a[w] }) }
+      function clashes(){ var ps=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis), c=''; ps.forEach(function(a,i){ ps.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) c=a.getAttribute('data-w')+' / '+b.getAttribute('data-w') }) }); return c }
+      // the spec, worked out on its own from the drawn grid: the nearest cell (in pixels) where the widget covers nothing
+      function nearestFree(w, wantC, wantR){
+        var me=boxOf(tile(w)); if(!me) return null;
+        var sp=me.c1-me.c0, n=me.r1-me.r0, others=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), function(t){ return vis(t) && t!==tile(w) }).map(boxOf).filter(Boolean);
+        var hcs=getComputedStyle($('hub')), unit=($('hub').clientWidth-(parseFloat(hcs.paddingLeft)||0)-(parseFloat(hcs.paddingRight)||0)-66)/12+6;
+        var bar=/span (\d+)/.exec(($('hub').querySelector('.hub-bar')||{style:{}}).style.gridRow||''), ROW0=bar ? +bar[1]+1 : 1, maxR=wantR, best=null;
+        others.forEach(function(b){ maxR=Math.max(maxR, b.r1) });
+        for(var r=ROW0;r<=maxR;r++) for(var c=1;c<=13-sp;c++){
+          if(others.some(function(b){ return c<b.c1 && b.c0<c+sp && r<b.r1 && b.r0<r+n })) continue;
+          var d=Math.pow((c-wantC)*unit,2)+Math.pow((r-wantR)*10,2); if(!best || d<best.d) best={c:c, r:r, d:d};
+        }
+        return best;
+      }
+      function pd(el, id, x, y){ el.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round(x), clientY:Math.round(y), pointerId:id})) }
+      function pm(id, x, y){ document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(x), clientY:Math.round(y), pointerId:id})) }
+      function pu(id){ document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:id})) }
+      // the hub must not jump when Arrange has just opened and the first widget is dropped (the bar was measured empty: 4 rows, then 3)
+      tap('hub-arrange'); tap('hub-arrange');
+      tile('time').scrollIntoView({block:'center'});
+      var jt0=R(tile('time')).t, jx=tile('time'), jr=R(jx);
+      pd(jx, 21, (jr.l+jr.r)/2, (jr.t+jr.b)/2); pm(21, (jr.l+jr.r)/2+1, (jr.t+jr.b)/2+1); pu(21);
+      T(Math.abs(R(tile('time')).t-jt0)<=1, 'the hub does not jump at the first drop after Arrange opens (clock top '+Math.round(jt0)+' -> '+Math.round(R(tile('time')).t)+')');
+      // drag Headlines by its grip onto the clock
       tile('time').scrollIntoView({block:'center'});   // a drop target has to be on screen, as it is for a hand
-      var g=tile('news').querySelector('.ht-grip'), tr=R(tile('time'));
-      g.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:1, clientY:1, pointerId:1}));
+      var g=tile('news').querySelector('.ht-grip'), gr=R(g), nr0=R(tile('news')), tr=R(tile('time')), tc0=boxOf(tile('time')), c0=cellsNow();
+      pd(g, 1, (gr.l+gr.r)/2, (gr.t+gr.b)/2);
       T(tile('news').classList.contains('dragging'), 'grabbing the grip picks the widget up');
-      document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr.l+6), clientY:Math.round((tr.t+tr.b)/2), pointerId:1}));
-      document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:1}));
-      T(!tile('news').classList.contains('dragging') && (freeHub() ? col('news')===col('time') : ord('news')<ord('time')),
-        'dropping Headlines on the clock lands it there ('+(freeHub() ? 'column '+col('news')+' vs '+col('time') : 'order '+ord('news')+' vs '+ord('time'))+')');
+      if(freeHub()) pm(1, (gr.l+gr.r)/2+(tr.l-nr0.l), (gr.t+gr.b)/2+(tr.t-nr0.t));   // carried so its own corner sits on the clock's corner
+      else pm(1, tr.l+6, (tr.t+tr.b)/2);
+      var ph=$('hub').querySelector('.hb-drop'), nrC=R(tile('news'));
+      if(freeHub()){
+        T(!!ph && vis(ph) && Math.abs(nrC.l-tr.l)<=2 && Math.abs(nrC.t-tr.t)<=2, 'carried: the widget rides in the hand and a dashed outline shows where it will land (news at '+Math.round(nrC.l)+','+Math.round(nrC.t)+' vs clock '+Math.round(tr.l)+','+Math.round(tr.t)+')');
+        T(othersMoved(c0, 'news').length===0, 'carried over the clock: no other widget moves ('+othersMoved(c0, 'news').join(',')+')');
+      }
+      var want=freeHub() ? nearestFree('news', tc0.c0, tc0.r0) : null;
+      pu(1);
+      var nb0=boxOf(tile('news'));
+      T(!tile('news').classList.contains('dragging') && !$('hub').querySelector('.hb-drop') && !tile('news').style.translate
+        && (freeHub() ? (boxOf(tile('time')).c0===tc0.c0 && boxOf(tile('time')).r0===tc0.r0 && !clashes() && !!want && nb0.c0===want.c && nb0.r0===want.r) : ord('news')<ord('time')),
+        freeHub() ? 'dropped on the clock: the clock stays put, Headlines lands in the nearest free spot, nothing overlaps (landed '+nb0.c0+','+nb0.r0+' expected '+(want&&want.c)+','+(want&&want.r)+' '+clashes()+')' : 'dropping Headlines on the clock lands it before the clock (order '+ord('news')+' vs '+ord('time')+')');
       // Hector 2026-09-15: "once i click ARRANGE i can just drag and move each widget"
       tile('time').scrollIntoView({block:'center'});
-      var mk=tile('markets'), mr=R(mk), tr2=R(tile('time'));
-      mk.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((mr.l+mr.r)/2), clientY:Math.round(mr.t+8), pointerId:7}));
+      var mk=tile('markets'), mr=R(mk), tr2=R(tile('time')), c1=cellsNow();
+      pd(mk, 7, (mr.l+mr.r)/2, mr.t+8);
       T(mk.classList.contains('dragging'), 'arranging: pressing the widget itself picks it up, no grip needed');
-      document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tr2.l+6), clientY:Math.round((tr2.t+tr2.b)/2), pointerId:7}));
-      document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:7}));
-      T(!mk.classList.contains('dragging'), 'dragging a widget by its body moves it');
+      pm(7, tr2.l+6, (tr2.t+tr2.b)/2);
+      pu(7);
+      T(!mk.classList.contains('dragging') && !clashes() && (freeHub() ? othersMoved(c1, 'markets').length===0 : true), 'dragging a widget by its body moves it, and only it ('+clashes()+othersMoved(c1, 'markets').join(',')+')');
       // Hector 2026-09-15: "i need to have free range so i can arrange the HUB how i like it"
       if(freeHub()){
         var clockCell=[col('time'), gs(tile('time'),'gridRowStart')];
         var wx=tile('weather'); wx.scrollIntoView({block:'center'});
         var wr=R(wx), hcs=getComputedStyle($('hub')), hpl=parseFloat(hcs.paddingLeft)||0, hcw=($('hub').clientWidth-hpl-(parseFloat(hcs.paddingRight)||0)-66)/12;
-        // the far right of its own row: a drop onto other widgets pushes them down now, so this one lands where nothing is
+        // the far right of its own row, grabbed near its corner so the corner is what lands there
         var fx=Math.round(R($('hub')).l+hpl+10*(hcw+6)+4), fy=Math.round(wr.t+5);
-        wx.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((wr.l+wr.r)/2), clientY:Math.round(wr.t+8), pointerId:11}));
-        document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:fx, clientY:fy, pointerId:11}));
-        document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:11}));
+        pd(wx, 11, wr.l+8, wr.t+8); pm(11, fx+8, fy+8); pu(11);
         T(col('weather')>=7, 'free range: a widget dropped on the right side stays on the right (column '+col('weather')+')');
         T(col('time')===clockCell[0] && gs(tile('time'),'gridRowStart')===clockCell[1],
           'free range: nothing reflows - the clock stayed put when the weather moved away');
         var svc=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
         T(!!svc.col && typeof svc.col.weather==='number' && !!svc.row && typeof svc.row.weather==='number',
           'free range: the cell is remembered (col '+(svc.col&&svc.col.weather)+', row '+(svc.row&&svc.row.weather)+')');
-        // Hector 2026-09-16: "why always i open the HUB everything it's unorganized?" - a drop landed ON the widgets there, and the overlap was saved
-        var clashes=function(){ var ps=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis), c=''; ps.forEach(function(a,i){ ps.slice(i+1).forEach(function(b){ var ra=R(a), rb=R(b); if(ra.l<rb.r-1 && ra.r>rb.l+1 && ra.t<rb.b-1 && ra.b>rb.t+1) c=a.getAttribute('data-w')+' / '+b.getAttribute('data-w') }) }); return c };
+        // Hector 2026-09-16: grabbing a widget by its middle must not jump it (the drag anchored its corner to the pointer: Weather jumped 119px and eleven widgets moved)
+        var st=tile('stocks'); st.scrollIntoView({block:'center'}); var sr=R(st), c2=cellsNow(), sb0=boxOf(st);
+        pd(st, 13, (sr.l+sr.r)/2, (sr.t+sr.b)/2); pm(13, (sr.l+sr.r)/2+1, (sr.t+sr.b)/2+1);
+        var sr1=R(st), ph2=$('hub').querySelector('.hb-drop'), pb=ph2 && R(ph2);
+        T(Math.abs(sr1.l-sr.l)<=1.5 && Math.abs(sr1.t-sr.t)<=1.5 && othersMoved(c2, 'stocks').length===0 && !!pb && Math.abs(pb.l-sr.l)<=2 && Math.abs(pb.t-sr.t)<=2,
+          'grabbed by its middle and moved a pixel: the widget moves a pixel, the outline is on its own spot, nothing else moves ('+Math.round(sr1.l-sr.l)+','+Math.round(sr1.t-sr.t)+' / '+othersMoved(c2, 'stocks').join(',')+')');
+        pu(13);
+        var sb1=boxOf(st);
+        T(sb1.c0===sb0.c0 && sb1.r0===sb0.r0 && othersMoved(c2, 'stocks').length===0 && !clashes(), 'let go there, it is back in its own cell and nothing moved');
+        // held over another widget: that one never moves; let go, it lands beside it in the nearest free spot
         tile('time').scrollIntoView({block:'center'});
-        var ib=tile('inbox'), ibr=R(ib), tmr0=R(tile('time'));
-        ib.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round((ibr.l+ibr.r)/2), clientY:Math.round(ibr.t+8), pointerId:12}));
-        document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(tmr0.l+6), clientY:Math.round(tmr0.t+6), pointerId:12}));
-        document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:12}));
-        var ibr2=R(ib), tmr2=R(tile('time')), cl=clashes();
-        T(!cl && Math.abs(ibr2.t-tmr0.t)<=11 && tmr2.t>=ibr2.b-1, 'a widget dropped on another takes the spot, and the one it covered moves down: no overlap ('+(cl||'inbox top '+Math.round(ibr2.t)+', clock top '+Math.round(tmr2.t))+')');
+        var ib=tile('inbox'), ibr=R(ib), tmr0=R(tile('time')), tb0=boxOf(tile('time')), c3=cellsNow();
+        pd(ib, 12, ibr.l+8, ibr.t+8); pm(12, tmr0.l+6+8, tmr0.t+6+8);
+        T(othersMoved(c3, 'inbox').length===0 && Math.abs(R(tile('time')).t-tmr0.t)<=1, 'inbox held over the clock: the clock and everything else stay where they are ('+othersMoved(c3, 'inbox').join(',')+')');
+        var want2=nearestFree('inbox', tb0.c0, tb0.r0);
+        pu(12);
+        var ib2=boxOf(ib), tb1=boxOf(tile('time')), cl=clashes();
+        T(!cl && tb1.c0===tb0.c0 && tb1.r0===tb0.r0 && !!want2 && ib2.c0===want2.c && ib2.r0===want2.r && othersMoved(c3, 'inbox').length===0,
+          'let go on the clock: the clock stays, the inbox lands in the nearest free spot, no overlap ('+(cl||'inbox '+ib2.c0+','+ib2.r0+' expected '+(want2&&want2.c)+','+(want2&&want2.r))+')');
         var E1=window.__lounge, hd=E1.hub;
         if(typeof E1.hubSettle!=='function') T(false, 'a layout saved with tiles on top of each other opens untangled (no settle)');
         else {
@@ -753,8 +798,10 @@
       document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:3}));
       var r1=R(tvT), ts=R($('tv-screen'));
       T(!document.body.classList.contains('hub-resizing'), 'let go: the resize flag clears (Arrange itself keeps players click-proof until Done)');
-      T((r1.r-r1.l)<(r0.r-r0.l)*.75 && Math.abs((r1.b-r1.t)-((r0.b-r0.t)+120))<=3 && !tvT.classList.contains('resizing'),
-        'dragging the corner makes the TV narrower and taller ('+Math.round(r0.r-r0.l)+'x'+Math.round(r0.b-r0.t)+' -> '+Math.round(r1.r-r1.l)+'x'+Math.round(r1.b-r1.t)+')');
+      // +120, unless a widget sits under it within that reach: then it stops at that widget's edge (the corner never pushes, 2026-09-17)
+      var stopper=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), function(x){ if(x===tvT || !vis(x)) return false; var xr=R(x); return xr.t>=r1.b-1 && xr.t<=r1.b+12 && xr.l<r1.r-2 && xr.r>r1.l+2 })[0];
+      T((r1.r-r1.l)<(r0.r-r0.l)*.75 && (Math.abs((r1.b-r1.t)-((r0.b-r0.t)+120))<=3 || (!!stopper && (r1.b-r1.t)>(r0.b-r0.t)+20)) && !tvT.classList.contains('resizing'),
+        'dragging the corner makes the TV narrower and taller ('+Math.round(r0.r-r0.l)+'x'+Math.round(r0.b-r0.t)+' -> '+Math.round(r1.r-r1.l)+'x'+Math.round(r1.b-r1.t)+(stopper ? ', stopped at '+stopper.getAttribute('data-w') : '')+')');
       T(ts.b<=r1.b+1 && ts.b-ts.t>150, 'the player grows to fill the taller window ('+Math.round(ts.b-ts.t)+'px)');
       T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/12-16 && (r1.r-r1.l)<(R($('hub')).r-R($('hub')).l)/4, 'a drag snaps to twelfths, down to a single one ('+Math.round(r1.r-r1.l)+'px)');
       var sv2=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
@@ -777,22 +824,36 @@
       T(nT.classList.contains('shut') && Math.abs((R(nT).b-R(nT).t)-(n1.b-n1.t))<=1, 'folded again, it is back to the short folded height');
       $('news-h').click();   // leave it open, as the checks above left it
       if(freeHub()){
+        // Hector 2026-09-16: "it moves others below it" - a corner drag stops at a neighbour, which never moves and is marked while pressed against
+        var cands=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis), pair=null;
+        cands.forEach(function(a){ if(pair) return; var ra=R(a); var under=cands.filter(function(b){ var rb=R(b); return b!==a && rb.t>=ra.b-1 && rb.t<ra.b+80 && rb.l<ra.r-4 && rb.r>ra.l+4 }).sort(function(x,y){ return R(x).t-R(y).t })[0]; if(under) pair=[a, under] });
+        if(!pair) T(false, 'a widget with a neighbour under it, for the corner-drag check (none found)');
+        else {
+          var top=pair[0], low=pair[1]; top.scrollIntoView({block:'center'}); var tr0=R(top), lr0=R(low), cA=cellsNow(), rzT=top.querySelector('.ht-resize');
+          pd(rzT, 5, tr0.r-4, tr0.b-4); pm(5, tr0.r-4, tr0.b-4+300);
+          var trH=R(top), lrH=R(low);
+          T(low.classList.contains('blocks') && Math.abs(lrH.t-lr0.t)<=1 && trH.b<=lrH.t && trH.b>=lrH.t-12 && othersMoved(cA, top.getAttribute('data-w')).length===0,
+            'the corner dragged 300px into the widget below stops at its edge; that widget is marked and does not move ('+top.getAttribute('data-w')+' bottom '+Math.round(trH.b)+' vs '+low.getAttribute('data-w')+' top '+Math.round(lrH.t)+', was '+Math.round(lr0.t)+', marked '+low.classList.contains('blocks')+')');
+          pu(5);
+          T(!low.classList.contains('blocks') && Math.abs(R(low).t-lr0.t)<=1 && !clashes(), 'let go: the mark clears, the neighbour is still where it was, no overlap');
+        }
         // the corner of a tile in the rightmost column takes the press (the scrollbar sat on it once, measured in WebKit)
         var rightT=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).sort(function(a,b){ return R(b).r-R(a).r })[0];
         if(rightT){ rightT.scrollIntoView({block:'center'}); var rhh=R(rightT.querySelector('.ht-resize')), at=document.elementFromPoint((rhh.l+rhh.r)/2, (rhh.t+rhh.b)/2);
           T(!!at && !!at.closest && at.closest('.ht-resize')===rightT.querySelector('.ht-resize'), 'the red corner of a tile in the rightmost column takes the press ('+rightT.getAttribute('data-w')+')') }
-        // Hector 2026-09-16: "now it just goes smaller but it covers the data ... WHAT PART OF FREE RANGE" - a small tile scales what it holds
-        var E2=window.__lounge, stT=tile('stocks'), sp0=E2.hub.span.stocks;
+        // Hector 2026-09-17: "when i size down a widget the text scales down, and i dont want that! ... only the widget size down, not its content"
+        var E2=window.__lounge, stT=tile('stocks'), sp0=E2.hub.span.stocks, fs0=getComputedStyle(stT.querySelector('.mk-n')).fontSize, fh0=getComputedStyle(stT.querySelector('.hb-h')).fontSize;
         stT.scrollIntoView({block:'center'});
         E2.hub.span.stocks=2; E2.hub.h.stocks=90; E2.applyHub();
-        var sr=R(stT), rowsSt=[].slice.call(stT.querySelectorAll('.mk')), outR=rowsSt.filter(function(li){ var r=R(li); return r.b>sr.b+1 || r.r>sr.r+1 || r.t<sr.t-1 }).length,
-            cutN=[].filter.call(stT.querySelectorAll('.mk-n'), function(n){ return n.scrollWidth>n.clientWidth+1 }).length, fitV=parseFloat(stT.style.getPropertyValue('--fit'))||1;
-        T(Math.abs((sr.b-sr.t)-90)<=1 && rowsSt.length===10 && !outR && !cutN && fitV<1,
-          'a small tile keeps the size it was given and still shows every row: its content scales down ('+Math.round(sr.r-sr.l)+'x'+Math.round(sr.b-sr.t)+', fit '+fitV+', '+outR+' rows outside, '+cutN+' names cut)');
+        var sr=R(stT), rowsSt=[].slice.call(stT.querySelectorAll('.mk')), fs1=getComputedStyle(stT.querySelector('.mk-n')).fontSize, fh1=getComputedStyle(stT.querySelector('.hb-h')).fontSize;
+        var outside=rowsSt.filter(function(li){ var r=R(li); return r.b>sr.b+1 }).length, painted=rowsSt.filter(function(li){ var r=R(li); if(r.b<=sr.b+1) return false; var at=document.elementFromPoint((r.l+r.r)/2, (r.t+r.b)/2); return !!at && li.contains(at) }).length;
+        T(Math.abs((sr.b-sr.t)-90)<=1 && fs1===fs0 && fh1===fh0 && getComputedStyle(stT).scale==='none' && !stT.style.getPropertyValue('--fit'),
+          'a small tile keeps the size it was given and its type stays the size it was: nothing scales ('+Math.round(sr.r-sr.l)+'x'+Math.round(sr.b-sr.t)+', rows '+fs0+' -> '+fs1+', header '+fh0+' -> '+fh1+', scale '+getComputedStyle(stT).scale+')');
+        T(rowsSt.length===10 && outside>0 && painted===0, 'the rows that do not fit are clipped by the tile, not drawn over what is below ('+outside+' past the bottom, '+painted+' painted)');
         var rzr=R(stT.querySelector('.ht-resize'));
-        T(Math.abs(rzr.r-sr.r)<=2 && Math.abs(rzr.b-sr.b)<=2 && Math.abs((rzr.r-rzr.l)-20)<=1, 'a scaled tile keeps its red corner full size, in the corner ('+Math.round(rzr.r-rzr.l)+'px)');
+        T(Math.abs(rzr.r-sr.r)<=2 && Math.abs(rzr.b-sr.b)<=2 && Math.abs((rzr.r-rzr.l)-20)<=1, 'the red corner stays full size, in the corner ('+Math.round(rzr.r-rzr.l)+'px)');
         E2.hub.span.stocks=sp0; E2.hub.h.stocks=160; E2.applyHub();
-        T(!stT.classList.contains('fit') || (parseFloat(stT.style.getPropertyValue('--fit'))||1)>fitV, 'given its room back, the content grows back');
+        T(getComputedStyle(stT.querySelector('.mk-n')).fontSize===fs0, 'given its room back, the type is still the same size');
       }
     }
     $('hub-reset').click();

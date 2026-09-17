@@ -456,7 +456,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .ht:hover{border-color:var(--rule-hot)}
 .ht-grip{cursor:grab;touch-action:none}
 .ht-size{display:none}   /* one column on a phone: nothing to resize */
-.hb.dragging{opacity:.5}
+.hb.dragging{opacity:.85;z-index:6}   /* carried above the others, from where it was grabbed */
+.hb-drop{box-sizing:border-box;border:1px dashed var(--red);background:rgba(214,40,40,.07);margin-bottom:var(--tg);pointer-events:none}   /* where it will land: the nearest spot where it fits */
+.hb.blocks{outline:1px solid var(--red)!important;outline-offset:-1px}   /* in the way of a corner drag: the corner stops at its edge */
 /* Hector 2026-09-15: "once i click ARRANGE i can just drag and move each widget" - the whole tile is the handle while
    arranging, so a finger has to drag it instead of scrolling the hub, and a player must not swallow the press */
 .hub.arranging .hb{cursor:grab;touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* a finger scrolls; holding still picks the widget up (Hector 2026-09-16: "when i click arrange i cant scroll down") */
@@ -483,18 +485,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 .hb-inbox.sized .ib-list,.hb-news.sized .h-list{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .hb-tv.sized .tv-screen,.hb-map.sized .map-box{flex:1 1 auto;aspect-ratio:auto;min-height:36px}
 .hub .hb.sized.shut{display:block}
-/* FIT (Hector 2026-09-16: "it just goes smaller but it covers the data ... WHAT PART OF FREE RANGE"): a tile smaller than what it
-   holds is laid out bigger and SCALED down into its cell (fitTile works the factor out), so nothing is cut off. A real scale, not
-   CSS zoom: WebKit never draws zoomed text under 9px, so zoomed type stayed big and pushed the names out (measured). The frame, the
-   corner and the Arrange tools keep their size. */
-.hub .hb.fit{width:calc(100% / var(--fit));height:calc(var(--th) / var(--fit))!important;justify-self:start;align-self:start;scale:var(--fit);transform-origin:0 0;border-width:calc(1px / var(--fit))}
-.hub .hb.fit>.ht-resize{scale:calc(1 / var(--fit));transform-origin:100% 100%}
-.hub .hb.fit>.hb-tools{scale:calc(1 / var(--fit));transform-origin:100% 0}
-.hub .hb.fitting{height:auto!important;align-self:start}
-.hub .hb.fitting .ib-list,.hub .hb.fitting .h-list,.hub .hb.fitting .iss-list{flex:none!important;overflow:visible!important}
-.hub .hb.fitting .tv-screen,.hub .hb.fitting .map-box{flex:none!important;height:36px!important;min-height:0!important}
-.hub .hb.fitting .cams-grid{flex:none!important;grid-auto-rows:auto!important}
-.hub .hb.fitting .cam-screen{flex:none!important;height:24px!important;min-height:0!important}
+/* A SMALL TILE KEEPS ITS TYPE (Hector 2026-09-17: "when i size down a widget the text scales down, and i dont want that! i want to keep
+   the size i had, and only the widget size down, not its content"): what does not fit is clipped by the tile (lists scroll inside);
+   nothing is scaled. The content-scaling FIT of 2026-09-16 is gone. */
 @container tm (max-width:300px){ .hub .hb-time.sized .sky{display:block} }   /* a small clock keeps its sun arc: the fit shrinks both */
 /* the TV on air: its frame and the YouTube button light red (Hector) */
 .hb-tv.playing .tv-screen{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(224,27,27,.4)}
@@ -1533,7 +1526,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   }
   function hubView(on){
     var c=$('scr-chat'); c.classList.toggle('hubview', !!on); document.body.classList.toggle('hubbing', !!on);
-    if(on) setTimeout(function(){ fitAll(true) }, 0);   // the widgets are drawn now: measure what could not be measured folded away
+    if(on) setTimeout(function(){ alignAll() }, 0);   // the widgets are drawn now: measure what could not be measured folded away
     $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
     if(on) startMap(); else toBottom();
   }
@@ -1675,15 +1668,15 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var rz=document.createElement('div'); rz.className='ht-resize'; rz.title='Drag to resize '+x.name+'. Double-click to fit its height.';
       t.appendChild(rz);
     });
-    // what a tile shows changed (news landed, a price moved, a list folded): fit it again
+    // what a stocks or fuel tile shows changed (a price moved, a row landed): its columns are measured again
     if(window.MutationObserver) try{ new MutationObserver(function(recs){
       recs.forEach(function(r){
         var n=r.target.nodeType===1 ? r.target : r.target.parentNode, t=(n && n.closest) ? n.closest('.hb[data-w]') : null;
         if(!t) return;
         if(r.type==='childList' && r.target===t && [].slice.call(r.addedNodes).concat([].slice.call(r.removedNodes)).every(function(x){ return x.nodeType===1 && x.classList.contains('hb-scorch') })) return;   // a scorch mark from the perch fight
-        if(fitDirty.indexOf(t)<0) fitDirty.push(t);
+        if(alignDirty.indexOf(t)<0) alignDirty.push(t);
       });
-      if(fitDirty.length && !fitTimer) fitTimer=setTimeout(function(){ fitTimer=0; var d=fitDirty; fitDirty=[]; d.forEach(function(t){ fitTile(t, true) }) }, 60);
+      if(alignDirty.length && !alignTimer) alignTimer=setTimeout(function(){ alignTimer=0; var d=alignDirty; alignDirty=[]; d.forEach(function(t){ alignRows(t) }) }, 60);
     }).observe($('hub'), {childList:true, subtree:true, characterData:true, attributes:true, attributeFilter:['hidden']}) }catch(e){}
     applyHub();
   }
@@ -1696,8 +1689,10 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     return H ? Math.max(1, Math.ceil((H+hubGap())/ROWU)) : 1;
   }
   /* NO TILE ON TOP OF ANOTHER (Hector 2026-09-16: "why always i open the HUB everything it's unorganized?" - a drop or a taller tile
-     landed ON its neighbours, measured in WebKit, and the overlap was saved and came back at every open). The tile being moved,
-     resized or unfolded keeps its spot; anything it lands on moves straight down, just far enough. Nothing moves UP: his gaps stay. */
+     landed ON its neighbours, measured in WebKit, and the overlap was saved and came back at every open). A tile that unfolds, comes
+     back with "+", widens by its button or steps by its arrows keeps its spot; anything it lands on moves straight down, just far
+     enough, and a saved layout with tiles on top of each other opens untangled. Nothing moves UP: his gaps stay. A DRAG never
+     calls this: see hubFreeNear. */
   function hubSettle(fixed){
     if(!hub) return false;
     var list=hub.order.filter(function(w){ return shown(w) && hub.col[w] && hub.row[w]!=null });
@@ -1715,6 +1710,39 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       placed.push({c0:c0, c1:c1, r0:r, r1:r+n});
     });
     return moved;
+  }
+  /* ONLY THE WIDGET IN HIS HAND MOVES (Hector 2026-09-16: "some get stuck each other, or when i tried to move one it moves others
+     below it!"). Measured on the previous page at his window: grabbing Weather by its middle and moving the pointer ONE pixel jumped
+     it 119px right (the drag anchored the tile's corner to the pointer) and moved eleven other widgets (every move pushed whatever it
+     covered down the grid, live). Now the widget rides in his hand from where he took it, a dashed outline shows the nearest spot
+     where it fits without covering anything, it lands there when he lets go, and no other widget moves. A corner drag stops at a
+     neighbour instead of pushing it. */
+  function hubBoxes(except){   // every placed widget on screen as the cells it fills
+    return hub.order.filter(function(w){ return w!==except && shown(w) && hub.col[w] && hub.row[w]!=null }).map(function(w){
+      var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN)), c0=Math.max(1, Math.min(13-sp, hub.col[w]));
+      return {w:w, c0:c0, c1:c0+sp, r0:hub.row[w], r1:hub.row[w]+tileRows(w)};
+    });
+  }
+  function hubHit(boxes, c0, c1, r0, r1){   // the widgets a box would cover
+    return boxes.filter(function(b){ return c0<b.c1 && b.c0<c1 && r0<b.r1 && b.r0<r1 }).map(function(b){ return b.w });
+  }
+  function hubColUnit(){ var host=$('hub'), cs=getComputedStyle(host); return (host.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0)-11*hubGap())/12+hubGap() }
+  function hubFreeNear(w, col, row){   // the nearest cell (in pixels) where the widget fits without covering another; below everything is always free
+    var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[w]||MIN_SPAN)), n=tileRows(w), boxes=hubBoxes(w), unit=hubColUnit(), best=null, maxR=row;
+    boxes.forEach(function(b){ maxR=Math.max(maxR, b.r1) });
+    col=Math.max(1, Math.min(13-sp, col)); row=Math.max(0, row);
+    for(var r=0;r<=maxR;r++) for(var c=1;c<=13-sp;c++){
+      if(hubHit(boxes, c, c+sp, r, r+n).length) continue;
+      var d=Math.pow((c-col)*unit, 2)+Math.pow((r-row)*ROWU, 2);
+      if(!best || d<best.d) best={col:c, row:r, d:d};
+    }
+    return best || {col:col, row:maxR};
+  }
+  var blocked=[];
+  function blockMark(ws){   // the neighbours a corner drag is pressing against
+    blocked.forEach(function(w){ var t=tile(w); if(t && ws.indexOf(w)<0) t.classList.remove('blocks') });
+    ws.forEach(function(w){ var t=tile(w); if(t) t.classList.add('blocks') });
+    blocked=ws;
   }
   // what he arranged, read top-to-bottom then left-to-right: how a phone (one column) stacks the same hub
   function visualOrder(){
@@ -1783,40 +1811,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     return {col:Math.max(1, Math.min(13-span, Math.round((x-hr.left-padL)/(colW+gap))+1)),
             row:Math.max(0, Math.round((y-hr.top+host.scrollTop-top)/ROWU))};
   }
-  /* FIT (Hector 2026-09-16: "now it just goes smaller but it covers the data ... WHAT PART OF FREE RANGE YOU DID NOT GET"): a tile
-     keeps exactly the size he gives it and what is inside scales down until all of it shows - the largest factor that fits, never
-     above 1 (a roomy tile keeps the normal type), never below FIT_MIN. Lists stop scrolling while measured: every row counts.
-     The map is the one tile never scaled (MapLibre reads the pointer in unscaled pixels); its map just takes what is left. */
-  var FIT_MIN=.3, fitDirty=[], fitTimer=0;
-  function fitCut(t){
-    if(t.scrollWidth>t.clientWidth+1) return true;
-    var c=t.querySelectorAll('.mk-n,.sc-m');   // a name or a game state cut to "…" is data covered too
-    for(var i=0;i<c.length;i++) if(c[i].offsetParent && c[i].scrollWidth>c[i].clientWidth+1) return true;
-    return false;
-  }
-  function fitSet(t, z, H){
-    if(z>=1){ if(t.classList.contains('fit')){ t.classList.remove('fit'); t.style.removeProperty('--fit'); t.style.removeProperty('--th') } }
-    else { t.style.setProperty('--fit', String(z)); t.style.setProperty('--th', H+'px'); t.classList.add('fit') }
-  }
-  function fitTile(t, fresh){
-    if(!t || !hub) return;
-    var w=t.getAttribute('data-w'), sized=t.classList.contains('sized'), H=tileH(w),
-        prev=t.classList.contains('fit') ? (parseFloat(t.style.getPropertyValue('--fit'))||1) : 1;
-    if(fresh || !sized || !H || w==='map'){ fitSet(t, 1); alignRows(t) }   // measured at full size
-    if(!sized || !H || w==='map'){ t._fit=''; return }
-    var key=H+'x'+Math.round(t.getBoundingClientRect().width);   // the cell: the height he gave it, the width of its columns
-    if(!fresh && t._fit===key) return;
-    t.classList.add('fitting');
-    var fits=function(z){ fitSet(t, z, H); return t.offsetHeight*z<=H+1 && !fitCut(t) }, z;
-    if(fits(1)) z=1;
-    else if(prev<1 && prev>FIT_MIN && fits(prev) && !fits(Math.min(1, prev+.02))) z=prev;   // unchanged since the last fit: two layouts, not nine
-    else if(!fits(FIT_MIN)) z=FIT_MIN;
-    else { var lo=FIT_MIN, hi=1; for(var i=0;i<7;i++){ var m=(lo+hi)/2; if(fits(m)) lo=m; else hi=m } z=Math.floor(lo*100)/100 }
-    t.classList.remove('fitting');
-    fitSet(t, z, H);
-    t._fit=key;
-  }
-  function fitAll(fresh){ if(hub) hub.order.forEach(function(w){ fitTile(tile(w), fresh) }) }
+  // the stock and fuel columns are measured again whenever a tile is drawn, resized or filled (a small tile keeps its type: nothing scales)
+  function alignAll(){ if(hub) hub.order.forEach(function(w){ var t=tile(w); if(t) alignRows(t) }) }
+  var alignDirty=[], alignTimer=0;
   // stocks and fuel (Hector 2026-09-16: "all the space wasted between the name and price"): one name column as wide as the longest name, one price column
   function alignRows(t){
     if(!t.matches || !t.matches('.hb-stocks,.hb-fuel')) return;
@@ -1840,6 +1837,15 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(!hub) return;
     var cols=gridCols(), free=cols>=12, bar=$('hub').querySelector('.hub-bar'), ROW0=1, gap=hubGap();
     $('hub').classList.toggle('arranging', arranging);   // first: the bar only exists on the wide grid while arranging
+    var add=$('hub-add'); add.textContent='';
+    hub.hidden.forEach(function(w){
+      var b=document.createElement('button'); b.type='button'; b.className='hb-btn'; b.setAttribute('data-show', w); b.textContent='+ '+wname(w); add.appendChild(b);
+    });
+    add.hidden=!arranging || !hub.hidden.length;
+    $('hub-reset').hidden=!arranging;
+    $('hub-tidy').hidden=!arranging;
+    // the bar is measured with its buttons already showing: measured empty the first time after Arrange, it counted 4 rows,
+    // then 3 at the next change, and the whole hub jumped up 10px at his first drop (measured 2026-09-16)
     if(bar) bar.style.gridRow='';
     if(free && bar && getComputedStyle(bar).display!=='none'){
       var brows=Math.max(1, Math.ceil(((bar.getBoundingClientRect().height||34)+gap)/ROWU));
@@ -1874,13 +1880,6 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     });
     $('hub-arrange').setAttribute('aria-pressed', arranging ? 'true' : 'false');
     $('hub-arrange').querySelector('.lbl').textContent=arranging ? 'Done' : 'Arrange';
-    var add=$('hub-add'); add.textContent='';
-    hub.hidden.forEach(function(w){
-      var b=document.createElement('button'); b.type='button'; b.className='hb-btn'; b.setAttribute('data-show', w); b.textContent='+ '+wname(w); add.appendChild(b);
-    });
-    add.hidden=!arranging || !hub.hidden.length;
-    $('hub-reset').hidden=!arranging;
-    $('hub-tidy').hidden=!arranging;
     // a widget with no cell yet (first run, Reset, or one added later) gets today's layout frozen as its starting point
     if(gridCols()>=12 && !freezing && hub.order.some(function(w){ return shown(w) && (!hub.col[w] || hub.row[w]==null || !tileH(w)) })){
       freezing=true;
@@ -1888,7 +1887,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     }
     if(hub.shut.tv || hub.hidden.indexOf('tv')>-1) tvStop();   // a folded or hidden TV does not keep playing out of sight
     if(hub.shut.cams || hub.hidden.indexOf('cams')>-1) camsStop();
-    fitAll(false);   // a tile whose size changed fits its content again
+    alignAll();   // a stocks or fuel tile whose width changed measures its columns again
     startMap();   // a map that was unfolded, shown or resized redraws to its new box
     issStart();   // an ISS tile brought back works out its passes
   }
@@ -2816,7 +2815,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var t=rz.parentNode;   // a folded tile resizes too (Hector 2026-09-16: "size down the widgets when compacted ... fill up small spaces")
       var r=t.getBoundingClientRect(), cs=getComputedStyle($('hub')), tr=(cs.gridTemplateColumns || '').split(' ').filter(Boolean);
       e.preventDefault();
-      resizing={w:t.getAttribute('data-w'), el:t, x0:e.clientX, y0:e.clientY, w0:r.width, h0:r.height, cols:gridCols(), rows0:Object.assign({}, hub.row),
+      resizing={w:t.getAttribute('data-w'), el:t, x0:e.clientX, y0:e.clientY, w0:r.width, h0:r.height, cols:gridCols(),
         colw:parseFloat(tr[0]) || r.width, gap:parseFloat(cs.columnGap) || 14};
       t.classList.add('resizing'); document.body.classList.add('hub-resizing');
       // Hector 2026-09-16: "it gets to a certain size and doesn't go smaller" - shrinking drags the corner INTO the tile, over its
@@ -2832,32 +2831,53 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     // scrolls the hub; holding it still for HOLD_MS picks the widget up (the grip still picks up at once). A mouse picks up at once.
     if(e.pointerType==='touch' && !e.target.closest('.ht-grip')){
       holdCancel();
-      hold={el:tt, pid:e.pointerId, x:e.clientX, y:e.clientY, timer:setTimeout(function(){ var h=hold; hold=null; if(h && h.el.isConnected && arranging) dragStart(h.el, h.pid) }, HOLD_MS)};
+      hold={el:tt, pid:e.pointerId, x:e.clientX, y:e.clientY, timer:setTimeout(function(){ var h=hold; hold=null; if(h && h.el.isConnected && arranging) dragStart(h.el, h.pid, h.x, h.y) }, HOLD_MS)};
       return;
     }
-    e.preventDefault(); dragStart(tt, e.pointerId);
+    e.preventDefault(); dragStart(tt, e.pointerId, e.clientX, e.clientY);
   });
   var hold=null, HOLD_MS=380;
   function holdCancel(){ if(hold){ clearTimeout(hold.timer); hold=null } }
-  function dragStart(tt, pid){
-    drag={w:tt.getAttribute('data-w'), el:tt, last:'', rows0:Object.assign({}, hub.row)}; tt.classList.add('dragging'); document.body.classList.add('hub-dragging');
+  function dragStart(tt, pid, x, y){
+    var r=tt.getBoundingClientRect(), w=tt.getAttribute('data-w');
+    drag={w:w, el:tt, last:'', x0:x, y0:y, st0:$('hub').scrollTop, left0:r.left, top0:r.top, to:null, ph:null};
+    tt.classList.add('dragging'); document.body.classList.add('hub-dragging');
+    if(gridCols()>=12 && hub.col[w] && hub.row[w]!=null){   // the dashed outline where it will land: its own spot until it moves
+      var ph=document.createElement('div'); ph.className='hb-drop'; ph.setAttribute('aria-hidden', 'true'); $('hub').appendChild(ph);
+      drag.ph=ph; dropAt({col:hub.col[w], row:hub.row[w]});
+    }
     try{ tt.setPointerCapture(pid) }catch(err){}
     try{ if(navigator.vibrate) navigator.vibrate(12) }catch(err){}
+  }
+  function dropAt(cell){   // the outline moves to the cell the widget would land in
+    var d=drag; if(!d || !d.ph) return;
+    d.to=cell;
+    var sp=Math.max(MIN_SPAN, Math.min(12, hub.span[d.w]||MIN_SPAN)), bar=$('hub').querySelector('.hub-bar'), m=bar ? /span (\d+)/.exec(bar.style.gridRow||'') : null, ROW0=m ? +m[1]+1 : 1;
+    d.ph.style.gridColumn=cell.col+' / span '+sp; d.ph.style.gridRow=(ROW0+cell.row)+' / span '+tileRows(d.w);
+    var H=tileH(d.w); d.ph.style.height=H ? H+'px' : '';
   }
   // once a widget is picked up, the finger moves the widget, not the page
   $('hub').addEventListener('touchmove', function(e){ if(drag) e.preventDefault() }, {passive:false});
   document.addEventListener('pointermove', function(e){
     if(hold && e.pointerId===hold.pid && (Math.abs(e.clientX-hold.x)>10 || Math.abs(e.clientY-hold.y)>10)) holdCancel();   // it was a scroll
     if(resizing){
-      var z=resizing, x=winfo(z.w), nw=z.w0+(e.clientX-z.x0);
+      var z=resizing, x=winfo(z.w), nw=z.w0+(e.clientX-z.x0), sp=hub.span[z.w]||MIN_SPAN, floor=hub.shut[z.w] ? MIN_HS : x.minH;
+      var nh=Math.max(floor, Math.round(Math.min(MAX_H, z.h0+(e.clientY-z.y0))));
       if(z.cols>1){
         var eff=Math.max(1, Math.min(z.cols, Math.round((nw+z.gap)/(z.colw+z.gap))));
-        hub.span[z.w]=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // down to a single twelfth (Hector 2026-09-16: "however i want")
-        hub.col[z.w]=Math.min(hub.col[z.w]||1, 13-hub.span[z.w]);
+        sp=Math.max(MIN_SPAN, Math.min(12, Math.round(eff*12/z.cols)));   // down to a single twelfth (Hector 2026-09-16: "however i want")
       }
-      var nh=Math.round(Math.min(MAX_H, z.h0+(e.clientY-z.y0)));
-      if(hub.shut[z.w]) hub.hs[z.w]=Math.max(MIN_HS, nh); else hub.h[z.w]=Math.max(x.minH, nh);   // the folded and the open height are each their own
-      if(z.cols>=12){ var zr=hub.row[z.w]; hub.row=Object.assign({}, z.rows0); hub.row[z.w]=zr; hubSettle(z.w) }   // growing pushes what it reaches down; shrinking gives it back
+      if(z.cols>=12 && hub.row[z.w]!=null){   // the corner stops at a neighbour; the neighbour never moves (Hector 2026-09-16: "it moves others below it")
+        var boxes=hubBoxes(z.w), r0=hub.row[z.w], rowsNow=tileRows(z.w), wantSp=sp, wantRows=Math.max(1, Math.ceil((nh+hubGap())/ROWU)), c0, rows=wantRows;
+        for(; sp>MIN_SPAN; sp--){ c0=Math.max(1, Math.min(13-sp, hub.col[z.w]||1)); if(!hubHit(boxes, c0, c0+sp, r0, r0+rowsNow).length) break }   // the widest that fits at today's height
+        c0=Math.max(1, Math.min(13-sp, hub.col[z.w]||1));
+        for(; rows>1; rows--) if(!hubHit(boxes, c0, c0+sp, r0, r0+rows).length) break;   // the tallest that fits at that width
+        var maxH=rows*ROWU-hubGap();
+        if(nh>maxH) nh=maxH>=floor ? maxH : (tileH(z.w)||floor);   // a neighbour closer than the floor: the height stays as it is
+        blockMark(hubHit(boxes, c0, c0+wantSp, r0, r0+wantRows));
+      }
+      hub.span[z.w]=sp; hub.col[z.w]=Math.min(hub.col[z.w]||1, 13-sp);
+      if(hub.shut[z.w]) hub.hs[z.w]=nh; else hub.h[z.w]=nh;   // the folded and the open height are each their own
       applyHub();
       return;
     }
@@ -2866,9 +2886,11 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var hr=$('hub').getBoundingClientRect();
     if(e.clientY<hr.top+48) $('hub').scrollTop-=24; else if(e.clientY>hr.bottom-48) $('hub').scrollTop+=24;
     if(gridCols()>=12){
-      var cell=hubCellAt(e.clientX, e.clientY, drag.w); if(!cell) return;
+      var dx=e.clientX-drag.x0, dy=e.clientY-drag.y0;
+      drag.el.style.translate=dx+'px '+(dy+$('hub').scrollTop-drag.st0)+'px';   // the widget rides in his hand, from where he took it
+      var cell=hubCellAt(drag.left0+dx, drag.top0+dy, drag.w); if(!cell) return;   // the cell under the widget's own corner, not under the pointer
       var ck='c'+cell.col+'r'+cell.row; if(ck===drag.last) return;
-      drag.last=ck; hub.row=Object.assign({}, drag.rows0); hub.col[drag.w]=cell.col; hub.row[drag.w]=cell.row; hubSettle(drag.w); applyHub();
+      drag.last=ck; dropAt(hubFreeNear(drag.w, cell.col, cell.row));
       return;
     }
     var over=document.elementFromPoint(e.clientX, e.clientY), t=(over && over.closest) ? over.closest('.hb[data-w]') : null;
@@ -2880,9 +2902,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function dragEnd(){
     holdCancel();
     document.body.classList.remove('hub-resizing'); document.body.classList.remove('hub-dragging');
-    if(resizing){ resizing.el.classList.remove('resizing'); resizing=null; hubSave() }
+    if(resizing){ resizing.el.classList.remove('resizing'); blockMark([]); resizing=null; hubSave() }
     if(!drag) return;
-    drag.el.classList.remove('dragging'); drag=null; hubSave();
+    var d=drag; drag=null;
+    d.el.classList.remove('dragging'); d.el.style.removeProperty('translate');
+    if(d.ph){ d.ph.remove(); if(d.to){ hub.col[d.w]=d.to.col; hub.row[d.w]=d.to.row } applyHub() }   // it lands where the outline was; nothing else moves
+    hubSave();
   }
   document.addEventListener('pointerup', dragEnd);
   document.addEventListener('pointercancel', dragEnd);
@@ -2972,8 +2997,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   // the blast lands on the widget he is standing on: a jolt, and a scorch mark where it hit, fading over 16 s
   function petBoom(o){
     var t=o.on ? tile(String(o.on)) : null, cv=petCanvas(); if(!t || t.hidden || !cv || !num(o.x) || !num(o.y)) return;
-    var r=t.getBoundingClientRect(), cr=cv.getBoundingClientRect(), f=t.classList.contains('fit') ? (parseFloat(t.style.getPropertyValue('--fit'))||1) : 1,
-        x=(cr.left+o.x-r.left)/f, y=(cr.top+o.y-r.top)/f; r={width:r.width/f, height:r.height/f};   // a scaled tile: its own pixels
+    var r=t.getBoundingClientRect(), cr=cv.getBoundingClientRect(), x=cr.left+o.x-r.left, y=cr.top+o.y-r.top;
     var m=document.createElement('i'); m.className='hb-scorch';
     m.style.left=Math.round(Math.max(8, Math.min(r.width-8, x)))+'px'; m.style.top=Math.round(Math.max(6, Math.min(r.height-8, y)))+'px';
     t.appendChild(m); setTimeout(function(){ if(m.parentNode) m.parentNode.removeChild(m) }, 16500);
@@ -3046,9 +3070,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     fitMark(); placePet(); sizeTape(); $('talk-fold').hidden=!isWide() || $('scr-lock').classList.contains('on'); $('full').hidden=$('talk-fold').hidden; if(hub) placeTools(); applyTalk(); if(hub) applyHub(); else startMap();
     var s=petScale(); if(s!==window.PET_SCALE){ try{ window.pet.scale(s) }catch(e){ window.PET_SCALE=s } }
   });
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape(); fitAll(true) });
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitMark(); sizeTape(); alignAll() });
   // ready can resolve before a font that is not yet in use has even started loading: re-measure whenever one lands
-  if(document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ fitMark(); sizeTape(); fitAll(true) });
+  if(document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function(){ fitMark(); sizeTape(); alignAll() });
   // a hidden tab does not need him drawing
   document.addEventListener('visibilitychange', function(){ try{ window.pet.pause(document.hidden) }catch(e){} });
 
@@ -3060,7 +3084,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
-    get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubTidy:hubTidy, hubSettle:hubSettle, fitAll:fitAll };
+    get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubTidy:hubTidy, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll };
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's own Fullscreen API, and while it is on
      the page drops its frame too (body.full) so the hub gets the whole screen. Safari fires webkitfullscreenchange. */
   function fullOn(){ return !!(document.fullscreenElement || document.webkitFullscreenElement) }
