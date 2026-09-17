@@ -318,13 +318,24 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
 .tv-tri::after{content:'';position:absolute;left:23px;top:12px;border-left:15px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent}
 .tv-play:hover .tv-tri{filter:brightness(1.15)}
-.tv-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
-.tv-foot .h-note{margin-top:0}
+/* Hector 2026-09-16: "all the buttons of the channels are wasting a lot of space, the screen is too small ... with a deployable menu".
+   The channel is one button in the header; its list opens OVER the screen and closes on a pick. */
+.tv-top{display:flex;align-items:center;gap:6px;min-width:0}
+.tv-pick{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:210px;font-family:var(--mono);font-size:var(--fx);font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink);border:1px solid var(--rule-hot);background:rgba(224,27,27,.12);padding:var(--bp)}
+.tv-pick span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tv-pick::after{content:'';flex:none;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor}
+.tv-pick[aria-expanded="true"]::after{border-top:0;border-bottom:5px solid currentColor}
+.tv-pick:hover{border-color:var(--red)}
+.hb-tv .tv-menu{position:absolute;inset:0;z-index:3;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));align-content:start;gap:6px;margin:0;padding:10px;
+  overflow-y:auto;overscroll-behavior:contain;background:rgba(8,5,6,.95)}
+.hb-tv .tv-menu .tv-c{text-align:left;padding:7px 9px}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .hb-link{flex:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);
   text-decoration:none;border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:3px 9px}
 .hb-link:hover{color:var(--ink);border-color:var(--rule-hot)}
 /* world events map (Leaflet, loaded when first shown) */
-.map-box{position:relative;width:100%;aspect-ratio:16/9;background:#0b0809;border:1px solid var(--rule);overflow:hidden}
+.map-box{position:relative;width:100%;aspect-ratio:16/9;background:#141414;border:1px solid var(--rule);overflow:hidden}
 .map-key{display:flex;align-items:center;gap:12px;letter-spacing:.06em}
 .map-key i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
 .map-key .k-q{border:1.5px solid var(--amber)}
@@ -373,6 +384,23 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .hub-add{display:flex;flex-wrap:wrap;gap:6px}
 #hub-pet[aria-pressed="true"],#hub-arrange[aria-pressed="true"]{color:var(--ink);border-color:var(--rule-hot);background:rgba(224,27,27,.16)}
 .head-tools{display:contents}
+.tool-btn{position:relative}
+.tool-btn .ico{display:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* Hector 2026-09-16: "move the vaderclawd and arrange buttons, i want the widgets to be all the way up, right below the header strip".
+   On a narrower screen they are icons in the header, shown while the hub is open (Done stays a word while arranging); the
+   connection light steps aside for them, it is about the chat. The hub's own bar only exists while arranging. */
+@media (max-width:1099px){
+  body:not(.hubbing) .head-tools>.tool-btn{display:none}
+  .tool-btn{padding:5px 7px;line-height:0}
+  .tool-btn .ico{display:block}
+  .tool-btn .lbl{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  #hub-arrange[aria-pressed="true"]{line-height:normal;padding:5px 9px}
+  #hub-arrange[aria-pressed="true"] .ico{display:none}
+  #hub-arrange[aria-pressed="true"] .lbl{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}
+  body.hubbing .head #status{display:none}
+  .head-r{gap:6px}
+}
+.hub:not(.arranging) .hub-bar{display:none}
 /* a drone he cut down from a widget's edge blows up against it (Hector 2026-09-16): the tile jolts and keeps a scorch for a while */
 .hb-hit{animation:hbhit .5s ease-out}
 @keyframes hbhit{0%{transform:translate(0,0);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 60px rgba(255,90,31,.35)}15%{transform:translate(-3px,2px)}30%{transform:translate(3px,-2px)}45%{transform:translate(-2px,1px)}60%{transform:translate(2px,-1px);box-shadow:inset 0 0 0 1px var(--red-hot),inset 0 0 40px rgba(255,90,31,.18)}100%{transform:translate(0,0);box-shadow:none}}
@@ -395,7 +423,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .hb-inbox.shut .ib-subj,.hb-news.shut .hl-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fm)}
 .hb-inbox.shut .ib-subj{margin-top:1px}
 .hb-news.shut .h-list li:nth-child(n+4),.hb-news.shut .hl-m{display:none}
-.hb-tv.shut .tv-ch,.hb-tv.shut .tv-screen,.hb-tv.shut .tv-foot,.hb-map.shut .map-box,.hb-map.shut .map-key,.hb-map.shut .map-ch,.hb-map.shut .h-note{display:none}
+.hb-tv.shut .tv-top,.hb-tv.shut .tv-screen,.hb-map.shut .map-box,.hb-map.shut .map-key,.hb-map.shut .map-ch,.hb-map.shut .h-note{display:none}
 .hb-tv.shut .hb-h,.hb-map.shut .hb-h{margin-bottom:0}
 .hb-tools{display:none}
 .hub.arranging .hb{outline:1px dashed var(--rule-hot);outline-offset:-1px}
@@ -407,7 +435,9 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .hb.dragging{opacity:.5}
 /* Hector 2026-09-15: "once i click ARRANGE i can just drag and move each widget" - the whole tile is the handle while
    arranging, so a finger has to drag it instead of scrolling the hub, and a player must not swallow the press */
-.hub.arranging .hb{cursor:grab;touch-action:none}
+.hub.arranging .hb{cursor:grab;touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* a finger scrolls; holding still picks the widget up (Hector 2026-09-16: "when i click arrange i cant scroll down") */
+.hub.arranging .ht-grip{touch-action:none}
+.hub.arranging .hb.dragging{box-shadow:0 0 0 1px var(--red),0 12px 34px rgba(0,0,0,.6)}
 .hub.arranging .hb.dragging{cursor:grabbing}
 .hub.arranging .hb iframe{pointer-events:none}
 /* free size: a corner handle (while arranging, or on hover with a mouse); a widget given a height lays out as a column
@@ -625,7 +655,6 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     padding:var(--tg);z-index:2}   /* over Gargantua; nothing reserved under the last row */
   .hub .hb{background:rgba(9,6,7,.8);border:1px solid var(--rule);padding:var(--tp) var(--tpx)}
   .hub .hub-bar{padding:0}
-  .hub:not(.arranging) .hub-bar{display:none}   /* Hector 2026-09-16: no empty row at the top; the bar (hidden widgets, Tidy, Reset) only while arranging */
   /* Hector 2026-09-16: "make him and the animations always on top of everything even the chat". His stage is the whole
      chat screen - the hub side and the conversation - drawn over both (above the hub's z-index 2 and the chat's 1) and
      letting every press through. The widgets' top edges are still his ledges (Hector 2026-09-15); the hub side keeps a
@@ -689,7 +718,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
           <button id="now" class="now" type="button" aria-controls="hub" aria-expanded="false" hidden><span id="now-time">--:--</span><span id="now-temp" class="nt"></span></button>
           <span id="status" class="chip" aria-live="polite">Locked</span>
           <button id="full" class="gbtn gbtn-ico" type="button" aria-pressed="false" aria-label="Full screen" hidden title="Full screen: The Lounge on the whole screen, no browser chrome and no frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f-in" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"/><path class="f-out" d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M3 15h4a2 2 0 0 1 2 2v4M15 21v-4a2 2 0 0 1 2-2h4"/></svg></button>
-          <span id="head-tools" class="head-tools"><button id="hub-pet" class="gbtn" type="button" aria-pressed="true" title="Switch VaderClawd off" hidden>VaderClawd: On</button><button id="hub-arrange" class="gbtn" type="button" aria-pressed="false" hidden>Arrange</button></span>
+          <span id="head-tools" class="head-tools"><button id="hub-pet" class="gbtn tool-btn" type="button" aria-pressed="true" title="Switch VaderClawd off" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c-4.3 0-7 3.1-7 7.2v3.1L3 19.5h6.2l1-2.2h3.6l1 2.2H21l-2-5.7v-3.1c0-4.1-2.7-7.2-7-7.2z"/><path d="M7.5 11.2h9M12 11.2v3.6"/></svg><span class="lbl">VaderClawd: On</span></button><button id="hub-arrange" class="gbtn tool-btn" type="button" aria-pressed="false" hidden><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg><span class="lbl">Arrange</span></button></span>
           <button id="talk-fold" class="gbtn" type="button" aria-controls="scr-chat" aria-expanded="true" hidden>Chat</button>
         </div>
         <div id="sweep" class="sweep" hidden aria-hidden="true"></div>
@@ -763,12 +792,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               </div>
             </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
-              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><a id="tv-yt" class="hb-link" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener">YouTube</a></div>
-              <div id="tv-ch" class="tv-ch" role="group" aria-label="Channel"></div>
+              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-stop" class="hb-btn" type="button" hidden>Stop</button><a id="tv-yt" class="hb-link" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener">YouTube</a></span></div>
               <div id="tv-screen" class="tv-screen">
                 <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span></button>
+                <div id="tv-ch" class="tv-ch tv-menu" role="group" aria-label="Channel" hidden></div>
               </div>
-              <div class="tv-foot"><span id="tv-note" class="h-note">Nothing loads until you press Play.</span><button id="tv-stop" class="hb-btn" type="button" hidden>Stop</button></div>
+              <span id="tv-note" class="vh" aria-live="polite">Nothing loads until you press Play.</span>
             </section>
             <section class="hb hb-map" data-w="map" aria-labelledby="map-h">
               <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span data-key="quakes" hidden><i class="k-q"></i>Quake</span><span data-key="gdacs" hidden><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span></span></div>
@@ -1478,7 +1507,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     }, 0);
   }
   function hubView(on){
-    var c=$('scr-chat'); c.classList.toggle('hubview', !!on);
+    var c=$('scr-chat'); c.classList.toggle('hubview', !!on); document.body.classList.toggle('hubbing', !!on);
     $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
     if(on) startMap(); else toBottom();
   }
@@ -1710,9 +1739,10 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     hub.order.forEach(function(w){ if(shown(w)){ delete hub.h[w]; delete hub.hs[w]; delete hub.col[w]; delete hub.row[w] } });
     hubSave(); applyHub();   // unsized, the tiles take their natural height; the next tick measures and packs them (hubFreeze)
   }
-  // VaderClawd and Arrange sit in the header beside Chat on a wide screen (Hector 2026-09-16: "put those on the red tape, next to chat"); on a phone in the hub's bar
+  // VaderClawd and Arrange sit in the header beside Chat (Hector 2026-09-16: "put those on the red tape, next to chat"), on a phone too
+  // as icons ("i want the widgets to be all the way up, right below the header strip")
   function placeTools(){
-    var wide=isWide(), host=wide ? $('head-tools') : $('hub').querySelector('.hub-bar'), locked=$('scr-lock').classList.contains('on');
+    var host=$('head-tools'), locked=$('scr-lock').classList.contains('on');
     [$('hub-pet'), $('hub-arrange')].forEach(function(b){ if(b.parentNode!==host) host.appendChild(b); b.hidden=locked });   // hidden until the hub is open (they start hidden in the markup: the lock screen's header has no room)
   }
   // the cell under the pointer, clamped so a widget can never start past the right edge
@@ -1814,7 +1844,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       }
     });
     $('hub-arrange').setAttribute('aria-pressed', arranging ? 'true' : 'false');
-    $('hub-arrange').textContent=arranging ? 'Done' : 'Arrange';
+    $('hub-arrange').querySelector('.lbl').textContent=arranging ? 'Done' : 'Arrange';
     var add=$('hub-add'); add.textContent='';
     hub.hidden.forEach(function(w){
       var b=document.createElement('button'); b.type='button'; b.className='hb-btn'; b.setAttribute('data-show', w); b.textContent='+ '+wname(w); add.appendChild(b);
@@ -1888,7 +1918,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       b.setAttribute('data-k', c.k); bar.appendChild(b);
     });
     [].forEach.call(bar.children, function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===tvPick.k ? 'true' : 'false') });
-    $('tv-yt').href=tvPick.page; $('tv-play-t').textContent='Play '+tvPick.name;
+    $('tv-yt').href=tvPick.page; $('tv-play-t').textContent='Play '+tvPick.name; $('tv-pick-t').textContent=tvPick.short;
   }
   function tvPlay(){
     var scr=$('tv-screen'), f=scr.querySelector('iframe');
@@ -2402,6 +2432,46 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     return fetch(url).then(function(r){ if(!r.ok) throw new Error(k+' '+r.status); return r.json() })
       .then(function(d){ busyFetch[k]=false; return d }, function(err){ busyFetch[k]=false; throw err });
   }
+  /* Hector 2026-09-16: "a more similar map to worldmonitor ... the color, and ... all the countries names doesn't look appealing".
+     WorldMonitor draws Protomaps' "black" basemap; measured off their screen: water #333333, land #141414, borders and country
+     names #707070, cities #999999. Same free OpenFreeMap tiles here, repainted in those colours; country names are small,
+     spaced capitals that wait for the first zoom-in, cities later. Layers are matched by what they draw, not only by name. */
+  var MAP_INK={land:'#141414', water:'#333333', park:'#181818', wood:'#1a1a1a', ice:'#191919', urban:'#161616', building:'#0a0a0a',
+    minor:'#1f1f1f', major:'#292929', casing:'#141414', rail:'#292929', border:'#707070', state:'#3d3d3d', country:'#707070', city:'#999999',
+    town:'#5c5c5c', ocean:'#707070', road:'#525252', halo:'#141414'};
+  function paintLikeWorldMonitor(st){
+    (st.layers||[]).forEach(function(l){
+      if(!l) return;
+      var id=String(l.id||''), sl=String(l['source-layer']||''), p=l.paint=l.paint||{}, y=l.layout=l.layout||{}, I=MAP_INK;
+      if(l.type==='background') p['background-color']=I.land;
+      else if(l.type==='fill' && sl==='water') p['fill-color']=I.water;
+      else if(l.type==='line' && sl==='waterway') p['line-color']=I.water;
+      else if(l.type==='fill' && (sl==='landcover' || sl==='landuse')) p['fill-color']=/ice|glacier/.test(id) ? I.ice : /wood/.test(id) ? I.wood : /park/.test(id) ? I.park : I.urban;
+      else if(l.type==='fill' && sl==='building'){ p['fill-color']=I.building; p['fill-outline-color']=I.casing }
+      else if(l.type==='fill' && sl==='aeroway') p['fill-color']=I.ice;
+      else if(l.type==='line' && sl==='aeroway') p['line-color']=I.major;
+      else if(l.type==='line' && sl==='transportation') p['line-color']=/casing/.test(id) ? I.casing : /dash/.test(id) ? I.land : /rail/.test(id) ? I.rail : /motorway|major/.test(id) ? I.major : I.minor;
+      else if(l.type==='line' && sl==='boundary') p['line-color']=/state/.test(id) ? I.state : I.border;
+      else if(l.type==='symbol'){
+        p['text-halo-color']=I.halo; p['text-halo-width']=1;
+        if(sl==='water_name'){ p['text-color']=I.ocean; y['text-font']=['Noto Sans Italic'] }
+        else if(sl==='transportation_name') p['text-color']=I.road;
+        else if(sl==='place'){
+          if(/country/.test(id)){
+            p['text-color']=I.country; y['text-transform']='uppercase'; y['text-letter-spacing']=.12;
+            y['text-size']=['interpolate', ['linear'], ['zoom'], 1, 9, 4, 11, 6, 13];
+            l.minzoom=/major/.test(id) ? 1.4 : /minor/.test(id) ? 2.6 : 3.6;
+          }
+          else if(/state/.test(id)){ p['text-color']=I.state; l.minzoom=Math.max(l.minzoom||0, 4) }
+          else if(/city_large/.test(id)){ p['text-color']=I.city; l.minzoom=Math.max(l.minzoom||0, 3) }
+          else if(/city/.test(id)){ p['text-color']=I.city; l.minzoom=Math.max(l.minzoom||0, 5) }
+          else p['text-color']=I.town;
+        }
+      }
+    });
+    st.name='The Lounge dark (WorldMonitor colours)';
+    return st;
+  }
   // the satellite style is the dark style's labels and borders over Esri's imagery
   function styleFor(base){
     if(!darkStyle) return null;
@@ -2419,7 +2489,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(!sp) return;   // the style is already on its way
     sp.then(function(st){
       if(!st || !Array.isArray(st.layers)) throw new Error('style shape');
-      darkStyle=st;
+      darkStyle=paintLikeWorldMonitor(st);
       loadMapLib(function(ok){ if(!ok){ $('map-note').textContent='The map could not load. Check your connection.'; return } mapMake() });
     }).catch(function(){ $('map-note').textContent='The map could not load. Check your connection.' });
   }
@@ -2723,10 +2793,26 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(!arranging) return;
     var tt=e.target.closest('.hb[data-w]'); if(!tt) return;
     if(e.target.closest('.hb-tools') && !e.target.closest('.ht-grip')) return;   // move, width and hide stay clickable
-    e.preventDefault(); drag={w:tt.getAttribute('data-w'), el:tt, last:'', rows0:Object.assign({}, hub.row)}; tt.classList.add('dragging'); document.body.classList.add('hub-dragging');
-    try{ tt.setPointerCapture(e.pointerId) }catch(err){}
+    // Hector 2026-09-16: "when i click arrange i cant scroll down, if i touch any widget immediately tries to move it". A finger
+    // scrolls the hub; holding it still for HOLD_MS picks the widget up (the grip still picks up at once). A mouse picks up at once.
+    if(e.pointerType==='touch' && !e.target.closest('.ht-grip')){
+      holdCancel();
+      hold={el:tt, pid:e.pointerId, x:e.clientX, y:e.clientY, timer:setTimeout(function(){ var h=hold; hold=null; if(h && h.el.isConnected && arranging) dragStart(h.el, h.pid) }, HOLD_MS)};
+      return;
+    }
+    e.preventDefault(); dragStart(tt, e.pointerId);
   });
+  var hold=null, HOLD_MS=380;
+  function holdCancel(){ if(hold){ clearTimeout(hold.timer); hold=null } }
+  function dragStart(tt, pid){
+    drag={w:tt.getAttribute('data-w'), el:tt, last:'', rows0:Object.assign({}, hub.row)}; tt.classList.add('dragging'); document.body.classList.add('hub-dragging');
+    try{ tt.setPointerCapture(pid) }catch(err){}
+    try{ if(navigator.vibrate) navigator.vibrate(12) }catch(err){}
+  }
+  // once a widget is picked up, the finger moves the widget, not the page
+  $('hub').addEventListener('touchmove', function(e){ if(drag) e.preventDefault() }, {passive:false});
   document.addEventListener('pointermove', function(e){
+    if(hold && e.pointerId===hold.pid && (Math.abs(e.clientX-hold.x)>10 || Math.abs(e.clientY-hold.y)>10)) holdCancel();   // it was a scroll
     if(resizing){
       var z=resizing, x=winfo(z.w), nw=z.w0+(e.clientX-z.x0);
       if(z.cols>1){
@@ -2757,6 +2843,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     drag.last=key; hubDragTo(drag.w, t.getAttribute('data-w'), after);
   });
   function dragEnd(){
+    holdCancel();
     document.body.classList.remove('hub-resizing'); document.body.classList.remove('hub-dragging');
     if(resizing){ resizing.el.classList.remove('resizing'); resizing=null; hubSave() }
     if(!drag) return;
@@ -2796,9 +2883,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var b=e.target.closest ? e.target.closest('button[data-k]') : null; if(!b) return;
     TV.forEach(function(c){ if(c.k===b.getAttribute('data-k')) tvPick=c });
     try{ localStorage.setItem(K_TV, tvPick.k) }catch(err){}
+    tvMenu(false);   // picked: the list closes
     var playing=!!$('tv-screen').querySelector('iframe');
     tvPaint(); if(playing) tvPlay();
   });
+  function tvMenu(open){ $('tv-ch').hidden=!open; $('tv-pick').setAttribute('aria-expanded', open ? 'true' : 'false') }
+  $('tv-pick').addEventListener('click', function(){ tvMenu($('tv-ch').hidden) });
   tvPaint();
   $('sc-ch').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button[data-k]') : null; if(!b) return;
@@ -2844,7 +2934,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var r=cv.getBoundingClientRect(), x=cx-r.left, y=cy-r.top;
     return (x>=petBox.x-6 && x<=petBox.x+petBox.w+6 && y>=petBox.y-8 && y<=petBox.y+petBox.h+6) ? {x:x, y:y} : null;
   }
-  function petPaint(){ var b=$('hub-pet'); b.setAttribute('aria-pressed', petOn ? 'true' : 'false'); b.textContent='VaderClawd: '+(petOn ? 'On' : 'Off'); b.title=petOn ? 'Switch VaderClawd off' : 'Switch VaderClawd on'; if(!petOn){ petLetGo(); petBox=null } placePet() }
+  function petPaint(){ var b=$('hub-pet'); b.setAttribute('aria-pressed', petOn ? 'true' : 'false'); b.querySelector('.lbl').textContent='VaderClawd: '+(petOn ? 'On' : 'Off'); b.title=petOn ? 'Switch VaderClawd off' : 'Switch VaderClawd on'; if(!petOn){ petLetGo(); petBox=null } placePet() }
   function petLetGo(e){
     if(!carrying || (e && e.pointerId!==undefined && e.pointerId!==carrying.id)) return;
     carrying=null; document.body.classList.remove('carrying'); try{ window.pet.drop() }catch(err){}

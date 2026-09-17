@@ -422,10 +422,16 @@
       }
     } else {
       T(!vis(document.querySelector('.garg')), 'no Gargantua on a narrow screen');
-      T(!!$('hub-pet').closest('.hub-bar') && !!$('hub-arrange').closest('.hub-bar'), 'on a phone VaderClawd and Arrange stay in the hub\'s bar');
+      // Hector 2026-09-16: "move the vaderclawd and arrange buttons, i want the widgets to be all the way up, right below the header strip"
+      T(!!$('hub-pet').closest('.head') && !!$('hub-arrange').closest('.head') && !vis($('hub-pet')) && !vis($('hub-arrange')), 'on a phone VaderClawd and Arrange live in the header strip, out of sight until the hub opens');
       T(!vis($('hub')), 'on a narrow screen the hub is folded away');
       $('now').click();
       T(vis($('hub')) && !vis($('log')) && $('now').getAttribute('aria-expanded')==='true', 'tapping the time opens the hub');
+      var hdr=R(document.querySelector('.head')), hdEl=document.querySelector('.head'), firstT=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).map(function(t){ return R(t).t }).sort(function(a,b){ return a-b })[0];
+      T(vis($('hub-pet')) && vis($('hub-arrange')) && R($('hub-arrange')).b<=hdr.b && R($('hub-pet')).t>=hdr.t && !vis($('hub').querySelector('.hub-bar')) && firstT-hdr.b<=10,
+        'the hub open: VaderClawd and Arrange sit in the header, and the first widget starts right under it ('+Math.round(firstT-hdr.b)+'px)');
+      T(R($('hub-arrange')).r-R($('hub-arrange')).l<=36 && vis($('hub-arrange').querySelector('.ico')) && vis($('hub-pet').querySelector('.ico')) && hdEl.scrollWidth<=hdEl.clientWidth+1,
+        'on a phone they are icons, and the header still fits ('+hdEl.scrollWidth+' in '+hdEl.clientWidth+')');
     }
     T(/^\d\d:\d\d$/.test($('h-time').textContent) && $('h-date').textContent.length>5, 'clock (24-hour) and date ('+$('h-time').textContent+', '+$('h-date').textContent+')');
     if(FAIL_HUB){
@@ -562,6 +568,30 @@
     if(!WIDE){ $('now').click(); T(!vis($('hub')) && vis($('log')), 'tapping the time again returns to the conversation'); }
   }
   // Hector 2026-09-15, after WorldMonitor: "you can move and rearrange the hub"
+  // Hector 2026-09-16: "when i click arrange i cant scroll down, if i touch any widget immediately tries to move it". A finger
+  // scrolls over a widget; holding it still picks the widget up; a mouse still picks up at once (the checks above).
+  function holdOK(){
+    if(!WIDE) $('now').click();
+    if($('hub-arrange').getAttribute('aria-pressed')!=='true') $('hub-arrange').click();
+    var tch=tile('weather'); tch.scrollIntoView({block:'center'}); var tr=R(tch), cx=Math.round((tr.l+tr.r)/2), cy=Math.round(tr.t+12);
+    function ev(el, type, id, y){ el.dispatchEvent(new PointerEvent(type, {bubbles:true, cancelable:true, pointerType:'touch', isPrimary:true, clientX:cx, clientY:y, pointerId:id})) }
+    T(getComputedStyle(tch).touchAction==='pan-y', 'arranging: a finger can scroll over a widget ('+getComputedStyle(tch).touchAction+')');
+    ev(tch, 'pointerdown', 31, cy);
+    T(!tch.classList.contains('dragging'), 'arranging: a finger touching a widget does not pick it up straight away');
+    ev(document, 'pointermove', 31, cy+40);   // the finger moves: a scroll
+    setTimeout(function(){
+      T(!tch.classList.contains('dragging'), 'arranging: a finger that moves first is scrolling, nothing is picked up');
+      ev(document, 'pointerup', 31, cy+40);
+      ev(tch, 'pointerdown', 32, cy);
+      setTimeout(function(){
+        T(tch.classList.contains('dragging') && document.body.classList.contains('hub-dragging'), 'arranging: holding a finger still picks the widget up');
+        ev(document, 'pointerup', 32, cy);
+        T(!tch.classList.contains('dragging') && !document.body.classList.contains('hub-dragging'), 'arranging: letting go puts it down');
+        $('hub-arrange').click();
+        T(true, 'hold: all checks ran');
+      }, 600);
+    }, 600);
+  }
   function arrangeOK(){
     if(!WIDE) $('now').click();
     T(ord('map')<ord('tv') && ord('tv')<ord('time') && ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('inbox')<ord('news'),
@@ -984,6 +1014,12 @@
     var st=mc.style;
     T(!!st && st.sources && !!st.sources.openmaptiles && /openfreemap\.org\/planet/.test(st.sources.openmaptiles.url) && st.layers.some(function(l){ return l.type==='symbol' }) && hubCalls.indexOf('style')>-1,
       'map: a vector map - OpenFreeMap\'s dark style fetched by the browser, no key');
+    // Hector 2026-09-16: "a more similar map to worldmonitor" - their palette, measured off their screen
+    var byId={}; (st && st.layers || []).forEach(function(l){ byId[l.id]=l });
+    var cm=byId.place_country_major, pc=byId.place_city;
+    T(!!byId.background && byId.background.paint['background-color']==='#141414' && !!byId.water && byId.water.paint['fill-color']==='#333333' && byId['boundary_country_z0-4'].paint['line-color']==='#707070'
+      && !!cm && cm.paint['text-color']==='#707070' && cm.layout['text-transform']==='uppercase' && cm.minzoom>=1.4 && !!pc && pc.paint['text-color']==='#999999' && pc.minzoom>=5,
+      'map: WorldMonitor\'s colours - near-black land, grey water, grey borders; country names in small capitals only once zoomed in, cities later');
     T(!!mc.opts && mc.opts.cooperativeGestures===true && mc.opts.dragRotate===false && mc.opts.maxZoom===12 && mc.opts.maxPitch===undefined, 'map: one finger scrolls the hub, a plain wheel scrolls the page (cooperative gestures), no tilt');
     var ids=layerIds(), evL=mc.layers.filter(function(l){ return l.id==='events-c' })[0], alL=mc.layers.filter(function(l){ return l.id==='alerts-f' })[0];
     T(['alerts-f','alerts-l','storms-l','storms-c','fires-c','events-c'].every(function(i){ return ids.indexOf(i)>-1 }) && !!mc.sources.events && !mc.sources.dem && ids.indexOf('hills')<0 && !mc.terrain && mc.projection==='mercator' && mc.pitch===0,
@@ -1103,6 +1139,14 @@
   function tvOK(){
     var scr=$('tv-screen');
     T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
+    // Hector 2026-09-16: "all the buttons of the channels are wasting a lot of space ... make them like the cameras, with a deployable menu"
+    T(!!$('tv-pick') && $('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='FOX LiveNOW' && !!$('tv-ch').closest('#tv-screen') && !!$('tv-pick').closest('.hb-h'),
+      'TV: the channel is one button in the widget header (FOX LiveNOW), the list closed');
+    var tvT=R(tile('tv')), scrR=R(scr);
+    T(vis(scr) && (scrR.b-scrR.t)/(tvT.b-tvT.t)>=.7, 'TV: the screen takes most of the widget ('+Math.round((scrR.b-scrR.t)/(tvT.b-tvT.t)*100)+'%)');
+    $('tv-pick').click();
+    var mR=R($('tv-ch'));
+    T(!$('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='true' && Math.abs(mR.t-scrR.t)<=2 && Math.abs(mR.b-scrR.b)<=2 && Math.abs(mR.l-scrR.l)<=2, 'TV: the channel list opens over the screen, not under it');
     var chips=$('tv-ch').querySelectorAll('button'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
     T(chips.length===13 && !!on && on.textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: thirteen channels with clear names, FOX first');
     // Hector 2026-09-16: "the best space shots, spaceX, nasa ... add them to the tv"
@@ -1120,7 +1164,9 @@
     T(f.length===1 && f[0].src==='https://www.youtube.com/embed/v6dJAqft5NU?autoplay=1&mute=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, muted, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
     T($('tv-play').hidden && !$('tv-stop').hidden, 'TV: Play becomes Stop');
     T(tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor==='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).borderTopColor==='rgb(224, 27, 27)', 'TV: while it plays, the YouTube frame lights red');
+    if($('tv-ch').hidden) $('tv-pick').click();
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
+    T($('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='ABC News', 'TV: picking a channel closes the list and names it on the button');
     f=scr.querySelectorAll('iframe');
     T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&mute=1&playsinline=1&rel=0' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
     T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('lounge_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
@@ -1161,7 +1207,7 @@
     if(mode==='hub') issOK(); else if(mode==='hubfail') issFailOK();
     layout('chat-empty');
     tapeOK('chat');
-    if(mode==='arrange'){ arrangeOK(); floorOK('arrange'); layout('arrange'); return done(); }
+    if(mode==='arrange'){ arrangeOK(); floorOK('arrange'); layout('arrange'); holdOK(); return done(); }
     if(mode==='hub'){
       if(!WIDE) $('now').click();
       var n0=calls.length; $('h-refresh').click();
