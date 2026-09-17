@@ -8,7 +8,7 @@
      expired  a 401 mid-conversation sends you back to the lock screen with the reason
      persist  a remembered transcript is on screen after a reload
      guard    a reply the guard replaced is marked as such
-     hub      the hub: Refresh is one login call, Ask sends a headline and a message to Esquiffis, Gmail down keeps the last inbox,
+     hub      the hub: Refresh is one login call, Ask sends a headline and a message to Jarvis, Gmail down keeps the last inbox,
               the TV loads nothing until Play, the map draws the feeds safely
      hubfail  every hub source is down: the hub says so and the chat still works (runs the ok turn)
      (hub also: Markets from fake metals + currency snapshots, the AI brief through a fake brief path, the camera mosaic)
@@ -26,15 +26,15 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('esq_pw'); sessionStorage.removeItem('esq_inbox'); localStorage.removeItem('esq_log'); localStorage.removeItem('esq_news'); localStorage.removeItem('esq_tv'); localStorage.removeItem('esq_hub'); localStorage.removeItem('esq_brief'); localStorage.removeItem('esq_cams'); localStorage.removeItem('esq_map'); localStorage.removeItem('esq_scores'); localStorage.removeItem('esq_pet') }catch(e){}
+  try{ sessionStorage.removeItem('lounge_pw'); sessionStorage.removeItem('lounge_inbox'); localStorage.removeItem('lounge_log'); localStorage.removeItem('lounge_news'); localStorage.removeItem('lounge_tv'); localStorage.removeItem('lounge_hub'); localStorage.removeItem('lounge_brief'); localStorage.removeItem('lounge_cams'); localStorage.removeItem('lounge_map'); localStorage.removeItem('lounge_scores'); localStorage.removeItem('lounge_pet') }catch(e){}
   if(mode==='hub') window.PET_FIGHT='always';   // the swarm comes the moment he lands on a widget edge (the fight is checked in edgesOK)
   // a map setting saved on the device, with junk in it: the retired 3D/Globe views, an unknown layer, a layer that is not exactly true; a saved league
-  if(mode==='arrange'){ localStorage.setItem('esq_map', JSON.stringify({base:'sat', view:{'3d':true, globe:true, bogus:true}, lay:{radar:true, quakes:true, bogus:true, alerts:'yes'}})); localStorage.setItem('esq_scores', 'mx') }
-  if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([
+  if(mode==='arrange'){ localStorage.setItem('lounge_map', JSON.stringify({base:'sat', view:{'3d':true, globe:true, bogus:true}, lay:{radar:true, quakes:true, bogus:true, alerts:'yes'}})); localStorage.setItem('lounge_scores', 'mx') }
+  if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([   // saved by the page before Esquiffis became Jarvis (old key, old role)
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
   // a layout saved on the device, with junk in it: a duplicate, unknown names, a bad size
-  if(mode==='arrange') localStorage.setItem('esq_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'}, span:{weather:2, inbox:1}, density:'dense', h:{tv:900},
+  if(mode==='arrange') localStorage.setItem('lounge_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'}, span:{weather:2, inbox:1}, density:'dense', h:{tv:900},
     hidden:['dodgers','nope'], shut:{inbox:false, bogus:true}}));
   var REPLY='Here is <b>bold</b> and <i>italic</i>, a link https://docs.x.ai/x and <a href="https://example.com/a">a tagged one</a>.\n• one\n• two<script>window.__pwned=1<\/script><img src=x onerror="window.__pwned=2"> <a href="javascript:alert(1)">bad link</a>';
   function ago(min){ return new Date(Date.now()-min*60000).toISOString() }
@@ -339,13 +339,13 @@
       T(ps.length<=3 && [].every.call(ps, function(li){ return /^(Today|Tomorrow|(Sun|Mon|Tue|Wed|Thu|Fri|Sat) \d+) \d\d:\d\d$/.test(li.querySelector('.iss-t').textContent) && /^rises (N|NE|E|SE|S|SW|W|NW) \u00B7 peaks \d+\u00B0 \u00B7 sets (N|NE|E|SE|S|SW|W|NW) \u00B7 \d+ min$/.test(li.querySelector('.iss-d').textContent) && /bright|good|low/.test(li.querySelector('.iss-b').textContent) }),
         'ISS: up to three passes, each with a local 24-hour time, where it rises and sets, how high, how long ('+ps.length+')');
       T(ps.length ? /Naked eye|Crossing your sky/.test(foot) : /No visible pass over Santa Clarita in the next 10 days/.test(foot), 'ISS: the note fits the list ('+foot+')');
-      T(/Orbit data \d\d:\d\d/.test(tx('iss-note')) && !!localStorage.getItem('esq_tle'), 'ISS: says when the orbit lines are from, and keeps them 12 hours');
+      T(/Orbit data \d\d:\d\d/.test(tx('iss-note')) && !!localStorage.getItem('lounge_tle'), 'ISS: says when the orbit lines are from, and keeps them 12 hours');
       // the maths against an independent reference: the same orbit, the same 10 days, the same visible passes to the second
-      var esq=window.__esq;
-      esq.loadSatLib(function(ok){
+      var lg=window.__lounge;
+      lg.loadSatLib(function(ok){
         if(!ok){ T(false, 'ISS: satellite.js loaded'); return T(true, 'iss: all checks ran') }
         var rec=window.satellite.twoline2satrec(TLE.line1, TLE.line2);
-        esq.issCompute(rec, ISS_FROM, 10, function(list){
+        lg.issCompute(rec, ISS_FROM, 10, function(list){
           var same=list.length===ISS_REF.length && list.every(function(p,i){ var r=ISS_REF[i]; return Math.abs(p.start-r.start)<=2000 && Math.abs(p.end-r.end)<=2000 && Math.abs(p.max-r.max)<=5000 && Math.abs(p.maxEl-r.maxEl)<=0.5 && p.from===r.from && p.to===r.to });
           T(same, 'ISS: '+list.length+' visible passes in 10 days match the Python SGP4 reference to the second ('+JSON.stringify(list.slice(0,2))+')');
           T(list.length===10 && !!list[7] && list[7].maxEl>=73.5 && list[7].maxEl<=74.5 && list[7].from==='NW' && list[7].to==='SE', 'ISS: the bright 74-degree pass on Sep 29 is there, NW to SE');
@@ -370,7 +370,7 @@
     // Hector 2026-09-16: "the button clear screen should be inside the chat only"
     T(!!$('clear').closest('.talk') && !$('clear').closest('.head') && vis($('clear')) && R($('clear')).t>=R($('scr-chat')).t-1, 'Clear screen lives inside the conversation column, not the header');
     // Hector 2026-09-16: "switch to military time"
-    T(!$('now').hidden && /^\d\d:\d\d$/.test($('now-time').textContent) && $('now-time').textContent===window.__esq.clockText(new Date()) && !/[AP]M/.test($('now-time').textContent),
+    T(!$('now').hidden && /^\d\d:\d\d$/.test($('now-time').textContent) && $('now-time').textContent===window.__lounge.clockText(new Date()) && !/[AP]M/.test($('now-time').textContent),
       'the header shows the time, 24-hour ('+$('now-time').textContent+')');
     if(WIDE){
       T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
@@ -487,7 +487,7 @@
       if(mode==='guard'){
         T(pump.length===4 && [].every.call(pump, function(li){ return li.querySelector('.mk-v').textContent==='\u2014' }) && whole.length===5 && whole[0].querySelector('.mk-v').textContent==='\u2014' && /\$2\.928/.test(whole[1].textContent) && /pump prices did not load/.test(tx('fu-note')) && /futures/.test(tx('fu-note')),
           'fuel tile: when n8n cannot read AAA and EIA the futures still show, the pump rows are dashes, and it says why ('+tx('fu-note')+')');
-        T(!localStorage.getItem('esq_fuel'), 'fuel tile: a failed read is not kept, so the next login asks again');
+        T(!localStorage.getItem('lounge_fuel'), 'fuel tile: a failed read is not kept, so the next login asks again');
       } else {
         T(pump.length===4 && /Regular \u00B7 LA/.test(pump[0].textContent) && /\$6\.09/.test(pump[0].textContent) && /\/gal/.test(pump[0].textContent) && /\+2\.79%/.test(pump[0].textContent) && !!pump[0].querySelector('.mk-c.up'),
           'fuel tile: LA regular from AAA, per gallon, up 2.79% on the week ('+(pump[0]&&pump[0].textContent)+')');
@@ -498,7 +498,7 @@
           'fuel tile: natural gas, gasoline, diesel and crude futures from the browser');
         T(/AAA 2026-09-16/.test(tx('fu-note')) && /week ago/.test(tx('fu-note')) && /EIA propane 2026-09-09/.test(tx('fu-note')) && /futures \d\d:\d\d/.test(tx('fu-note')), 'fuel tile: names its sources and dates ('+tx('fu-note')+')');
         T(!!calls[0] && calls[0].fuel==='1', 'the first login asked n8n for the pump prices (fuel=1)');
-        var kept=null; try{ kept=JSON.parse(localStorage.getItem('esq_fuel')||'null') }catch(e){}
+        var kept=null; try{ kept=JSON.parse(localStorage.getItem('lounge_fuel')||'null') }catch(e){}
         T(!!kept && kept.ok===true && kept.aaa && kept.aaa.la && kept.aaa.la.reg===6.0894 && kept.propane && kept.propane.usd===0.833 && !('mid' in kept.aaa.la), 'fuel prices are kept on this device for 12 hours, the figures the tile shows and nothing more');
       }
       // Hector 2026-09-15: "make it to load once at logging in, and refresh it's manually, maybe an auto-refresh every 2 hrs"
@@ -524,7 +524,7 @@
       var a0=ibs[0] && ibs[0].querySelector('a.ib-subj');
       T(!!a0 && a0.href==='https://mail.google.com/mail/u/0/#all/199a1b2c3d4e5f60' && a0.target==='_blank' && /noopener/.test(a0.rel), 'inbox: a message opens in Gmail in a new tab ('+(a0&&a0.href)+')');
       T(ibs.length===3 && !ibs[2].querySelector('a') && !$('ib-list').querySelector('b') && /<b>bold<\/b>/.test(ibs[1].textContent), 'inbox: a bad thread id is not a link, and markup in a subject stays text');
-      T(JSON.stringify(localStorage).indexOf('Masterbuilt')<0 && (sessionStorage.getItem('esq_inbox')||'').indexOf('Masterbuilt')>-1, 'inbox: kept for this tab only, never in localStorage');
+      T(JSON.stringify(localStorage).indexOf('Masterbuilt')<0 && (sessionStorage.getItem('lounge_inbox')||'').indexOf('Masterbuilt')>-1, 'inbox: kept for this tab only, never in localStorage');
       T(/Updated/.test($('ib-note').textContent) && /every 2 hours/.test($('ib-note').textContent), 'inbox: says when it was read, and that it refreshes every 2 hours ('+$('ib-note').textContent+')');
       var ibr=$('ib-list').querySelectorAll('.ib-from'), spill=[].filter.call(ibr, function(e){ return vis(e) && getComputedStyle(e).textOverflow!=='ellipsis' && e.scrollWidth>e.clientWidth+1 });
       T(spill.length===0, 'inbox: long sender names end in an ellipsis, never spill');
@@ -550,7 +550,7 @@
       T(sideW1>sideW0+300 && Math.abs(sideW1-(scr.r-scr.l))<=2, 'folded: the hub takes the empty space ('+Math.round(sideW0)+' -> '+Math.round(sideW1)+' of '+Math.round(scr.r-scr.l)+')');
       T(Math.abs((floor.r-floor.l)-sideW1)<=2, 'folded: VaderClawd walks the whole window ('+Math.round(floor.r-floor.l)+')');
       T(/Chat/.test(tx('talk-fold')) && attr('talk-fold','aria-expanded')==='false', 'folded: the button offers the chat back');
-      T((localStorage.getItem('esq_talk')||'')==='1', 'folded: remembered on this device');
+      T((localStorage.getItem('lounge_talk')||'')==='1', 'folded: remembered on this device');
       tap('talk-fold');
       var talkW2=R(document.querySelector('.talk')).r-R(document.querySelector('.talk')).l;
       T(Math.abs(talkW2-talkW0)<=2 && Math.abs((R(document.querySelector('.side')).r-R(document.querySelector('.side')).l)-sideW0)<=2,
@@ -626,7 +626,7 @@
     $('tv-h').click();
     T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
     $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
-    var saved=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+    var saved=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
     T(Array.isArray(saved.order) && saved.order.length===12 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===9 && saved.hidden.join()==='dodgers',
       'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
     T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
@@ -661,7 +661,7 @@
         T(col('weather')>=7, 'free range: a widget dropped on the right side stays on the right (column '+col('weather')+')');
         T(col('time')===clockCell[0] && gs(tile('time'),'gridRowStart')===clockCell[1],
           'free range: nothing reflows - the clock stayed put when the weather moved away');
-        var svc=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+        var svc=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
         T(!!svc.col && typeof svc.col.weather==='number' && !!svc.row && typeof svc.row.weather==='number',
           'free range: the cell is remembered (col '+(svc.col&&svc.col.weather)+', row '+(svc.row&&svc.row.weather)+')');
         // Hector 2026-09-16: "why always i open the HUB everything it's unorganized?" - a drop landed ON the widgets there, and the overlap was saved
@@ -673,7 +673,7 @@
         document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:12}));
         var ibr2=R(ib), tmr2=R(tile('time')), cl=clashes();
         T(!cl && Math.abs(ibr2.t-tmr0.t)<=11 && tmr2.t>=ibr2.b-1, 'a widget dropped on another takes the spot, and the one it covered moves down: no overlap ('+(cl||'inbox top '+Math.round(ibr2.t)+', clock top '+Math.round(tmr2.t))+')');
-        var E1=window.__esq, hd=E1.hub;
+        var E1=window.__lounge, hd=E1.hub;
         if(typeof E1.hubSettle!=='function') T(false, 'a layout saved with tiles on top of each other opens untangled (no settle)');
         else {
           hd.col.fuel=hd.col.stocks; hd.row.fuel=hd.row.stocks; E1.hubSettle(null); E1.applyHub();   // what the page does with a saved layout at every open
@@ -711,18 +711,18 @@
         'dragging the corner makes the TV narrower and taller ('+Math.round(r0.r-r0.l)+'x'+Math.round(r0.b-r0.t)+' -> '+Math.round(r1.r-r1.l)+'x'+Math.round(r1.b-r1.t)+')');
       T(ts.b<=r1.b+1 && ts.b-ts.t>150, 'the player grows to fill the taller window ('+Math.round(ts.b-ts.t)+'px)');
       T((r1.r-r1.l)>=(R($('hub')).r-R($('hub')).l-32)/12-16 && (r1.r-r1.l)<(R($('hub')).r-R($('hub')).l)/4, 'a drag snaps to twelfths, down to a single one ('+Math.round(r1.r-r1.l)+'px)');
-      var sv2=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+      var sv2=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
       T(!!sv2.h && Math.abs(sv2.h.tv-(r1.b-r1.t))<=1 && typeof sv2.span.tv==='number' && sv2.span.tv<6, 'the free size is remembered ('+JSON.stringify(sv2.h)+', width '+(sv2.span&&sv2.span.tv)+'/12)');
       rz.dispatchEvent(new MouseEvent('dblclick', {bubbles:true}));
       T(!tvT.style.height && !tvT.classList.contains('sized'), 'double-clicking the handle fits the height to the content again');
       // Hector 2026-09-16: "size down the widgets when are compacted, not only when they are open. i need to be able to fill up small spaces"
       var nT=tile('news'); if(!nT.classList.contains('shut')) $('news-h').click();   // fold it (the checks above unfolded it)
-      var nh=nT.querySelector('.ht-resize'), n0=R(nT), hOpen=(JSON.parse(localStorage.getItem('esq_hub')||'{}').h||{}).news;
+      var nh=nT.querySelector('.ht-resize'), n0=R(nT), hOpen=(JSON.parse(localStorage.getItem('lounge_hub')||'{}').h||{}).news;
       T(nT.classList.contains('shut') && vis(nh), 'a folded tile has its corner handle too');
       nh.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true, cancelable:true, clientX:Math.round(n0.r-4), clientY:Math.round(n0.b-4), pointerId:4}));
       document.dispatchEvent(new PointerEvent('pointermove', {bubbles:true, clientX:Math.round(n0.r-4), clientY:Math.round(n0.b-4-60), pointerId:4}));
       document.dispatchEvent(new PointerEvent('pointerup', {bubbles:true, pointerId:4}));
-      var n1=R(nT), sv3=JSON.parse(localStorage.getItem('esq_hub')||'{}');
+      var n1=R(nT), sv3=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
       T(n1.b-n1.t<=(n0.b-n0.t)-50 && !!sv3.hs && typeof sv3.hs.news==='number' && sv3.hs.news>=36 && (sv3.h||{}).news===hOpen,
         'dragging a folded tile shorter takes it down, kept as its folded height, the open height untouched ('+Math.round(n0.b-n0.t)+' -> '+Math.round(n1.b-n1.t)+', open '+hOpen+')');
       $('news-h').click(); var n2=R(nT);
@@ -736,7 +736,7 @@
         if(rightT){ rightT.scrollIntoView({block:'center'}); var rhh=R(rightT.querySelector('.ht-resize')), at=document.elementFromPoint((rhh.l+rhh.r)/2, (rhh.t+rhh.b)/2);
           T(!!at && !!at.closest && at.closest('.ht-resize')===rightT.querySelector('.ht-resize'), 'the red corner of a tile in the rightmost column takes the press ('+rightT.getAttribute('data-w')+')') }
         // Hector 2026-09-16: "now it just goes smaller but it covers the data ... WHAT PART OF FREE RANGE" - a small tile scales what it holds
-        var E2=window.__esq, stT=tile('stocks'), sp0=E2.hub.span.stocks;
+        var E2=window.__lounge, stT=tile('stocks'), sp0=E2.hub.span.stocks;
         stT.scrollIntoView({block:'center'});
         E2.hub.span.stocks=2; E2.hub.h.stocks=90; E2.applyHub();
         var sr=R(stT), rowsSt=[].slice.call(stT.querySelectorAll('.mk')), outR=rowsSt.filter(function(li){ var r=R(li); return r.b>sr.b+1 || r.r>sr.r+1 || r.t<sr.t-1 }).length,
@@ -810,7 +810,7 @@
     if(WIDE){ var a3=R(frames[2]), gr3=R(g); T(Math.abs((a3.r-a3.l)-(gr3.r-gr3.l))<=2, 'cameras: with three, the third runs the full width'); }
     $('cams-stop').click();
     T(!g.querySelector('iframe') && !$('cams-play').hidden && !tile('cams').classList.contains('playing'), 'cameras: Stop removes every player');
-    var sv=JSON.parse(localStorage.getItem('esq_cams')||'{}');
+    var sv=JSON.parse(localStorage.getItem('lounge_cams')||'{}');
     T(sv.n===3 && Array.isArray(sv.picks) && sv.picks[3]==='iss' && sv.picks[1]==='zocalo', 'cameras: the count and the picks are remembered');
     var spill=[].filter.call(g.querySelectorAll('.cam-city,.cam-place'), function(e){ return vis(e) && getComputedStyle(e).textOverflow!=='ellipsis' && e.scrollWidth>e.clientWidth+1 });
     T(spill.length===0, 'cameras: long names end in an ellipsis, never spill');
@@ -842,15 +842,15 @@
       T(!sp.classList.contains('shut') && vis(ch) && vis(rows[3]) && !vis($('sc-more')) && fold.getAttribute('aria-expanded')==='true', 'sports: unfolded, the leagues and every game show');
       fold.click(); T(sp.classList.contains('shut') && !vis(ch), 'sports: and it folds again'); }
     var n0=hubCalls.length; [].filter.call(ch.children, function(c){ return c.textContent==='NFL' })[0].click();
-    T(hubCalls[n0]==='espn:football/nfl' && pressed()==='NFL' && localStorage.getItem('esq_scores')==='nfl', 'scores: NFL fetches the NFL board and is remembered');
-    var tick=window.__esq && window.__esq.hubTick, n1=hubCalls.length; if(tick) tick(Date.now()+6*60000);
+    T(hubCalls[n0]==='espn:football/nfl' && pressed()==='NFL' && localStorage.getItem('lounge_scores')==='nfl', 'scores: NFL fetches the NFL board and is remembered');
+    var tick=window.__lounge && window.__lounge.hubTick, n1=hubCalls.length; if(tick) tick(Date.now()+6*60000);
     T(!!tick && hubCalls.slice(n1).some(function(k){ return /^espn:/.test(k) }), 'scores: with a game on, 6 minutes later the board refreshes by itself (0 n8n calls)');
     var n2=hubCalls.length; if(tick) tick(Date.now()+60000); T(!hubCalls.slice(n2).some(function(k){ return /^espn:/.test(k) }), 'scores: not again a minute later');
   }
   // the corner (Hector 2026-09-15: "sunrise, sunset, UV and santa clarita air ... a sun and a moon"; 2026-09-16: "to the right of
   // the clock ... the widget of weather, to its right as well we have some room")
   function skyOK(){
-    var box=$('sky'), wx=$('wx-x'); if(!box || !wx || !window.__esq.paintSky){ T(false, 'sky: the corner beside the clock and the weather exists'); return }
+    var box=$('sky'), wx=$('wx-x'); if(!box || !wx || !window.__lounge.paintSky){ T(false, 'sky: the corner beside the clock and the weather exists'); return }
     if(FAIL_HUB){ T(box.hidden && wx.hidden && hubCalls.indexOf('sun')>-1 && hubCalls.indexOf('air')>-1, 'sky: sun and air down, both corners stay empty'); return }
     var sun=$('sky-sun'), moon=$('sky-moon');
     T(vis(box) && vis(wx) && hubCalls.indexOf('sun')>-1 && hubCalls.indexOf('air')>-1, 'sky: sun times and air come from the browser (Open-Meteo), not n8n');
@@ -864,15 +864,15 @@
     T(!sun.classList.contains('off') && moon.classList.contains('off') && /^sunset in (4h|3h 5\dm)/.test(tx('sky-line')) && !box.classList.contains('night'), 'sky: by day the sun is out and the arc counts down to sunset ('+tx('sky-line')+')');
     var tr=(sun.getAttribute('transform')||'').match(/translate\(([\d.]+) ([\d.]+)\)/), x=tr ? +tr[1] : -1, y=tr ? +tr[2] : -1, want=60-50*Math.cos(Math.PI*3/7);
     T(Math.abs(x-want)<3 && y>0 && y<52, 'sky: the sun sits 3/7 of the way along its arc ('+x+','+y+' vs '+want.toFixed(1)+')');
-    T(tx('sky-rise')==='\u2191 '+window.__esq.clockText(new Date(SUN_RISE)) && tx('sky-set')===window.__esq.clockText(new Date(SUN_SET))+' \u2193' && /^\d\d:\d\d$/.test(tx('sky-rise').slice(2)),
+    T(tx('sky-rise')==='\u2191 '+window.__lounge.clockText(new Date(SUN_RISE)) && tx('sky-set')===window.__lounge.clockText(new Date(SUN_SET))+' \u2193' && /^\d\d:\d\d$/.test(tx('sky-rise').slice(2)),
       'sky: sunrise at the arc\'s left end and sunset at its right, 24-hour ('+tx('sky-rise')+' / '+tx('sky-set')+')');
     T(tx('sky-uv')==='UV 7' && tx('sky-uv-w')==='High' && tx('sky-uv-t')==='' && $('sky-uv').style.color==='rgb(255, 138, 61)' && tx('sky-air')==='AQI 63' && tx('sky-air-w')==='Moderate' && $('sky-air').style.color==='rgb(232, 197, 71)',
       'sky: UV and the air, each a number with its word in its colour ('+tx('sky-uv')+' '+tx('sky-uv-w')+' / '+tx('sky-air')+' '+tx('sky-air-w')+')');
-    window.__esq.paintSky(SUN_SET+3600000);   // an hour after sunset
+    window.__lounge.paintSky(SUN_SET+3600000);   // an hour after sunset
     T(sun.classList.contains('off') && !moon.classList.contains('off') && /^sunrise in/.test(tx('sky-line')) && box.classList.contains('night') && tx('sky-uv')==='UV 6' && tx('sky-uv-w')==='High' && tx('sky-uv-t')==='tomorrow',
       'sky: after sunset the moon crosses instead and the arc counts down to sunrise, UV is tomorrow\'s ('+tx('sky-line')+' / '+tx('sky-uv')+' '+tx('sky-uv-w')+')');
-    window.__esq.paintSky();
-    var tick=window.__esq.hubTick, h=hubCalls.length; if(tick) tick(Date.now()+31*60000);
+    window.__lounge.paintSky();
+    var tick=window.__lounge.hubTick, h=hubCalls.length; if(tick) tick(Date.now()+31*60000);
     T(hubCalls.slice(h).indexOf('air')>-1 && hubCalls.slice(h).indexOf('sun')<0, 'sky: the air refreshes every 30 minutes by itself, the sun times not yet (0 n8n calls)');
   }
   // full screen (Hector 2026-09-15: "a fullscreen button that uses those extra borders of the safari")
@@ -896,20 +896,20 @@
   }
   // VaderClawd can always be grabbed (Hector 2026-09-16: "grabbed always"); the hub bar switch is HIM, on or off
   function grabOK(){
-    var b=$('hub-pet'); if(!b || $('hub-grab') || !window.__esq || !('petBox' in window.__esq)){ T(false, 'pet: the On/Off switch exists and the grab switch is gone'); return }
+    var b=$('hub-pet'); if(!b || $('hub-grab') || !window.__lounge || !('petBox' in window.__lounge)){ T(false, 'pet: the On/Off switch exists and the grab switch is gone'); return }
     T(b.getAttribute('aria-pressed')==='true' && /VaderClawd: On/.test(b.textContent) && !$('vc-stage').hidden && window.pet.state().paused===false, 'pet: on by default, and the button says so ('+b.textContent+')');
-    var box=window.__esq.petBox, cv=$('vc-stage') && $('vc-stage').querySelector('canvas');
+    var box=window.__lounge.petBox, cv=$('vc-stage') && $('vc-stage').querySelector('canvas');
     if(!box || !cv){ T(false, 'grab: he reports where he is (box '+JSON.stringify(box)+')'); return }
     var r=cv.getBoundingClientRect(), cx=r.left+box.x+box.w/2, cy=r.top+box.y+box.h/2;
     function pev(type, x, y){ var e=new PointerEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, pointerId:7, isPrimary:true, pointerType:'mouse', button:0}); (document.elementFromPoint(x,y)||document.body).dispatchEvent(e); return e }
     var e1=pev('pointerdown', cx, cy), st=window.pet.state();
-    T(e1.defaultPrevented && st.mode==='held' && window.__esq.carrying && document.body.classList.contains('carrying'), 'grab: a press on him picks him up, no switch needed ('+st.mode+')');
+    T(e1.defaultPrevented && st.mode==='held' && window.__lounge.carrying && document.body.classList.contains('carrying'), 'grab: a press on him picks him up, no switch needed ('+st.mode+')');
     pev('pointermove', cx-160, cy-60); var st2=window.pet.state();
     T(st2.mode==='held' && Math.abs(st2.x-(box.x+box.w/2-160-18*st2.S))<6 && st2.lift>0, 'grab: he follows the pointer (x '+st2.x+', lift '+st2.lift+')');
     pev('pointermove', cx, cy-60); pev('pointerup', cx, cy-60); var st3=window.pet.state();
-    T(st3.mode==='falling' && !window.__esq.carrying && !document.body.classList.contains('carrying'), 'grab: let go, he falls back to his floor ('+st3.mode+')');
+    T(st3.mode==='falling' && !window.__lounge.carrying && !document.body.classList.contains('carrying'), 'grab: let go, he falls back to his floor ('+st3.mode+')');
     var tr=R(tile('time')), e2=pev('pointerdown', tr.l+20, tr.t+20);
-    T(!e2.defaultPrevented && !window.__esq.carrying, 'grab: a press anywhere else is left alone'); pev('pointerup', tr.l+20, tr.t+20);
+    T(!e2.defaultPrevented && !window.__lounge.carrying, 'grab: a press anywhere else is left alone'); pev('pointerup', tr.l+20, tr.t+20);
     // the page's side of a drone blast (the engine's own fight is checked in edgesOK): the widget jolts and keeps a scorch
     var wr=R(tile('weather')), n0=document.querySelectorAll('.hb-scorch').length;
     window.PET_POST({type:'boom', x:wr.l+40-r.left, y:wr.t+10-r.top, on:'weather'});
@@ -919,18 +919,18 @@
     window.PET_POST({type:'boom', x:10, y:10, on:'nope'}); T(document.querySelectorAll('.hb-scorch').length===n0+1, 'boom: an unknown widget is ignored');
     // the switch: Off hides him and stops the engine, On brings him back
     b.click(); var so=window.pet.state();
-    T(b.getAttribute('aria-pressed')==='false' && /VaderClawd: Off/.test(b.textContent) && $('vc-stage').hidden && !vis($('vc-stage')) && so.paused===true && localStorage.getItem('esq_pet')==='0' && !window.__esq.petBox,
+    T(b.getAttribute('aria-pressed')==='false' && /VaderClawd: Off/.test(b.textContent) && $('vc-stage').hidden && !vis($('vc-stage')) && so.paused===true && localStorage.getItem('lounge_pet')==='0' && !window.__lounge.petBox,
       'pet: Off hides his stage, pauses the engine (no frames) and is remembered');
-    var e3=pev('pointerdown', cx, cy); T(!e3.defaultPrevented && !window.__esq.carrying, 'pet: off, a press where he stood does nothing'); pev('pointerup', cx, cy);
+    var e3=pev('pointerdown', cx, cy); T(!e3.defaultPrevented && !window.__lounge.carrying, 'pet: off, a press where he stood does nothing'); pev('pointerup', cx, cy);
     b.click(); var sn=window.pet.state();
-    T(b.getAttribute('aria-pressed')==='true' && !$('vc-stage').hidden && sn.paused===false && localStorage.getItem('esq_pet')==='1' && $('vc-stage').parentNode===$('hub-floor'), 'pet: On brings him back on his floor');
+    T(b.getAttribute('aria-pressed')==='true' && !$('vc-stage').hidden && sn.paused===false && localStorage.getItem('lounge_pet')==='1' && $('vc-stage').parentNode===$('hub-floor'), 'pet: On brings him back on his floor');
     setTimeout(function(){ edgesOK(box, cv) }, 200);   // he reports his box again a frame later
   }
   // the widget edges are his paths (Hector 2026-09-15: "all the edges of each individual window like a path for him")
   function edgesOK(box0, cv){
     var pet=window.pet, st0=pet.state();
-    if(typeof st0.platforms!=='number' || !window.__esq.feedPlatforms){ T(false, 'edges: the page hands him the widget edges'); return }
-    window.__esq.feedPlatforms(); var st1=pet.state();
+    if(typeof st0.platforms!=='number' || !window.__lounge.feedPlatforms){ T(false, 'edges: the page hands him the widget edges'); return }
+    window.__lounge.feedPlatforms(); var st1=pet.state();
     var sr=cv.getBoundingClientRect(), scr=$('scr-chat').getBoundingClientRect();
     T(st1.platforms>=5 && st1.platforms<=9, 'edges: every widget top edge on screen is a ledge ('+st1.platforms+')');
     T($('hub-floor').parentNode===$('scr-chat') && Math.abs(sr.top-scr.top)<2 && Math.abs(sr.bottom-scr.bottom)<2 && Math.abs(sr.left-scr.left)<2 && Math.abs(sr.right-scr.right)<2,
@@ -956,7 +956,7 @@
         var r0=cv.getBoundingClientRect();
         function pev(type, x, y){ var e=new PointerEvent(type, {bubbles:true, cancelable:true, clientX:x, clientY:y, pointerId:9, isPrimary:true, pointerType:'mouse', button:0}); (document.elementFromPoint(x,y)||document.body).dispatchEvent(e); return e }
         setTimeout(function(){
-          var box=window.__esq.petBox; if(!box){ T(false, 'edges: he reports where he is before the drop'); return }
+          var box=window.__lounge.petBox; if(!box){ T(false, 'edges: he reports where he is before the drop'); return }
           var tr=R(tile('time')), cx=r0.left+box.x+box.w/2, cy=r0.top+box.y+box.h/2;
           pev('pointerdown', cx, cy); pev('pointermove', tr.l+60, tr.t-40); pev('pointerup', tr.l+60, tr.t-40);
           setTimeout(function(){
@@ -978,7 +978,7 @@
     var M=mc.map;
     function pressed(g){ return [].filter.call(g.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }) }
     function chip(g, txt){ return [].filter.call(g.children, function(c){ return c.textContent===txt })[0] }
-    function saved(){ try{ return JSON.parse(localStorage.getItem('esq_map')||'null') }catch(e){ return null } }
+    function saved(){ try{ return JSON.parse(localStorage.getItem('lounge_map')||'null') }catch(e){ return null } }
     function layerIds(){ return mc.layers.map(function(l){ return l.id }) }
     function feats(id){ var s=mc.sources[id]; return (s && s.data && s.data.features) || [] }
     var st=mc.style;
@@ -1000,7 +1000,7 @@
       T(mc.styleLoads>=2 && layerIds().indexOf('events-c')>-1 && feats('events').length===(FAIL_HUB ? 0 : 4), 'map: after the basemap change the events are drawn again ('+feats('events').length+')');
       chip(base,'Dark').click();
       setTimeout(function(){
-        T(mc.style===window.__esq.darkStyle || (mc.style && !mc.style.sources.esri), 'map: and back to Dark');
+        T(mc.style===window.__lounge.darkStyle || (mc.style && !mc.style.sources.esri), 'map: and back to Dark');
         T(!saved().view && !mc.terrain && mc.projection==='mercator', 'map: nothing about a view is saved or applied any more');
         var h0=hubCalls.length; chip(lay,'Radar').click();
         setTimeout(function(){
@@ -1021,30 +1021,30 @@
             }
             var al=feats('alerts');
             T(al.length===2 && /2 severe weather alerts \(\+1 with no map shape\)/.test(tx('map-note')), 'map: 2 outlined NWS alerts drawn, the zone-only one counted, the nameless one dropped ('+tx('map-note')+')');
-            var tor=al.filter(function(f){ var p=window.__esq.popupFor(f.properties.id); return p && /Tornado/.test(p.textContent) })[0], fl=al.filter(function(f){ var p=window.__esq.popupFor(f.properties.id); return p && /Flood/.test(p.textContent) })[0];
+            var tor=al.filter(function(f){ var p=window.__lounge.popupFor(f.properties.id); return p && /Tornado/.test(p.textContent) })[0], fl=al.filter(function(f){ var p=window.__lounge.popupFor(f.properties.id); return p && /Flood/.test(p.textContent) })[0];
             T(!!tor && tor.properties.color==='#FF3B30' && !!fl && fl.properties.color==='#FF8A3D', 'map: a tornado warning is red, a severe flood warning orange');
-            var flp=fl && window.__esq.popupFor(fl.properties.id);
+            var flp=fl && window.__lounge.popupFor(fl.properties.id);
             T(!!flp && !flp.querySelector('img') && /<img/.test(flp.textContent) && window.__pwned===undefined && /Severe alert/.test(flp.textContent) && /NWS/.test(flp.textContent) && /Maumee/.test(flp.textContent),
               'map: markup in an alert name stays text; the area, severity and NWS in the popup');
             var fi=feats('fires');
             T(fi.length===2 && /2 wildfires/.test(tx('map-note')), 'map: 2 named wildfires drawn (EONET), no coordinates dropped, sea ice ignored');
-            var bad=fi.map(function(f){ return window.__esq.popupFor(f.properties.id) }).filter(function(p){ return /<img/.test(p.textContent) })[0], meers=fi.map(function(f){ return window.__esq.popupFor(f.properties.id) }).filter(function(p){ return /MEERS/.test(p.textContent) })[0];
+            var bad=fi.map(function(f){ return window.__lounge.popupFor(f.properties.id) }).filter(function(p){ return /<img/.test(p.textContent) })[0], meers=fi.map(function(f){ return window.__lounge.popupFor(f.properties.id) }).filter(function(p){ return /MEERS/.test(p.textContent) })[0];
             T(!!bad && !bad.querySelector('img') && !bad.querySelector('a') && window.__pwned===undefined && !!meers && !meers.querySelector('a') && !/^Wildfire/.test(meers.querySelector('.ev-t').textContent),
               'map: a fire\'s links are dropped (evil, and IRWIN\'s login page), its name loses the "Wildfire" prefix');
-            var sm=feats('storms'), line=sm.filter(function(f){ return f.geometry.type==='LineString' })[0], pt=sm.filter(function(f){ return f.geometry.type==='Point' })[0], sp=pt && window.__esq.popupFor(pt.properties.id);
+            var sm=feats('storms'), line=sm.filter(function(f){ return f.geometry.type==='LineString' })[0], pt=sm.filter(function(f){ return f.geometry.type==='Point' })[0], sp=pt && window.__lounge.popupFor(pt.properties.id);
             T(sm.length===2 && !!line && line.geometry.coordinates.length===3 && !!pt && pt.geometry.coordinates[1]===20.4 && pt.geometry.coordinates[0]===-142.4 && !!sp && /Norbert/.test(sp.textContent) && /1 storm/.test(tx('map-note'))
               && [].every.call(sp.querySelectorAll('a'), function(a){ return /^https:\/\/www\.nhc\.noaa\.gov\//.test(a.href) }) && !!sp.querySelector('a'),
               'map: the storm is a 3-point track ending at its last position, with its NHC link');
             T([].filter.call(document.querySelectorAll('.map-key [data-key]'), function(k){ return !k.hidden }).length===5 && document.querySelectorAll('.map-key [data-key]').length===5,
               'map: every key entry belongs to a layer, and the key shows the five that are on');
-            if(allowAsk && tor && !window.__esq.busy){ var n=calls.length; window.__esq.popupFor(tor.properties.id).querySelector('.hl-ask').click();
-              T(calls.length===n+1 && calls[n].a==='chat' && /NWS/.test(calls[n].msg||'') && /Tornado Warning/.test(calls[n].msg||''), 'map: Ask hands the alert to Esquiffis'); }
+            if(allowAsk && tor && !window.__lounge.busy){ var n=calls.length; window.__lounge.popupFor(tor.properties.id).querySelector('.hl-ask').click();
+              T(calls.length===n+1 && calls[n].a==='chat' && /NWS/.test(calls[n].msg||'') && /Tornado Warning/.test(calls[n].msg||''), 'map: Ask hands the alert to Jarvis'); }
             // a tap on a feature opens its popup on the map
             M.fire('click', 'alerts-f', {features:[{properties:{id:tor.properties.id}}], lngLat:{lng:-98.4, lat:34.7}});
             T(mc.popups.length===1 && !!mc.popups[0].node && /Tornado/.test(mc.popups[0].node.textContent) && mc.popups[0].ll.lat===34.7, 'map: tapping a shape opens its popup where it was tapped');
             chip(lay,'Wildfires').click();
             T(feats('fires').length===0 && feats('storms').length===2 && !/wildfire/.test(tx('map-note')) && /1 storm/.test(tx('map-note')) && saved().lay.fires===false && saved().lay.storms===true, 'map: Wildfires off leaves the storm track');
-            var tick=window.__esq.hubTick; chip(lay,'Radar').click();
+            var tick=window.__lounge.hubTick; chip(lay,'Radar').click();
             setTimeout(function(){
               var h3=hubCalls.length; tick(Date.now()+16*60000); var fresh=hubCalls.slice(h3);
               T(fresh.indexOf('radar')>-1 && fresh.indexOf('nws')>-1 && fresh.indexOf('eonet')>-1, 'map: 16 minutes later radar, alerts and storms refresh by themselves, 0 n8n calls ('+fresh.filter(function(k,i,a){ return a.indexOf(k)===i }).join(',')+')');
@@ -1077,20 +1077,20 @@
       T(mc.markers.length===4, 'map: 2 quakes + 2 alerts drawn; green GDACS events (a quake and a wildfire), ended, unknown and coordinate-less ones dropped ('+mc.markers.length+')');
       T(/2 earthquakes/.test(tx('map-note')) && /2 disaster alerts \(orange and red\)/.test(tx('map-note')) && /Updated \d\d:\d\d/.test(tx('map-note')), 'map: the count line, 24-hour ('+tx('map-note')+')');
       T([].filter.call(document.querySelectorAll('.map-key [data-key]'), function(k){ return !k.hidden }).map(function(k){ return k.getAttribute('data-key') }).join()==='quakes,gdacs', 'map: the key shows Quake and Disaster alert now');
-      var pops=mc.markers.map(function(f){ return window.__esq.popupFor(f.properties.id) }).filter(Boolean), tc=pops.filter(function(p){ return /Cyclone/.test(p.textContent) })[0];
+      var pops=mc.markers.map(function(f){ return window.__lounge.popupFor(f.properties.id) }).filter(Boolean), tc=pops.filter(function(p){ return /Cyclone/.test(p.textContent) })[0];
       T(pops.length===4 && !!tc && !tc.querySelector('img') && /<img/.test(tc.textContent) && window.__pwned===undefined, 'map: markup in an event name stays text');
       T(pops.every(function(p){ return [].every.call(p.querySelectorAll('a'), function(a){ return /^https:\/\/(earthquake\.usgs\.gov|www\.gdacs\.org)\//.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }) }), 'map: Details links only to USGS or GDACS, in a new tab');
       T(!!tc && !tc.querySelector('a') && pops.filter(function(p){ return /Fiji/.test(p.textContent) && !p.querySelector('a') }).length===1, 'map: a link to any other site is dropped');
       var red=mc.markers.filter(function(f){ return f.properties.color==='#FF3B30' }).length, quake=mc.markers.filter(function(f){ return f.properties.ring===true && f.properties.color==='#E8A33D' }).length, green=mc.markers.filter(function(f){ return f.properties.color==='#3FD07A' }).length;
       T(red===1 && quake===2 && green===0, 'map: colored by what it is (quakes amber rings, a red alert red), nothing green');
       var ask=tc && tc.querySelector('.hl-ask'), n=calls.length;
-      if(allowAsk && ask && !window.__esq.busy){ ask.click(); T(calls.length===n+1 && calls[n].a==='chat' && /Tropical Cyclone/.test(calls[n].msg||'') && /GDACS/.test(calls[n].msg||''), 'map: Ask hands the event to Esquiffis'); }
+      if(allowAsk && ask && !window.__lounge.busy){ ask.click(); T(calls.length===n+1 && calls[n].a==='chat' && /Tropical Cyclone/.test(calls[n].msg||'') && /GDACS/.test(calls[n].msg||''), 'map: Ask hands the event to Jarvis'); }
       // one layer off keeps the other's dots from the cache, no new fetch; back on, still from the cache; 16 minutes later both refresh by themselves
       var h1=hubCalls.length; chipL('Disasters').click();
       T(mc.markers.length===2 && hubCalls.length===h1 && /2 earthquakes/.test(tx('map-note')) && !/disaster/.test(tx('map-note')) && $('map-lay').querySelector('[data-lay="gdacs"]').getAttribute('aria-pressed')==='false', 'map: Disasters off leaves the quakes, nothing refetched ('+tx('map-note')+')');
       chipL('Disasters').click();
       T(mc.markers.length===4 && hubCalls.length===h1, 'map: Disasters back on draws from what it fetched a moment ago');
-      var tick=window.__esq.hubTick, h2=hubCalls.length; if(tick) tick(Date.now()+16*60000);
+      var tick=window.__lounge.hubTick, h2=hubCalls.length; if(tick) tick(Date.now()+16*60000);
       T(hubCalls.slice(h2).indexOf('quakes')>-1 && hubCalls.slice(h2).indexOf('gdacs')>-1, 'map: 16 minutes later both event feeds refresh by themselves (0 n8n calls)');
       chipL('Quakes').click(); chipL('Disasters').click();
       var h3=hubCalls.length; if(tick) tick(Date.now()+40*60000);
@@ -1123,7 +1123,7 @@
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
     f=scr.querySelectorAll('iframe');
     T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&mute=1&playsinline=1&rel=0' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
-    T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('esq_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
+    T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('lounge_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
     $('tv-stop').click();
     T(!document.querySelector('iframe') && !$('tv-play').hidden && /ABC/.test($('tv-play-t').textContent), 'TV: Stop removes the player completely');
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: and the red goes out');
@@ -1181,7 +1181,7 @@
         if(WIDE){ fullOK(); grabOK(); }
         // "the stuff than can be refresh auto without execution from N8N, do it": 16 minutes on, the browser refreshes by itself
         // (the map's event feeds are not among them while their layers are off - Hector 2026-09-16, a clean map)
-        var nN8n=calls.length, h0=hubCalls.length, tick=window.__esq && window.__esq.hubTick;
+        var nN8n=calls.length, h0=hubCalls.length, tick=window.__lounge && window.__lounge.hubTick;
         if(typeof tick==='function') tick(Date.now()+16*60000);
         var fresh=hubCalls.slice(h0);
         T(typeof tick==='function' && ['wx','fox','foxus','foxpol','dw','arutz','gold','snap'].every(function(k){ return fresh.indexOf(k)>-1 }) && fresh.indexOf('mlb')<0 && fresh.indexOf('quakes')<0 && fresh.indexOf('gdacs')<0 && calls.length===nN8n,
@@ -1197,18 +1197,18 @@
         T(tile('news').classList.contains('has-brief') && tile('news').classList.contains('shut') && !vis($('h-list')) && vis($('h-more')) && tx('h-more')==='Show all '+qa('h-list').length+' headlines' && qa('h-list').length>=6,
           'with a brief, the headline list folds away behind "Show all" ('+$('h-more').textContent+')');
         T(/Summarized/.test(tx('brief-meta')) && /7 headlines/.test(tx('brief-meta')) && !!$('brief-go') && !$('brief-go').disabled && /Refresh brief/.test(tx('brief-go')), 'it says when, and from how many headlines ('+tx('brief-meta')+')');
-        T((localStorage.getItem('esq_brief')||'').indexOf('Point two')>-1, 'the brief is kept on this device');
+        T((localStorage.getItem('lounge_brief')||'').indexOf('Point two')>-1, 'the brief is kept on this device');
         $('h-more').click();
         T(vis($('h-list')) && !tile('news').classList.contains('shut'), '"Show all" opens the headlines under the brief');
         var nN8n2=calls.length;
-        var b3=briefCalls.length; if(typeof window.__esq.hubTick==='function') (window.__esq.hubTick)(Date.now()+2*60*60000+60000);
+        var b3=briefCalls.length; if(typeof window.__lounge.hubTick==='function') (window.__lounge.hubTick)(Date.now()+2*60*60000+60000);
         // Hector 2026-09-15: "The inbox, same than the headlines, just update every 2 hrs and manually"
         T(calls.length===nN8n2+1 && !!calls[nN8n2] && calls[nN8n2].a==='login' && briefCalls.length===b3,
           'after 2 hours the inbox and headlines refresh by themselves (one login call), and the due brief waits for them');
         var ask=$('h-list').querySelector('.hl-ask'), askTitle=tx('h-list') && $('h-list').querySelector('.hl-t').textContent, n1=calls.length;
         if(!WIDE && $('scr-chat').className.indexOf('hubview')<0) $('now').click();
         ask.click();
-        T(calls.length===n1+1 && calls[n1].a==='chat' && !!askTitle && (calls[n1].msg||'').indexOf(askTitle)>-1, 'Ask sends that headline to Esquiffis ('+(calls[n1]&&calls[n1].msg)+')');
+        T(calls.length===n1+1 && calls[n1].a==='chat' && !!askTitle && (calls[n1].msg||'').indexOf(askTitle)>-1, 'Ask sends that headline to Jarvis ('+(calls[n1]&&calls[n1].msg)+')');
         T(vis($('log')) && $('scr-chat').className.indexOf('hubview')<0, 'and shows the conversation');
         setTimeout(function(){
           T(briefCalls.length===b3+1, 'then the brief refreshes once, from the fresh headlines');
@@ -1216,7 +1216,7 @@
           floorOK('hub'); layout('hub');
           if(!WIDE) $('now').click();
           var ia=$('ib-list').querySelector('.hl-ask'), n2=calls.length; ia.click();
-          T(calls.length===n2+1 && calls[n2].a==='chat' && /Masterbuilt/.test(calls[n2].msg||'') && /order shipped/.test(calls[n2].msg||''), 'Ask on a message hands it to Esquiffis ('+(calls[n2]&&calls[n2].msg)+')');
+          T(calls.length===n2+1 && calls[n2].a==='chat' && /Masterbuilt/.test(calls[n2].msg||'') && /order shipped/.test(calls[n2].msg||''), 'Ask on a message hands it to Jarvis ('+(calls[n2]&&calls[n2].msg)+')');
           var n3=calls.length; $('ib-refresh').click();
           T(calls.length===n3+1 && calls[n3].a==='login', 'the inbox Refresh is the same single login call');
           setTimeout(done, 300);
@@ -1228,11 +1228,15 @@
       var ms=document.querySelectorAll('#col .m');
       T(ms.length===2, 'the remembered transcript is on screen ('+ms.length+')');
       T(/brisket/.test(ms[1].textContent), 'with its words');
+      // Hector 2026-09-16: Esquiffis is Jarvis now - a chat saved under the old names comes back as his
+      var byOld=ms[1] && ms[1].querySelector('.by');
+      T(!!ms[1] && ms[1].classList.contains('jarvis') && !!byOld && byOld.textContent==='Jarvis' && localStorage.getItem('esq_log')===null && /"r":"jarvis"/.test(localStorage.getItem('lounge_log')||''),
+        'a chat saved before the rename moves to the new names and reads as Jarvis ('+(byOld && byOld.textContent)+')');
       T(!document.querySelector('#col .m .used'), 'a reply saved before receipts existed shows none');
       T($('empty').hidden, 'and no empty state over it');
       $('clear').click();
       T(document.querySelectorAll('#col .m').length===0 && !$('empty').hidden, 'Clear screen empties it and the invitation returns');
-      T(localStorage.getItem('esq_log')==='[]', 'and forgets it locally');
+      T(localStorage.getItem('lounge_log')==='[]', 'and forgets it locally');
       return done();
     }
     T(vis($('empty')), 'an empty conversation invites you to ask');
@@ -1264,38 +1268,38 @@
     if(mode==='expired'){
       T($('scr-lock').classList.contains('on'), 'a 401 mid-conversation returns to the lock screen');
       T(/expired/i.test($('lock-msg').textContent), 'with the reason ('+$('lock-msg').textContent+')');
-      T(sessionStorage.getItem('esq_pw')===null, 'and the passphrase is forgotten');
-      T(sessionStorage.getItem('esq_inbox')===null && $('ib-list').children.length===0, 'and so is the inbox');
+      T(sessionStorage.getItem('lounge_pw')===null, 'and the passphrase is forgotten');
+      T(sessionStorage.getItem('lounge_inbox')===null && $('ib-list').children.length===0, 'and so is the inbox');
       T(vis($('vc-stage')) && $('now').hidden, 'back on the lock screen: VaderClawd on screen, the hub readout gone');
       return done();
     }
     var ms=document.querySelectorAll('#col .m');
     T(ms.length===2, 'two messages on screen ('+ms.length+')');
-    var esq=document.querySelector('#col .m.esq .body');
-    T(!!esq, 'the reply is marked as his');
+    var jv=document.querySelector('#col .m.jarvis .body');
+    T(!!jv, 'the reply is marked as his');
     if(mode==='guard'){
-      T(!!document.querySelector('#col .m.esq .tag'), 'a guarded reply carries the guard tag');
-      T(/Stopping myself/.test(esq.textContent), 'and shows the guard\'s words');
-      T(/No tools used/.test((document.querySelector('#col .m.esq .used')||{}).textContent||''), 'a reply that used no tools says so');
+      T(!!document.querySelector('#col .m.jarvis .tag'), 'a guarded reply carries the guard tag');
+      T(/Stopping myself/.test(jv.textContent), 'and shows the guard\'s words');
+      T(/No tools used/.test((document.querySelector('#col .m.jarvis .used')||{}).textContent||''), 'a reply that used no tools says so');
     } else {
-      T(esq.querySelector('b') && esq.querySelector('b').textContent==='bold', 'bold survives');
-      T(esq.querySelector('i') && esq.querySelector('i').textContent==='italic', 'italic survives');
-      var links=esq.querySelectorAll('a');
+      T(jv.querySelector('b') && jv.querySelector('b').textContent==='bold', 'bold survives');
+      T(jv.querySelector('i') && jv.querySelector('i').textContent==='italic', 'italic survives');
+      var links=jv.querySelectorAll('a');
       T(links.length===2, 'the bare URL and the tagged link are links, the javascript: one is not ('+links.length+')');
       T([].every.call(links, function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'links open in a new tab safely');
-      T(!esq.querySelector('script') && !esq.querySelector('img') && window.__pwned===undefined, 'script and img are stripped, nothing ran');
-      T(/• one/.test(esq.textContent) && /• two/.test(esq.textContent), 'line breaks and bullets are kept');
-      T(!document.querySelector('#col .m.esq .tag'), 'an ordinary reply has no guard tag');
-      var chips=[].map.call(document.querySelectorAll('#col .m.esq .used .t'), function(e){ return e.textContent });
+      T(!jv.querySelector('script') && !jv.querySelector('img') && window.__pwned===undefined, 'script and img are stripped, nothing ran');
+      T(/• one/.test(jv.textContent) && /• two/.test(jv.textContent), 'line breaks and bullets are kept');
+      T(!document.querySelector('#col .m.jarvis .tag'), 'an ordinary reply has no guard tag');
+      var chips=[].map.call(document.querySelectorAll('#col .m.jarvis .used .t'), function(e){ return e.textContent });
       T(chips.join('|')==='Gmail|Weather|Some New Tool', 'the tools he used show under the reply: plain names, once each, Think hidden ('+chips.join('|')+')');
-      var sv=JSON.parse(localStorage.getItem('esq_log')||'[]'); T(!!sv[1] && Array.isArray(sv[1].k) && sv[1].k.length===5, 'and they are remembered with the transcript');
+      var sv=JSON.parse(localStorage.getItem('lounge_log')||'[]'); T(!!sv[1] && Array.isArray(sv[1].k) && sv[1].k.length===5, 'and they are remembered with the transcript');
       var ps=petOK('reply', true);
       if(ps) T(ps.act==='celebrate' || !!ps.bubble, 'VaderClawd reacts to the reply ('+(ps.act||ps.bubble)+')');
     }
     T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'the page is ready again');
     var l=$('log'); T(Math.abs(l.scrollTop+l.clientHeight-l.scrollHeight)<=2 || l.scrollHeight<=l.clientHeight, 'the conversation is scrolled to the newest message');
-    var saved=JSON.parse(localStorage.getItem('esq_log')||'[]');
-    T(saved.length===2 && saved[1].r==='esq', 'the transcript is remembered for a reload');
+    var saved=JSON.parse(localStorage.getItem('lounge_log')||'[]');
+    T(saved.length===2 && saved[1].r==='jarvis', 'the transcript is remembered for a reload');
     if(WIDE && (mode==='ok' || FAIL_HUB)) mapOK(true, function(){ mapLayersOK(true) });
     floorOK('chat');
     layout('chat');

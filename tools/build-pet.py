@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Put VaderClawd into the Esquiffis web page.
+"""Put VaderClawd into The Lounge (the Jarvis web page).
 
     python3 tools/build-pet.py
 
@@ -13,7 +13,7 @@ Web patches (Hector 2026-09-14):
   - mostly stays where he is; now and then he crosses to another part of the page
   - big moves more often (drones, probe, swarm, flyover, workout, a crate); no climbing
   - no night meditation, no CPU sign, no march, no sound
-  - lines about Esquiffis, and pet.react(kind) so the page can make him react to replies
+  - lines about Jarvis, and pet.react(kind) so the page can make him react to replies
   - the loop starts on a timer, not requestAnimationFrame (works in a background tab and headless)
 The pet and the rig are NOT modified."""
 import pathlib, re, sys
@@ -83,20 +83,20 @@ js = once_re(js, r"      if\(r<\.2\)\{ var nx=Math\.max.*?\n      else startAct\
 
 # lines for the web door
 js = once_re(js, r"    idle:\[[^\]]*\],\n",
-    "    idle:['Ask him something.','Esquiffis is listening.','*mechanical breathing*','The web door is open.',\n"
-    "          'Check the smoker, pitmaster.','Hydrate, apprentice.','Same Esquiffis. Same Empire.','Your inbox fears you.',\n"
+    "    idle:['Ask him something.','Jarvis is listening.','*mechanical breathing*','The web door is open.',\n"
+    "          'Check the smoker, pitmaster.','Hydrate, apprentice.','Same Jarvis. Same Empire.','Your inbox fears you.',\n"
     "          'I find your lack of questions disturbing.','Join the dark side. We have coffee.','I am watching this page.'],\n"
-    "    greet:['Welcome back, Hector.','The web door. I approve.','Same Esquiffis as your phone.'],\n"
-    "    thinking:['He is looking. Patience.','Esquiffis is on it.','Checking. Stand by.','Give him a moment.'],\n"
+    "    greet:['Welcome back, Hector.','The web door. I approve.','Same Jarvis as your phone.'],\n"
+    "    thinking:['He is looking. Patience.','Jarvis is on it.','Checking. Stand by.','Give him a moment.'],\n"
     "    waiting:['Still on it.','A big one. He is still working.','Patience, apprentice.'],\n"
-    "    reply:['There. Answered.','Esquiffis delivers.','Read it, apprentice.'],\n"
+    "    reply:['There. Answered.','Jarvis delivers.','Read it, apprentice.'],\n"
     "    guard:['The guard caught that one.','He almost made that up. Blocked.'],\n"
     "    failed:['The line went dead. Ask again.','No answer. Try once more.'],\n"
     "    locked:['Access denied.','Wrong code, rebel.'],\n"
     "    news:['News from across the galaxy.','Fresh headlines. Read them.','The HoloNet has spoken.'],\n"
     "    hot:['Hot out there. Even for a Sith.','The suit is not rated for this heat.'],\n")
 js = once(js, "    celebrate:['Task complete. Impressive.','The Force is strong with this code.','Another one for the Empire.'],",
-              "    celebrate:['Answered. Impressive.','Esquiffis delivers.','Another one for the Empire.'],")
+              "    celebrate:['Answered. Impressive.','Jarvis delivers.','Another one for the Empire.'],")
 
 # the page's hook
 js = once(js, "  window.pet={\n",

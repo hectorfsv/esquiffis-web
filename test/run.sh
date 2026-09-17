@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify the Esquiffis web page. Read-only: nothing is sent, nothing is spent.
+# Verify the Jarvis (The Lounge) web page. Read-only: nothing is sent, nothing is spent.
 #   ./test/run.sh           every mode at every viewport (Chromium)
 #   ./test/run.sh webkit    the lock and chat layout in real WebKit via ../webkit-check
 # The harness is REGENERATED from index.html on every run; test/build is disposable.

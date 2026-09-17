@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A0708">
-<title>Esquiffis</title>
+<title>The Lounge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-/* Esquiffis, the web door. One assistant, three ways in: Telegram on the phone,
+/* The Lounge: Jarvis's web door. One assistant, three ways in: Telegram on the phone,
    this page, and the desktop pet. This page talks to the SAME agent (memory,
-   tools, guard) through the access point on the Esquiffis workflow.
+   tools, guard) through the access point on the Jarvis workflow.
 
    2026-09-14 (Hector): the Render Rig's chrome - notched card, red corner
    brackets, running tape, chips - with the rig's Vader art BEHIND the letters
@@ -95,7 +95,7 @@ button{cursor:pointer}
 .now .nt{color:var(--amber)}
 .now .nt:empty{display:none}
 .now[aria-expanded="true"]{border-color:var(--rule-hot);background:rgba(224,27,27,.12)}
-/* while Esquiffis is thinking, a red sweep runs under the header */
+/* while Jarvis is thinking, a red sweep runs under the header */
 .sweep{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--red);box-shadow:0 0 10px rgba(224,27,27,.7);
   transform-origin:left;transform:scaleX(0);animation:sweep 1.6s cubic-bezier(.4,0,.2,1) infinite}
 @keyframes sweep{0%{transform:scaleX(0);transform-origin:left}55%{transform:scaleX(1);transform-origin:left}
@@ -164,14 +164,14 @@ button{cursor:pointer}
 .m.me{align-self:flex-end;max-width:min(82%,54ch);align-items:flex-end}
 .m.me .body{background:rgba(255,255,255,.04);border:1px solid var(--rule);padding:10px 14px;
   clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
-/* Esquiffis: his words on the stage, marked by the red rule */
-.m.esq{align-self:flex-start;max-width:min(100%,70ch)}
-.m.esq .body{border-left:3px solid var(--red);padding:4px 0 4px 14px;background:linear-gradient(90deg,rgba(224,27,27,.07),transparent 45%)}
-.m.esq .body b,.m.esq .body strong{font-weight:700}
-.m.esq .body code{font-family:var(--mono);font-size:.9em;background:var(--panel);padding:1px 5px}
-.m.esq .body pre{font-family:var(--mono);font-size:.88em;background:var(--panel);padding:12px 14px;overflow-x:auto;white-space:pre;margin:6px 0}
-.m.esq .body pre code{background:none;padding:0}
-.m.esq .body a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
+/* Jarvis: his words on the stage, marked by the red rule */
+.m.jarvis{align-self:flex-start;max-width:min(100%,70ch)}
+.m.jarvis .body{border-left:3px solid var(--red);padding:4px 0 4px 14px;background:linear-gradient(90deg,rgba(224,27,27,.07),transparent 45%)}
+.m.jarvis .body b,.m.jarvis .body strong{font-weight:700}
+.m.jarvis .body code{font-family:var(--mono);font-size:.9em;background:var(--panel);padding:1px 5px}
+.m.jarvis .body pre{font-family:var(--mono);font-size:.88em;background:var(--panel);padding:12px 14px;overflow-x:auto;white-space:pre;margin:6px 0}
+.m.jarvis .body pre code{background:none;padding:0}
+.m.jarvis .body a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
 .m .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--amber);margin-top:6px}
 /* what he actually used for this answer: the workflow's own record, not his claim */
 .used{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px}
@@ -180,7 +180,7 @@ button{cursor:pointer}
   background:rgba(0,0,0,.35);border:1px solid var(--rule);padding:3px 8px}
 .used .t::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--go);box-shadow:0 0 6px rgba(63,208,122,.5)}
 .used.none{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-faint)}
-/* a note from the page itself (never from Esquiffis) */
+/* a note from the page itself (never from Jarvis) */
 .m.note{align-self:flex-start;max-width:60ch}
 .m.note .body{color:var(--ink-dim);border-left:3px solid var(--ink-faint);padding:2px 0 2px 14px}
 
@@ -678,12 +678,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       <header class="head">
         <div class="who">
           <img class="face" id="face" alt="" width="28" height="28">
-          <span class="name">Esquiffis</span><span class="model">Grok 4.20</span>
+          <span class="name">The Lounge</span><span class="model">Jarvis</span>
         </div>
         <div class="head-r">
           <button id="now" class="now" type="button" aria-controls="hub" aria-expanded="false" hidden><span id="now-time">--:--</span><span id="now-temp" class="nt"></span></button>
           <span id="status" class="chip" aria-live="polite">Locked</span>
-          <button id="full" class="gbtn gbtn-ico" type="button" aria-pressed="false" aria-label="Full screen" hidden title="Full screen: the hub on the whole screen, no browser chrome and no frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f-in" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"/><path class="f-out" d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M3 15h4a2 2 0 0 1 2 2v4M15 21v-4a2 2 0 0 1 2-2h4"/></svg></button>
+          <button id="full" class="gbtn gbtn-ico" type="button" aria-pressed="false" aria-label="Full screen" hidden title="Full screen: The Lounge on the whole screen, no browser chrome and no frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="f-in" d="M3 9V5a2 2 0 0 1 2-2h4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M9 21H5a2 2 0 0 1-2-2v-4"/><path class="f-out" d="M9 3v4a2 2 0 0 1-2 2H3M21 9h-4a2 2 0 0 1-2-2V3M3 15h4a2 2 0 0 1 2 2v4M15 21v-4a2 2 0 0 1 2-2h4"/></svg></button>
           <span id="head-tools" class="head-tools"><button id="hub-pet" class="gbtn" type="button" aria-pressed="true" title="Switch VaderClawd off" hidden>VaderClawd: On</button><button id="hub-arrange" class="gbtn" type="button" aria-pressed="false" hidden>Arrange</button></span>
           <button id="talk-fold" class="gbtn" type="button" aria-controls="scr-chat" aria-expanded="true" hidden>Chat</button>
         </div>
@@ -693,9 +693,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       <section id="scr-lock" class="screen lock on" aria-labelledby="mark">
         <div class="art" aria-hidden="true"><img id="art" src="hero.webp" alt="" width="736" height="1408" draggable="false"></div>
         <form id="lock-form" class="lock-form" autocomplete="on">
-          <h1 id="mark" class="mark"><span id="mark-t">Esquiffis</span></h1>
+          <h1 id="mark" class="mark"><span id="mark-t">The Lounge</span></h1>
           <div class="gate" data-pet-cover>
-            <p class="sub">Same Esquiffis as on your phone, with the same memory.</p>
+            <p class="sub">Same Jarvis as on your phone, with the same memory.</p>
             <label class="sr" for="pw">Passphrase</label>
             <div class="slot">
               <input id="pw" type="password" placeholder="passphrase" autocomplete="current-password" autocapitalize="off" spellcheck="false">
@@ -709,7 +709,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       <section id="scr-chat" class="screen chat" aria-label="Conversation">
         <div class="garg" aria-hidden="true"><img src="gargantua.jpg" alt="" width="2560" height="1600" loading="lazy" decoding="async" draggable="false"></div>
         <div class="side">
-          <aside id="hub" class="hub" aria-label="Hub">
+          <aside id="hub" class="hub" aria-label="The Lounge">
             <div class="hub-bar"><span id="hub-add" class="hub-add" hidden></span><button id="hub-tidy" class="hb-btn" type="button" hidden title="Close the gaps: every tile packs up in reading order, widths kept">Tidy</button><button id="hub-reset" class="hb-btn" type="button" hidden>Reset layout</button></div>
             <section class="hb hb-time" data-w="time" aria-label="Clock">
               <div class="tm"><div id="h-time" class="h-time">--:--</div><div id="h-date" class="h-date"></div></div>
@@ -769,7 +769,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span data-key="quakes" hidden><i class="k-q"></i>Quake</span><span data-key="gdacs" hidden><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span></span></div>
               <div id="map-ch" class="map-ch"><span id="map-base" class="map-cg" role="group" aria-label="Basemap"></span><span id="map-lay" class="map-cg" role="group" aria-label="Layers"></span></div>
               <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes, disaster alerts, weather and wildfires"></div>
-              <p id="map-note" class="h-note">The map loads when the hub is on screen.</p>
+              <p id="map-note" class="h-note">The map loads when The Lounge is on screen.</p>
             </section>
             <section class="hb hb-cams" data-w="cams" aria-labelledby="cams-h">
               <div class="hb-h"><button id="cams-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="cams-grid">Live cameras</button><span class="cams-bar"><span id="cams-n" class="cams-n" role="group" aria-label="How many cameras"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button></span><button id="cams-play" class="hb-btn" type="button">Play</button><button id="cams-stop" class="hb-btn" type="button" hidden>Stop</button></span></div>
@@ -813,7 +813,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
             <div class="col" id="col">
               <div id="empty" class="empty">
                 <p class="lead">What do you need?</p>
-                <p class="hint">Same Esquiffis as on your phone. He remembers both.</p>
+                <p class="hint">Same Jarvis as on your phone. He remembers both.</p>
                 <div class="asks" id="asks">
                   <button type="button" data-ask="give me my morning coffee">Morning coffee <span>the briefing</span></button>
                   <button type="button" data-ask="anything important in my inbox?">My inbox</button>
@@ -827,7 +827,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
           <div id="dock" class="dock">
             <form id="composer" class="composer">
               <label class="sr" for="box">Message</label>
-              <div class="in" data-pet-cover><textarea id="box" rows="1" placeholder="Message Esquiffis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
+              <div class="in" data-pet-cover><textarea id="box" rows="1" placeholder="Message Jarvis" enterkeyhint="send" autocapitalize="sentences"></textarea></div>
               <button id="send" class="send" type="submit" aria-label="Send" data-pet-cover>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 8h-5v10H9V11H4z"/></svg>
               </button>
@@ -843,15 +843,33 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 <script>
 (function(){
   'use strict';
-  /* ---------- where Esquiffis answers ----------
-     The access point on the Esquiffis workflow. Form data on purpose: a JSON
+  /* The assistant's new name is Jarvis and his hub is The Lounge (Hector 2026-09-16). What this device saved under the old
+     key names (esq_*) moves across: the layout, the map, the chat, the rest. Run now and again at every unlock: a tab still
+     open on the old page can keep saving under the old names. */
+  function moveOldNames(){
+    ['brief','cams','fuel','hub','inbox','log','map','news','pet','pw','scores','talk','tle','tv'].forEach(function(k){
+      [window.localStorage, window.sessionStorage].forEach(function(st){
+        try{
+          var old=st.getItem('esq_'+k); if(old===null) return;
+          if(st.getItem('lounge_'+k)===null){
+            if(k==='log') try{ var a=JSON.parse(old); if(Array.isArray(a)){ a.forEach(function(m){ if(m && m.r==='esq') m.r='jarvis' }); old=JSON.stringify(a) } }catch(e){}
+            st.setItem('lounge_'+k, old);
+          }
+          st.removeItem('esq_'+k);
+        }catch(e){}
+      });
+    });
+  }
+  moveOldNames();
+  /* ---------- where Jarvis answers ----------
+     The access point on the Jarvis workflow. Form data on purpose: a JSON
      body is not a CORS "simple" request and would fire a preflight the webhook
      cannot answer. ?dev=1 talks to the DEV copy. */
-  var PROD='https://hectorfsv.app.n8n.cloud/webhook/esquiffis-access';
+  var PROD='https://hectorfsv.app.n8n.cloud/webhook/jarvis-access';
   var BASE=/[?&]dev=1(&|$)/.test(location.search) ? PROD+'-dev' : PROD;
-  var K_PW='esq_pw', K_LOG='esq_log', K_NEWS='esq_news', K_INBOX='esq_inbox';
+  var K_PW='lounge_pw', K_LOG='lounge_log', K_NEWS='lounge_news', K_INBOX='lounge_inbox';
   var PW_TTL_MS=2*60*60*1000;   // sessionStorage never expires on iOS by itself: timestamp it
-  var LOG_MAX=80;               // what a reload shows; Esquiffis's own memory lives on the server
+  var LOG_MAX=80;               // what a reload shows; Jarvis's own memory lives on the server
   var WAIT_MS=120*1000;         // real turns run 6-78 s; the webhook connection is cut near 100 s
   var FACE='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QKORXhpZgAATU0AKgAAAAgAAwEOAAIAAAD4AAAAMgE7AAIAAAAlAAABKodpAAQAAAABAAABUAAAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AGNhZTYyMWY4LTVmN2QtNGFhNC1iZDMwLTI0YzFhMGE5NWI0NgAAAASShgAHAAAA/wAAAYagAQADAAAAAQABAACgAgAEAAAAAQAAACqgAwAEAAAAAQAAAFAAAAAAQVNDSUkAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AP/tADhQaG90b3Nob3AgMy4wADhCSU0EBAAAAAAAADhCSU0EJQAAAAAAENQdjNmPALIE6YAJmOz4Qn7/wAARCABQACoDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAD/9oADAMBAAIRAxEAPwD+f+iiigAooooAKKUqw5IpKAP/0P5/6KKKACtCxtDcPgVTiTzHCk4HfvXsvwv8Cap418VaV4W0SIz3mq3EcEK9t0jADJ9B1J7CoqTUU2zrwWFlWqxpQ3Zgal4K1TTtFtNau7SSK0vt4glZSEkMeA+0ng7SRnHSuDMKgkYr68/aZ8YaReeI7fwX4UlEnhvwbbrpViy9JvJJM9x9Z5i8n0IHavkMzqSTWWGqSlDmkehnuEo0MQ6VJ3S0+fX8T//R/n/q5p9jPqV5DY2w3STMqKOOSxwOuB+ZqnXTeHNT/s3U7GW0tlnuI5Q4DgENID8gIJAKg8kHg9+2BAdvoXgR410nUrieK40/WlAikUHcsynDRsDjG08EjIr7C+F+lw/CL4Y+KPjTOQmo3vmaD4fPGftFxH/plwv/AFwgbYCOjyKeoryTwZZXXi9NC8JaLqiXniC8vNk9g8aQRRTGZhGYJDIyyFjKxbaseBwVYjcO4/aw8W6Raa5p3wm8JXCzeH/h9a/2ZC6H5Li7B3Xtzx182ctg/wBxVHavNxc3OSpI+54fpQw1CePk9UrR9X/X59j4v8RXzXE7ZOdxrk6t3cpllZjVSvRirKx8XWqOUnJn/9L+f+nI7RsHQlWU5BHBBHpTaKAPSPDfi64bxBeazqgNxf3MUjRuh8qT7SR8rpsGN5Iyemee5rltQ1i4vSzzOXZuSSckn1rCR3jdZI2KuhBBHBBHQimkk8mlZbmntZcvLfQUnJzSUUUzM//T/n/ooooAKKKKACiiigD/2Q==';
 
@@ -979,12 +997,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     post(loginFields(v))
       .then(function(r){
         if(r.status===401){ lockMsg('That passphrase is not right.', true); vc('locked'); return }
-        if(!r.ok){ lockMsg('Esquiffis did not answer ('+r.status+'). Try again.', true); return }
+        if(!r.ok){ lockMsg('Jarvis did not answer ('+r.status+'). Try again.', true); return }
         pw=v; savePw(v);
         // the login answer also carries the hub's headlines (fetched by n8n in this same call)
         return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setFuel(d && d.fuel); enter(true) });
       })
-      .catch(function(){ lockMsg("Can't reach Esquiffis. Check your connection.", true) })
+      .catch(function(){ lockMsg("Can't reach Jarvis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
@@ -1001,7 +1019,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     placePet();
   }
   function enter(fresh){
-    show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub(fresh);
+    moveOldNames(); show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub(fresh);
     if(fresh) setTimeout(function(){ vc('greet') }, 900);
     // a focused field on the phone pops the keyboard over the conversation; only the desktop wants it
     if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ box.focus() }, 50);
@@ -1019,7 +1037,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     }
     if(last<text.length) into.appendChild(document.createTextNode(text.slice(last)));
   }
-  /* Esquiffis writes for Telegram: plain text with line breaks and, at most, the
+  /* Jarvis writes for Telegram: plain text with line breaks and, at most, the
      tags Telegram allows. Everything else becomes text or a line break. Nothing
      he writes can run here. */
   function sanitize(html){
@@ -1055,11 +1073,11 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function when(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }catch(e){ return '' } }
   function node(m){
     var art=document.createElement('article'); art.className='m '+m.r;
-    if(m.r==='esq'){ var by=document.createElement('div'); by.className='by'; by.textContent='Esquiffis'; art.appendChild(by) }
+    if(m.r==='jarvis'){ var by=document.createElement('div'); by.className='by'; by.textContent='Jarvis'; art.appendChild(by) }
     var body=document.createElement('div'); body.className='body';
-    if(m.r==='esq') body.appendChild(sanitize(m.m)); else body.textContent=m.m;
+    if(m.r==='jarvis') body.appendChild(sanitize(m.m)); else body.textContent=m.m;
     art.appendChild(body);
-    if(m.r==='esq' && Array.isArray(m.k)){
+    if(m.r==='jarvis' && Array.isArray(m.k)){
       var seen={}, labels=[], used=document.createElement('div'); used.className='used';
       m.k.forEach(function(n){ var l=toolLabel(n); if(l && !seen[l]){ seen[l]=1; labels.push(l) } });
       if(labels.length){
@@ -1121,7 +1139,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
         return r.json().then(function(d){
           var reply=(d && typeof d.response==='string') ? d.response.trim() : '';
           if(!reply) throw new Error('empty');
-          var guarded=d.blocked===true, item={r:'esq', m:reply, t:new Date().toISOString(), g:guarded};
+          var guarded=d.blocked===true, item={r:'jarvis', m:reply, t:new Date().toISOString(), g:guarded};
           if(Array.isArray(d.tools)) item.k=d.tools.filter(function(x){ return typeof x==='string' }).slice(0,24);   // older workflow: no receipts
           add(item);
           vc(guarded ? 'guard' : 'reply');
@@ -1130,7 +1148,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       .catch(function(err){
         if(!pw) return;   // already locked out
         var why = (err && err.name==='AbortError')
-          ? 'No reply in two minutes. Esquiffis may still finish it on his side; ask again in a moment.'
+          ? 'No reply in two minutes. Jarvis may still finish it on his side; ask again in a moment.'
           : 'Something failed on the way back. Try again.';
         add({r:'note', m:why, t:new Date().toISOString()});
         vc('failed');
@@ -1141,7 +1159,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   /* ---------- the hub: clock, weather, headlines, Dodgers ----------
      What each costs (Ninth Rule). The clock, the weather (Open-Meteo), Fox News and the Dodgers (MLB's own
      API) come straight from the browser: 0 n8n executions. BBC, Jerusalem Post and Times of Israel do not let a
-     browser read their feeds, so Esquiffis fetches them inside the login call that already happens: 0 extra.
+     browser read their feeds, so Jarvis fetches them inside the login call that already happens: 0 extra.
      The inbox rides the same login call: 0 extra. Refresh (either button), or every 2 hours by itself, asks for both again: 1 execution.
      Gargantua is a still picture on this site: 0. The TV (YouTube) and the map (USGS, GDACS, CARTO tiles) are read
      by the browser (map tiles from Esri): 0. Nothing is fetched until you unlock, and the TV loads nothing until you press Play. */
@@ -1341,7 +1359,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      still to come. Refreshed every 15 minutes, every 5 while a game is on. The league is remembered. */
   var LEAGUES=[{k:'mlb', name:'MLB', path:'baseball/mlb'}, {k:'nfl', name:'NFL', path:'football/nfl'}, {k:'nba', name:'NBA', path:'basketball/nba'},
     {k:'nhl', name:'NHL', path:'hockey/nhl'}, {k:'mx', name:'Liga MX', path:'soccer/mex.1'}];
-  var K_SC='esq_scores', scPick=LEAGUES[0], lastSc=0, scLive=false;
+  var K_SC='lounge_scores', scPick=LEAGUES[0], lastSc=0, scLive=false;
   function scLoadSaved(){ scPick=LEAGUES[0]; try{ var sck=localStorage.getItem(K_SC); LEAGUES.forEach(function(l){ if(l.k===sck) scPick=l }) }catch(e){} }   // read at unlock, like the layout
   scLoadSaved();
   function scMs(){ return (scLive ? 5 : 15)*60*1000 }
@@ -1437,7 +1455,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   // on a phone the hub folds away behind the time in the header
   /* Hector 2026-09-15: the chat folds away so the hub (and VaderClawd) get the whole window, and comes back
      the same shape it had. Remembered like the rest of his layout. */
-  var K_TALK='esq_talk', talkShut=false;
+  var K_TALK='lounge_talk', talkShut=false;
   try{ talkShut=localStorage.getItem(K_TALK)==='1' }catch(e){}
   function applyTalk(){
     var on=talkShut && isWide();
@@ -1445,7 +1463,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var b=$('talk-fold');
     b.setAttribute('aria-expanded', on ? 'false' : 'true');
     b.textContent=on ? 'Chat' : 'Hide chat';
-    b.title=on ? 'Bring the conversation back' : 'Fold the conversation away and give the hub the whole window';
+    b.title=on ? 'Bring the conversation back' : 'Fold the conversation away and give The Lounge the whole window';
     // the hub's column count comes from a container query on .side, so it is not true until the new width lands:
     // measuring in the same tick read the OLD count and laid 12-column cells into a 6-column grid
     setTimeout(function(){
@@ -1462,9 +1480,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 
   /* ---------- the inbox: a glance at Primary ----------
      Sender, subject, a short snippet, time and the unread flag for the latest 8 in Primary, plus the unread count.
-     Esquiffis reads them inside the login call (0 extra executions). Kept for this tab only (sessionStorage, the
+     Jarvis reads them inside the login call (0 extra executions). Kept for this tab only (sessionStorage, the
      same 2-hour life as the passphrase) and forgotten on lock: mail never goes to localStorage. A subject opens
-     the conversation in Gmail in a new tab; Ask hands the message to Esquiffis (1 execution). */
+     the conversation in Gmail in a new tab; Ask hands the message to Jarvis (1 execution). */
   var inbox=null;
   function setInbox(ib){
     if(!ib || typeof ib!=='object') return;   // an older workflow sends no inbox
@@ -1540,7 +1558,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {w:'markets', name:'Markets', span:12, minH:40}, {w:'cams', name:'Live cameras', span:6, minH:40}, {w:'news', name:'News', span:6, minH:40, shut:true},
     {w:'stocks', name:'Stocks & crypto', span:6, minH:40}, {w:'fuel', name:'Fuel & energy', span:6, minH:40}, {w:'iss', name:'ISS overhead', span:6, minH:40}];   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
   // widths are twelfths, down to a single twelfth; the button cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full (Hector 2026-09-16)
-  var K_HUB='esq_hub', SPANS=[1,2,3,4,6,8,9,12], SPAN_WORD={1:'a twelfth', 2:'a sixth', 3:'a quarter', 4:'a third', 6:'half', 8:'two thirds', 9:'three quarters', 12:'the full width'},
+  var K_HUB='lounge_hub', SPANS=[1,2,3,4,6,8,9,12], SPAN_WORD={1:'a twelfth', 2:'a sixth', 3:'a quarter', 4:'a third', 6:'half', 8:'two thirds', 9:'three quarters', 12:'the full width'},
       SPAN_GLYPH={1:'1/12', 2:'\u2159', 3:'\u00BC', 4:'\u2153', 6:'\u00BD', 8:'\u2154', 9:'\u00BE', 12:'1'},
       LEGACY_SPAN={S:3, M:6, L:12}, MIN_SPAN=1, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=2;   // GAP mirrors the CSS --tg for the grid maths; LOOK stamps a layout measured under the current look
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
@@ -1855,7 +1873,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {k:'nasa', short:'NASA ISS', name:'NASA \u00B7 live from the International Space Station', vid:'M3HKLzjvKPc', page:'https://www.youtube.com/@NASA/live'},
     {k:'starbase', short:'Starbase Live', name:'NASASpaceflight \u00B7 Starbase Live 24/7 (Starship)', vid:'mhJRzQsLZGg', page:'https://www.youtube.com/@NASASpaceflight/live'},
     {k:'cape', short:'Space Coast Live', name:'NASASpaceflight \u00B7 Space Coast Live 24/7 (the Cape)', vid:'Jm8wRjD3xVA', page:'https://www.youtube.com/@NASASpaceflight/live'}];
-  var K_TV='esq_tv', tvPick=TV[0];
+  var K_TV='lounge_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
   function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0' }   // Hector: the TV starts on his click, muted
   function tvPaint(){
@@ -1991,7 +2009,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      the other logins stay quick. Propane: EIA's Mont Belvieu wholesale spot, the free daily page, the same way (no
      retail propane price exists for California: EIA's residential survey covers 46 areas and none is here, measured).
      Natural gas, gasoline, diesel and crude: the futures, from the CNBC call above, in the browser. */
-  var K_FUEL='esq_fuel', FUEL_MS=12*60*60*1000, fuel=null, fuelFail=0;
+  var K_FUEL='lounge_fuel', FUEL_MS=12*60*60*1000, fuel=null, fuelFail=0;
   function loadFuel(){ if(fuel) return; try{ var f=JSON.parse(localStorage.getItem(K_FUEL)||'null'); if(f && f.ok===true && f.t) fuel=f }catch(e){} }
   function fuelWanted(){ return !(fuel && fuel.ok===true && Date.now()-fuel.t<FUEL_MS) }
   function loginFields(v){ var f={action:'login', password:v}; if(fuelWanted()) f.fuel='1'; return f }   // the pump prices ride the login once a day
@@ -2033,7 +2051,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      (measured CORS *, kept 12 hours), the sun from the Astronomical Almanac approximation, Earth's shadow as a cylinder.
      0 executions and one small request a day. Checked against an independent SGP4 reference (Python) in the harness. */
   var SAT_JS='https://cdnjs.cloudflare.com/ajax/libs/satellite.js/5.0.0/satellite.min.js', SAT_SRI='sha384-e6V1JVpc+kVNTxT0gEOla7yL4c92Romsw7itPoipfzHbEjzUwPhTv6oeVDMHHzqT';
-  var TLE_URL='https://api.wheretheiss.at/v1/satellites/25544/tles', K_TLE='esq_tle', TLE_MS=12*60*60*1000, ISS_MS=6*60*60*1000, ISS_DAYS=10, ISS_MIN_S=60;
+  var TLE_URL='https://api.wheretheiss.at/v1/satellites/25544/tles', K_TLE='lounge_tle', TLE_MS=12*60*60*1000, ISS_MS=6*60*60*1000, ISS_DAYS=10, ISS_MIN_S=60;
   var HOME_LAT=34.3917, HOME_LON=-118.5426, HOME_ALT=0.37;   // Santa Clarita, km above the sea
   var OBS={latitude:HOME_LAT*Math.PI/180, longitude:HOME_LON*Math.PI/180, height:HOME_ALT};
   var satLib=0, satWait=[], tleD=null, satrec=null, issList=null, issAt0=0, issBusy=false;
@@ -2158,13 +2176,13 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 
   /* ---------- the AI news brief ----------
      Hector: "an AI summarize from all my news, that would be better and it would save me some space". One tap sends the
-     headlines the hub has to n8n's brief path: one grok-4.3 call that bypasses the Esquiffis agent, so nothing lands in
+     headlines the hub has to n8n's brief path: one grok-4.3 call that bypasses the Jarvis agent, so nothing lands in
      his memory or the session log. 1 execution and about 0.4 cents a brief (measured). Hector 2026-09-15: it runs once
      at every unlock, again every 2 hours while the hub stays open ("for news 2 hrs it's a good gap"), and on Refresh
      brief; a reload with a remembered session does not spend one unless the kept brief is 2 hours old. Grok may only
      restate the headlines, and n8n drops any source name that was not in them. The last brief is kept on this device
      (localStorage: public news only). */
-  var K_BRIEF='esq_brief', brief=null, briefing=false, lastBriefTry=0, BRIEF_MS=2*60*60*1000;
+  var K_BRIEF='lounge_brief', brief=null, briefing=false, lastBriefTry=0, BRIEF_MS=2*60*60*1000;
   try{ var bs=JSON.parse(localStorage.getItem(K_BRIEF)||'null'); if(bs && Array.isArray(bs.points) && bs.t) brief=bs }catch(e){}
   function newsForBrief(){
     var all=((serverNews && serverNews.items) || []).concat(webItems());   // every source the hub holds, the free feeds included
@@ -2240,7 +2258,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {k:'acuna2', region:'US–Mexico border', city:'Del Rio – Ciudad Acuña', place:'International Bridge 2', vid:'_Icedwkezwc'},
     {k:'london', region:'Europe', city:'London', place:'Abbey Road', vid:'zMCea32gpmg'},
     {k:'iss', region:'Space', city:'International Space Station', place:'Earth from orbit', vid:'awQzjn72bI0'}];
-  var K_CAMS='esq_cams', cams={n:2, picks:['wall','wh','nyc','la']}, camsOn=false, camsReady=false;
+  var K_CAMS='lounge_cams', cams={n:2, picks:['wall','wh','nyc','la']}, camsOn=false, camsReady=false;
   function camBy(k){ for(var i=0;i<CAMS.length;i++) if(CAMS[i].k===k) return CAMS[i]; return null }
   try{
     var cs0=JSON.parse(localStorage.getItem(K_CAMS)||'null');
@@ -2346,7 +2364,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       IMG_TILES='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   var MAP_BASES=[{k:'dark', name:'Dark'}, {k:'sat', name:'Satellite'}],
       MAP_LAYERS=[{k:'quakes', name:'Quakes'}, {k:'gdacs', name:'Disasters'}, {k:'radar', name:'Radar'}, {k:'alerts', name:'US alerts'}, {k:'fires', name:'Wildfires'}, {k:'storms', name:'Storms'}];
-  var K_MAP='esq_map', mapSet={base:'dark', lay:{}};   // his basemap and layers, remembered on this device; every layer starts off
+  var K_MAP='lounge_map', mapSet={base:'dark', lay:{}};   // his basemap and layers, remembered on this device; every layer starts off
   function mapLoadSaved(){   // only a known basemap, and switches saved as exactly true (a saved 3D or Globe view is ignored: they are gone)
     mapSet={base:'dark', lay:{}}; MAP_LAYERS.forEach(function(l){ mapSet.lay[l.k]=false });
     try{ var ms=JSON.parse(localStorage.getItem(K_MAP)||'null');
@@ -2465,7 +2483,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   }
   function mapNote(){
     var parts=[evNote, radarNote, alertNote, eonetNote.fires, eonetNote.storms].filter(Boolean);
-    $('map-note').textContent=parts.length ? parts.join('  ·  ') : !MAP ? 'The map loads when the hub is on screen.' : (evsOn() && lastMap) ? 'Loading events…' : 'A clean map. Switch on what you want to see.';
+    $('map-note').textContent=parts.length ? parts.join('  ·  ') : !MAP ? 'The map loads when The Lounge is on screen.' : (evsOn() && lastMap) ? 'Loading events…' : 'A clean map. Switch on what you want to see.';
   }
   function setSrc(id, feats){ if(!MAP) return false; try{ var s=MAP.getSource(id); if(!s) return false; s.setData({type:'FeatureCollection', features:feats}); return true }catch(e){ return false } }
   function clearEvs(prefix){ Object.keys(evs).forEach(function(k){ if(k.indexOf(prefix)===0) delete evs[k] }) }
@@ -2636,7 +2654,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     box.value=b.getAttribute('data-ask'); send();
   });
   $('clear').addEventListener('click', function(){
-    log=[]; saveLog(); render();   // the screen only: Esquiffis's memory is his, on the server
+    log=[]; saveLog(); render();   // the screen only: Jarvis's memory is his, on the server
   });
   $('now').addEventListener('click', function(){ if(!isWide()) hubView(!$('scr-chat').classList.contains('hubview')) });
   $('talk-fold').addEventListener('click', function(){
@@ -2795,7 +2813,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      through PET_POST) - a press that lands on him lifts him, he follows the pointer and falls where he is let go; presses
      anywhere else are untouched. The switch in the hub bar is HIM: VaderClawd on or off, remembered on this device. Off = his
      stage hidden and the engine paused (no frames, no CPU). */
-  var K_PET='esq_pet', petOn=true, petBox=null, carrying=null;
+  var K_PET='lounge_pet', petOn=true, petBox=null, carrying=null;
   try{ petOn=localStorage.getItem(K_PET)!=='0' }catch(e){}
   window.PET_POST=function(o){
     if(!o) return;
@@ -2890,7 +2908,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__esq={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
+  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
     get hub(){ return hub }, applyHub:applyHub, hubTidy:hubTidy, hubSettle:hubSettle, fitAll:fitAll };
@@ -2900,7 +2918,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function fullPaint(){
     var on=fullOn(), b=$('full');
     document.body.classList.toggle('full', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
-    b.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen'); b.title=on ? 'Exit full screen' : 'Full screen: the hub on the whole screen, no browser chrome and no frame';
+    b.setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen'); b.title=on ? 'Exit full screen' : 'Full screen: The Lounge on the whole screen, no browser chrome and no frame';
     setTimeout(function(){ if(hub) applyHub(); startMap(); placePet(); sizeTape() }, 0);   // the new size lands a tick later
   }
   $('full').addEventListener('click', function(){
@@ -3449,13 +3467,13 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   // drawBubble draws ONE line and never wraps, so anything longer belongs in the Mac's panel, not over his head
   var SPEAK_MAX=72;
   var LINES={
-    idle:['Ask him something.','Esquiffis is listening.','*mechanical breathing*','The web door is open.',
-          'Check the smoker, pitmaster.','Hydrate, apprentice.','Same Esquiffis. Same Empire.','Your inbox fears you.',
+    idle:['Ask him something.','Jarvis is listening.','*mechanical breathing*','The web door is open.',
+          'Check the smoker, pitmaster.','Hydrate, apprentice.','Same Jarvis. Same Empire.','Your inbox fears you.',
           'I find your lack of questions disturbing.','Join the dark side. We have coffee.','I am watching this page.'],
-    greet:['Welcome back, Hector.','The web door. I approve.','Same Esquiffis as your phone.'],
-    thinking:['He is looking. Patience.','Esquiffis is on it.','Checking. Stand by.','Give him a moment.'],
+    greet:['Welcome back, Hector.','The web door. I approve.','Same Jarvis as your phone.'],
+    thinking:['He is looking. Patience.','Jarvis is on it.','Checking. Stand by.','Give him a moment.'],
     waiting:['Still on it.','A big one. He is still working.','Patience, apprentice.'],
-    reply:['There. Answered.','Esquiffis delivers.','Read it, apprentice.'],
+    reply:['There. Answered.','Jarvis delivers.','Read it, apprentice.'],
     guard:['The guard caught that one.','He almost made that up. Blocked.'],
     failed:['The line went dead. Ask again.','No answer. Try once more.'],
     locked:['Access denied.','Wrong code, rebel.'],
@@ -3467,7 +3485,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     cpuLow:['CPU {t}%. The Force is calm.','Only {t}% CPU. Too easy.'],
     cpuMid:['CPU {t}%. You are working hard.','{t}% CPU. Acceptable.'],
     cpuHigh:['CPU {t}%. I feel a disturbance.','{t}% CPU. Close something.'],
-    celebrate:['Answered. Impressive.','Esquiffis delivers.','Another one for the Empire.'],
+    celebrate:['Answered. Impressive.','Jarvis delivers.','Another one for the Empire.'],
     cpu:['The CPU is strong with this one.','Too... much... load.','Who is running all these processes?'],
     cool:['Much better.','The fans can rest now.'],
     lowBattery:['Low power. Charge me.','My suit needs a charger.'],
@@ -4894,7 +4912,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       if(paused||sceneKey!=='roam'||!roam||now-lastCelebrate<20000) return;
       if(roam.act('celebrate')) lastCelebrate=now;
     },
-    // Esquiffis talking through him (Hector 2026-09-15). Returns false when the line cannot be said here - too long
+    // Jarvis talking through him (Hector 2026-09-15). Returns false when the line cannot be said here - too long
     // for one unwrapped line, bubbles switched off, or he is held/travelling - so the app shows its panel instead.
     speak:function(text,dur){
       var t=String(text==null?'':text).replace(/\s+/g,' ').trim();
