@@ -330,6 +330,17 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .hb-tv .tv-menu{position:absolute;inset:0;z-index:3;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));align-content:start;gap:6px;margin:0;padding:10px;
   overflow-y:auto;overscroll-behavior:contain;background:rgba(8,5,6,.95)}
 .hb-tv .tv-menu .tv-c{text-align:left;padding:7px 9px}
+/* Hector 2026-09-16: "I can't see the volume button, I have to rotate my phone". YouTube's own mute button only shows after a tap
+   on the video and hides again (measured at his 357px); the TV has its own Sound button, always there while it plays. It talks to
+   the player through YouTube's iframe API and shows what the player reports back. Stop and YouTube became icons to make room. */
+.hb-tv .tv-ico{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:24px;padding:0;color:var(--ink-dim);border:1px solid var(--rule);background:rgba(0,0,0,.3)}
+.hb-tv .tv-ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hb-tv .tv-ico .fill{fill:currentColor;stroke:none}
+.hb-tv .tv-ico:hover{color:var(--ink);border-color:var(--rule-hot)}
+#tv-sound .on,#tv-sound[aria-pressed="true"] .off{display:none}
+#tv-sound[aria-pressed="true"] .on{display:inline}
+#tv-sound[aria-pressed="false"]{color:var(--ink);border-color:var(--rule-hot)}
+#tv-sound[aria-pressed="true"]{color:#fff;border-color:var(--red);background:rgba(224,27,27,.22)}
 .vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .hb-link{flex:none;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);
   text-decoration:none;border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:3px 9px}
@@ -792,7 +803,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               </div>
             </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
-              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-stop" class="hb-btn" type="button" hidden>Stop</button><a id="tv-yt" class="hb-link" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener">YouTube</a></span></div>
+              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><a id="tv-yt" class="hb-link tv-ico" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener" aria-label="Open on YouTube" title="Open on YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></a></span></div>
               <div id="tv-screen" class="tv-screen">
                 <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span></button>
                 <div id="tv-ch" class="tv-ch tv-menu" role="group" aria-label="Channel" hidden></div>
@@ -1891,7 +1902,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      FOX refuses that form, so FOX plays its current live video by id; when FOX ends that stream the id goes stale,
      and the YouTube button always opens the channel's live page. Fox News itself does not stream on YouTube. */
   var TV=[
-    {k:'fox', short:'FOX LiveNOW', name:'LiveNOW from FOX', vid:'v6dJAqft5NU', page:'https://www.youtube.com/@LiveNOWFOX/live'},
+    {k:'fox', short:'FOX LiveNOW', name:'LiveNOW from FOX', vid:'oNxmNtKwIVA',   /* v6dJAqft5NU ended 2026-09-16 ('recording is not available'); oNxmNtKwIVA measured live and playing embedded that night */ page:'https://www.youtube.com/@LiveNOWFOX/live'},
     {k:'abc', short:'ABC News', name:'ABC News Live', ch:'UCBi2mrWuNuyYy4gbM6fU18Q', page:'https://www.youtube.com/@ABCNews/live'},
     {k:'aje', short:'Al Jazeera', name:'Al Jazeera English', vid:'gCNeDWCI0vo', page:'https://www.youtube.com/@aljazeeraenglish/live'},   // in NBC's place (Hector 2026-09-15); its channel-live embed did not play
     {k:'cbs', short:'CBS News', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
@@ -1910,7 +1921,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {k:'cape', short:'Space Coast Live', name:'NASASpaceflight \u00B7 Space Coast Live 24/7 (the Cape)', vid:'Jm8wRjD3xVA', page:'https://www.youtube.com/@NASASpaceflight/live'}];
   var K_TV='lounge_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
-  function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0' }   // Hector: the TV starts on his click, muted
+  function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1'
+    +(/^https?:/.test(location.origin || '') ? '&origin='+encodeURIComponent(location.origin) : '') }   // the iframe API: the Sound button talks to the player   // Hector: the TV starts on his click, muted
   function tvPaint(){
     var bar=$('tv-ch');
     if(!bar.children.length) TV.forEach(function(c){
@@ -1926,15 +1938,17 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       f=document.createElement('iframe'); f.title='Live news';
       f.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen'); f.setAttribute('allowfullscreen', '');
       f.referrerPolicy='strict-origin-when-cross-origin';   // YouTube refuses embeds that do not say which site they are on
+      f.addEventListener('load', function(){ tvPost({event:'listening', id:1, channel:'widget'}) });   // ask the player to report its state (muted or not)
       scr.appendChild(f);
     }
     f.src=tvSrc(tvPick);
+    tvMuted=true; $('tv-sound').hidden=false; soundPaint();   // every channel starts muted (Hector: the TV starts on his click, muted)
     $('tv-play').hidden=true; $('tv-stop').hidden=false; $('tv-note').textContent=tvPick.name;
     $('tv-screen').parentNode.classList.add('playing');
   }
   function tvStop(){
     var f=$('tv-screen').querySelector('iframe'); if(f) f.remove();
-    $('tv-play').hidden=false; $('tv-stop').hidden=true; $('tv-note').textContent='Nothing loads until you press Play.';
+    $('tv-play').hidden=false; $('tv-stop').hidden=true; $('tv-sound').hidden=true; $('tv-note').textContent='Nothing loads until you press Play.';
     $('tv-screen').parentNode.classList.remove('playing');
   }
 
@@ -2887,6 +2901,23 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var playing=!!$('tv-screen').querySelector('iframe');
     tvPaint(); if(playing) tvPlay();
   });
+  var tvMuted=true, tvSent=[];
+  function tvPost(msg){
+    var f=$('tv-screen').querySelector('iframe'); if(!f || !f.contentWindow) return;
+    tvSent.push(msg.func || msg.event); if(tvSent.length>40) tvSent.shift();
+    try{ f.contentWindow.postMessage(JSON.stringify(msg), 'https://www.youtube.com') }catch(e){}
+  }
+  function soundPaint(){ var b=$('tv-sound'), on=!tvMuted; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.setAttribute('aria-label', on ? 'Mute' : 'Turn the sound on'); b.title=b.getAttribute('aria-label') }
+  $('tv-sound').addEventListener('click', function(){
+    if(tvMuted){ tvPost({event:'command', func:'unMute', args:[]}); tvPost({event:'command', func:'setVolume', args:[100]}); tvPost({event:'command', func:'playVideo', args:[]}) }
+    else tvPost({event:'command', func:'mute', args:[]});
+    tvMuted=!tvMuted; soundPaint();   // the player's own report (below) corrects it if it disagrees
+  });
+  window.addEventListener('message', function(e){
+    var f=$('tv-screen').querySelector('iframe'); if(!f || e.source!==f.contentWindow || !/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin)) return;
+    var d=null; try{ d=typeof e.data==='string' ? JSON.parse(e.data) : e.data }catch(err){ return }
+    if(d && d.info && typeof d.info.muted==='boolean' && d.info.muted!==tvMuted){ tvMuted=d.info.muted; soundPaint() }
+  });
   function tvMenu(open){ $('tv-ch').hidden=!open; $('tv-pick').setAttribute('aria-expanded', open ? 'true' : 'false') }
   $('tv-pick').addEventListener('click', function(){ tvMenu($('tv-ch').hidden) });
   tvPaint();
@@ -3006,7 +3037,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
-    get hub(){ return hub }, applyHub:applyHub, hubTidy:hubTidy, hubSettle:hubSettle, fitAll:fitAll };
+    get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubTidy:hubTidy, hubSettle:hubSettle, fitAll:fitAll };
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): the browser's own Fullscreen API, and while it is on
      the page drops its frame too (body.full) so the hub gets the whole screen. Safari fires webkitfullscreenchange. */
   function fullOn(){ return !!(document.fullscreenElement || document.webkitFullscreenElement) }

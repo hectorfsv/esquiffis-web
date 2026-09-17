@@ -1139,6 +1139,7 @@
   function tvOK(){
     var scr=$('tv-screen');
     T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
+    T($('tv-sound').hidden, 'TV: no Sound button until something plays');
     // Hector 2026-09-16: "all the buttons of the channels are wasting a lot of space ... make them like the cameras, with a deployable menu"
     T(!!$('tv-pick') && $('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='FOX LiveNOW' && !!$('tv-ch').closest('#tv-screen') && !!$('tv-pick').closest('.hb-h'),
       'TV: the channel is one button in the widget header (FOX LiveNOW), the list closed');
@@ -1161,17 +1162,28 @@
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: the YouTube frame is dark while nothing plays');
     $('tv-play').click();
     var f=scr.querySelectorAll('iframe');
-    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/v6dJAqft5NU?autoplay=1&mute=1&playsinline=1&rel=0' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, muted, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/oNxmNtKwIVA?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, muted, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
     T($('tv-play').hidden && !$('tv-stop').hidden, 'TV: Play becomes Stop');
+    // Hector 2026-09-16: "I can't see the volume button, I have to rotate my phone"
+    var snd=$('tv-sound'), hh=tile('tv').querySelector('.hb-h');
+    T(vis(snd) && snd.getAttribute('aria-pressed')==='false' && /sound on/i.test(snd.getAttribute('aria-label')) && R(snd).b<=R(scr).t+1 && hh.scrollWidth<=hh.clientWidth+1,
+      'TV: while it plays, a Sound button sits in the widget header, muted to start, and the header still fits ('+hh.scrollWidth+' in '+hh.clientWidth+')');
+    var sent0=window.__lounge.tvSent.length; snd.click();
+    var sent=window.__lounge.tvSent.slice(sent0);
+    T(sent.join()==='unMute,setVolume,playVideo' && snd.getAttribute('aria-pressed')==='true' && /mute/i.test(snd.getAttribute('aria-label')), 'TV: Sound tells the player to unmute, at full volume ('+sent.join()+')');
+    window.dispatchEvent(new MessageEvent('message', {data:JSON.stringify({event:'infoDelivery', info:{muted:true}}), origin:'https://www.youtube.com', source:f[0].contentWindow}));
+    T(snd.getAttribute('aria-pressed')==='false', 'TV: the button shows what the player reports (it said muted)');
+    window.dispatchEvent(new MessageEvent('message', {data:JSON.stringify({event:'infoDelivery', info:{muted:false}}), origin:'https://evil.example', source:window}));
+    T(snd.getAttribute('aria-pressed')==='false', 'TV: a message from anywhere but the player changes nothing');
     T(tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor==='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).borderTopColor==='rgb(224, 27, 27)', 'TV: while it plays, the YouTube frame lights red');
     if($('tv-ch').hidden) $('tv-pick').click();
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
     T($('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='ABC News', 'TV: picking a channel closes the list and names it on the button');
     f=scr.querySelectorAll('iframe');
-    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&mute=1&playsinline=1&rel=0' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
     T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('lounge_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
     $('tv-stop').click();
-    T(!document.querySelector('iframe') && !$('tv-play').hidden && /ABC/.test($('tv-play-t').textContent), 'TV: Stop removes the player completely');
+    T(!document.querySelector('iframe') && !$('tv-play').hidden && /ABC/.test($('tv-play-t').textContent) && $('tv-sound').hidden, 'TV: Stop removes the player completely, and the Sound button with it');
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: and the red goes out');
   }
   function go(){
