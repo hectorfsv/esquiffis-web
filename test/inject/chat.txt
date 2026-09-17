@@ -986,7 +986,11 @@
     pickBtn(1).click();
     var chips=lib.querySelectorAll('.lib-c'), regions=[].map.call(lib.querySelectorAll('.lib-r'), function(x){ return x.textContent });
     T(vis(lib) && /frame 2/.test(tx('cams-lib-t')) && pickBtn(1).getAttribute('aria-expanded')==='true', 'cameras: tapping a frame opens the camera list for that frame');
-    T(chips.length===15 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 15 camera buttons grouped by region ('+regions.join(', ')+')');
+    T(chips.length===16 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 16 camera buttons grouped by region ('+regions.join(', ')+')');
+    // Hector 2026-09-17: "for tulum any camera with ruins view?" - there is none on YouTube; the pyramids of Teotihuacán are the one live ruins camera
+    var teo=lib.querySelector('[data-k="teoti"]');
+    T(!!teo && /Teotihuac/.test(teo.textContent) && /Pyramids/.test(teo.textContent) && teo.closest('.lib-g').querySelector('.lib-r').textContent==='México',
+      'cameras: the pyramids of Teotihuacán are in the Mexican group ('+(teo && teo.textContent)+')');
     // Hector 2026-09-15: "Only eagle pass one and both from ciudad acuña"
     var border=[].filter.call(lib.querySelectorAll('.lib-g'), function(gp){ return /border/.test(gp.querySelector('.lib-r').textContent) })[0];
     T(!!border && [].map.call(border.querySelectorAll('.lib-c'), function(c){ return c.getAttribute('data-k') }).join('|')==='eaglepass|acuna1|acuna2' && /Acuña/.test(border.textContent) && /Bridge 2/.test(border.textContent),
