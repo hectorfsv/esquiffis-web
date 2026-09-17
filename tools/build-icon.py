@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-build-icon.py - The Lounge's icons, cut from the Vader painting (hero.webp). Hector picked this one on 2026-09-16 over
-VaderClawd and Gargantua (preview version 2): helmet, cigarette smoke and the blade for the home screen; the helmet and the
-blade for the browser tab and the header square, the close-up that still reads at 16 points.
+build-icon.py - The Lounge's icons from the Vader painting (hero.webp). Hector picked it on 2026-09-16 over VaderClawd and
+Gargantua, and the version FITTED IN THE FRAME (preview version 3: "the second one that you fit in the frame"): the whole
+figure - helmet, cigarette smoke, hand and the full blade with its glow - centred on the painting's own black, nothing cut.
 
   python3 tools/build-icon.py        # writes apple-touch-icon.png, favicon-32.png, favicon-16.png and face.png, prints the header's data URI size
 
@@ -13,19 +13,25 @@ import base64, io, os
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-HOME_BOX = (160, 540, 560, 940)   # helmet, smoke, blade to the corner
-TAB_BOX = (215, 590, 515, 890)    # helmet and the base of the blade
+FIGURE = (174, 328, 694, 1006)   # everything brighter than the black ground, the blade's glow included (measured)
+HOME_MARGIN = 1.12                # room around the figure on the home screen, clear of iPhone's rounded corners
+TAB_MARGIN = 1.04
 GAMMA = .78
 
 
-def cut(src, box):
+def cut(src, margin):
+    x0, y0, x1, y1 = FIGURE
+    cx, cy, side = (x0 + x1) / 2, (y0 + y1) / 2, int(max(x1 - x0, y1 - y0) * margin)
+    left, top = int(cx - side / 2), int(cy - side / 2)
+    square = Image.new('RGB', (side, side), (0, 0, 0))   # the painting's ground is pure black: the square extends it
+    square.paste(src.crop((max(0, left), max(0, top), min(src.width, left + side), min(src.height, top + side))), (max(0, -left), max(0, -top)))
     lut = [int(255 * ((i / 255) ** GAMMA)) for i in range(256)]
-    return src.crop(box).point(lut * 3)
+    return square.point(lut * 3)
 
 
 def main():
     src = Image.open(os.path.join(ROOT, 'hero.webp')).convert('RGB')
-    home, tab = cut(src, HOME_BOX), cut(src, TAB_BOX)
+    home, tab = cut(src, HOME_MARGIN), cut(src, TAB_MARGIN)
     out = {'apple-touch-icon.png': home.resize((180, 180), Image.LANCZOS),
            'favicon-32.png': tab.resize((32, 32), Image.LANCZOS),
            'favicon-16.png': tab.resize((16, 16), Image.LANCZOS),

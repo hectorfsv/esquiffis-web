@@ -876,7 +876,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   var PW_TTL_MS=2*60*60*1000;   // sessionStorage never expires on iOS by itself: timestamp it
   var LOG_MAX=80;               // what a reload shows; Jarvis's own memory lives on the server
   var WAIT_MS=120*1000;         // real turns run 6-78 s; the webhook connection is cut near 100 s
-  var FACE='face.png';   // the helmet-and-blade close-up of the Vader painting, 56px for the 28-point square (tools/build-icon.py)
+  var FACE='face.png';   // the whole Vader painting fitted in the square, 56px for the 28-point square (tools/build-icon.py)
 
   function $(id){return document.getElementById(id)}
   var pw='', log=[], busy=false, tick=null, t0=0, aborter=null, waited=false;
