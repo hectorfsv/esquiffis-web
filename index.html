@@ -1172,6 +1172,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     // On a phone the hub IS the Lounge: unlocking lands there, not in the chat (Hector 2026-09-17: "once i login i go
     // straight to the lounge? Don't open jarvis first"). The clock still swaps back to the conversation.
     if(!isWide()) hubView(true);
+    pickUpLostTurn();   // an answer a previous page lost is still worth having
     if(fresh) setTimeout(function(){ vc('greet') }, 900);
     // a focused field on the phone pops the keyboard over the conversation; only the desktop wants it
     if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ box.focus() }, 50);
@@ -1280,7 +1281,14 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      The turn is finished and logged on the server either way, so the page asks for it back: `action=last` reads the
      newest assistant line out of the session log (1 execution, no agent, no Grok) and drops it in where the note was.
      It tries by itself, again when he comes back to the tab, and leaves a button when it cannot. */
-  var lost=null;   // {note, sent, last, busy} while an answer is missing
+  var lost=null;   // {note, sent, q, last, busy} while an answer is missing
+  var LOST_NOTE=/(lost on the way back|failed on the way back|No reply in two minutes)/i;
+  function sameAsk(a, b){   // his question, as the log kept it: punctuation and case aside, one contains the other
+    function n(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim() }
+    var x=n(a), y=n(b);
+    if(!x || !y) return false;
+    return x.indexOf(y.slice(0,60))>=0 || y.indexOf(x.slice(0,60))>=0;
+  }
   function recoverLast(force){
     if(!lost || !pw || lost.busy) return;
     if(!force && Date.now()-lost.last < 20000) return;   // never a burst of executions
@@ -1294,6 +1302,10 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var text=(d && d.ok===true && typeof d.text==='string') ? d.text.trim() : '';
       var at=Date.parse((d && d.at) || '') || 0;
       if(!text || at < mine.sent-5000) throw new Error('not the answer to that turn');   // older than the question: not ours
+      // Telegram and the pet write to the same session log, so the answer waiting there may be a reply to something
+      // else entirely: it only counts when the question it answered is the one this turn asked (an older workflow
+      // sends no `asked` and the time rule above stands alone)
+      if(mine.q && typeof d.asked==='string' && d.asked && !sameAsk(d.asked, mine.q)) throw new Error('that answer belongs to another question')
       var i=log.indexOf(mine.note); if(i>=0) log.splice(i, 1);
       log.push({r:'jarvis', m:text, t:new Date(at).toISOString(), rec:true});
       lost=null; saveLog(); render(); vc('reply');
@@ -1303,6 +1315,18 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       if(mine.note.fail){ mine.note.m=mine.note.fail; delete mine.note.fail }
       mine.note.act='last'; saveLog(); render();
     });
+  }
+  function pickUpLostTurn(){
+    // the transcript is remembered on this device, so a turn that failed on an older page (or in another tab) still
+    // ends with its note: it gets the button, and one automatic try while the answer can still be the right one
+    if(lost || !pw || !log.length) return;
+    var last=log[log.length-1];
+    if(!last || last.r!=='note' || !LOST_NOTE.test(last.m)) return;
+    var q=''; for(var i=log.length-2;i>=0;i--){ if(log[i].r==='me'){ q=log[i].m; break } if(log[i].r==='jarvis') break }
+    var when=Date.parse(last.t||'')||0;
+    lost={note:last, sent:when, q:q, last:0, busy:false};
+    if(!last.act){ last.act='last'; saveLog(); render() }
+    if(when && Date.now()-when < 24*3600*1000) recoverLast(true);   // still recent: ask once, by itself
   }
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) recoverLast(false) });
   window.addEventListener('focus', function(){ recoverLast(false) });
@@ -1349,7 +1373,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
                          : 'The answer got lost on the way back. Jarvis finished it \u2014 tap to get it.';
         var note={r:'note', m:why, fail:fail, t:new Date().toISOString()};
         add(note); vc('failed');
-        lost={note:note, sent:sentAt, last:0, busy:false};
+        lost={note:note, sent:sentAt, q:text, last:0, busy:false};
         recoverLast(true);   // the turn is in the session log: ask for it (1 execution, no agent)
       })
       .finally(function(){ clearTimeout(timer); aborter=null; if(pw) setBusy(false); });

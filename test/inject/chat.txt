@@ -32,7 +32,10 @@
   if(mode==='arrange'){ localStorage.setItem('lounge_map', JSON.stringify({base:'sat', view:{'3d':true, globe:true, bogus:true}, lay:{radar:true, quakes:true, bogus:true, alerts:'yes'}})); localStorage.setItem('lounge_scores', 'mx') }
   if(mode==='persist'){ localStorage.setItem('esq_log', JSON.stringify([   // saved by the page under the OLD key and role names, before the rename
     {r:'me',m:'what did I ask yesterday',t:'2026-09-14T10:00:00Z'},
-    {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'}])) }
+    {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'},
+    // a turn a PREVIOUS page lost (Hector 2026-09-17: his phone dropped one and the note had no way back to the answer)
+    {r:'me',m:'what is happening at the western wall',t:new Date(Date.now()-600000).toISOString()},
+    {r:'note',m:'Something failed on the way back. Try again.',t:new Date(Date.now()-599000).toISOString()}])) }
   // a layout saved on the device, with junk in it: a duplicate, unknown names, a bad size
   if(mode==='arrange') localStorage.setItem('lounge_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'}, span:{weather:2, inbox:1}, density:'dense', h:{tv:900},
     hidden:['dodgers','nope'], shut:{inbox:false, bogus:true}}));
@@ -201,7 +204,7 @@
       return /latest/.test(url) ? res(200,SNAP_TODAY) : /2026-09-14/.test(url) ? res(200,SNAP_YDAY) : res(404,'') }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
     if(a==='brief'){ briefCalls.push({heads:(b&&b.get)?b.get('headlines'):null}); return pwd==='right' ? res(200, (FAIL_HUB || mode==='guard') ? {ok:false, points:[], n:0} : BRIEF) : res(401,{error:'unauthorized'}) }
-    calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, fuel:(b&&b.get)?b.get('fuel'):null, json:!!(o&&o.headers)});
+    if(a!=='last') calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, fuel:(b&&b.get)?b.get('fuel'):null, json:!!(o&&o.headers)});
     if(a==='login'){
       if(pwd!=='right') return res(401,{error:'unauthorized'});
       logins++;
@@ -214,9 +217,13 @@
     if(a==='last'){
       lastCalls.push({pwd:pwd, msg:(b&&b.get)?b.get('message'):null});
       if(pwd!=='right') return res(401,{error:'unauthorized'});
-      var stale=lastCalls.length===1;   // the first try finds an OLDER answer: not the one he is waiting for
-      return res(200,{ok:true, text: stale ? 'Something Jarvis said yesterday.' : LOSTANS,
-        at:new Date(Date.now()-(stale ? 600000 : 1000)).toISOString()});
+      // persist mode: the note is old and the answer waiting on the server is its own
+      if(mode==='persist') return res(200,{ok:true, text:LOSTANS, at:new Date(Date.now()-300000).toISOString(), asked:'What is happening at the Western Wall?'});
+      var k=lastCalls.length;
+      if(k===1) return res(200,{ok:true, text:'Something Jarvis said yesterday.', at:new Date(Date.now()-600000).toISOString(), asked:'hello there'});
+      // the OTHER door answered in the meantime: Telegram writes to the same session log, and that reply is not his
+      if(k===2) return res(200,{ok:true, text:'The weather in Santa Clarita is 88 degrees.', at:new Date(Date.now()-1000).toISOString(), asked:'what is the weather in santa clarita'});
+      return res(200,{ok:true, text:LOSTANS, at:new Date(Date.now()-1000).toISOString(), asked:'hello there'});
     }
     if(a==='chat'){
       // iOS killed the request: a real fetch rejects with a TypeError, not an AbortError
@@ -231,7 +238,7 @@
     }
     return Promise.reject(new Error('no net'));
   };
-  var lastCalls=[], LOSTANS='The brisket goes on at 04:00 and the porch light stays on for the neighbours.';
+  var lastCalls=[], LOSTANS='Selichot runs until Yom Kippur, so the plaza fills up most nights.';
   function layout(tag){
     var d=document.documentElement;
     T(d.scrollWidth<=innerWidth, tag+': no horizontal overflow ('+d.scrollWidth+'<='+innerWidth+')');
@@ -1569,8 +1576,12 @@
     }
     if(mode==='persist'){
       var ms=document.querySelectorAll('#col .m');
-      T(ms.length===2, 'the remembered transcript is on screen ('+ms.length+')');
+      T(ms.length===4, 'the remembered transcript is on screen ('+ms.length+')');
       T(/brisket/.test(ms[1].textContent), 'with its words');
+      // Hector 2026-09-17: "I still haven't gotten my answer, do i have to ask?" - a turn lost by an OLDER page ends
+      // with its note; opening the chat picks it up, asks the server once and puts the real answer in its place
+      T(lastCalls.length===1 && !document.querySelector('#col .m.note') && ms[3].classList.contains('jarvis') && /plaza fills up/.test(ms[3].textContent) && /Fetched back/.test(ms[3].textContent),
+        'a turn an older page lost is picked up when the chat opens, without asking Jarvis again ('+lastCalls.length+' call)');
       // Hector 2026-09-16: Esquiffis is Jarvis now - a chat saved under the old names comes back as his
       var byOld=ms[1] && ms[1].querySelector('.by');
       T(!!ms[1] && ms[1].classList.contains('jarvis') && !!byOld && byOld.textContent==='Jarvis' && localStorage.getItem('esq_log')===null && /"r":"jarvis"/.test(localStorage.getItem('lounge_log')||''),
@@ -1629,15 +1640,20 @@
           'an answer older than the question is refused, and the note offers to try again ('+(btn?btn.textContent:'no button')+')');
         btn.click();
         setTimeout(function(){
-          T(lastCalls.length===2, 'the button asks once more ('+lastCalls.length+' calls)');
+          T(lastCalls.length===2 && !!document.querySelector('.note-go') && !document.querySelector('#col .m.jarvis'),
+            'an answer to ANOTHER question (Telegram writes to the same log) is refused too ('+lastCalls.length+' calls)');
+          document.querySelector('.note-go').click();
+          setTimeout(function(){
+          T(lastCalls.length===3, 'the button asks once more ('+lastCalls.length+' calls)');
           T(!document.querySelector('#col .m.note'), 'the note is gone once the answer lands');
           var ms=document.querySelectorAll('#col .m.jarvis');
-          T(ms.length===1 && ms[0].querySelector('.body').textContent.indexOf('porch light stays on')>-1,
+          T(ms.length===1 && ms[0].querySelector('.body').textContent.indexOf('plaza fills up')>-1,
             'the answer he lost is in the conversation, word for word ('+(ms[0]?ms[0].querySelector('.body').textContent.slice(0,40):'none')+')');
           T(!!ms[0] && /Fetched back/.test(ms[0].textContent), 'and it says it was fetched back after the connection dropped');
-          T(/porch light stays on/.test(localStorage.getItem('lounge_log')||''), 'it is remembered with the transcript');
+          T(/plaza fills up/.test(localStorage.getItem('lounge_log')||''), 'it is remembered with the transcript');
           T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'and the page is usable again');
           done();
+          }, 250);
         }, 250);
       }, 250);
       return;
