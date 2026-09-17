@@ -337,6 +337,9 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .hb-tv .tv-ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .hb-tv .tv-ico .fill{fill:currentColor;stroke:none}
 .hb-tv .tv-ico:hover{color:var(--ink);border-color:var(--rule-hot)}
+/* Hector 2026-09-16: the YouTube logo stays and lights up while it plays, but it is not a link any more - it sat next to Sound
+   and opened YouTube by mistake (the player's own YouTube logo still opens it) */
+.hb-tv .tv-air{cursor:default;pointer-events:none}
 #tv-sound .on,#tv-sound[aria-pressed="true"] .off{display:none}
 #tv-sound[aria-pressed="true"] .on{display:inline}
 #tv-sound[aria-pressed="false"]{color:var(--ink);border-color:var(--rule-hot)}
@@ -356,6 +359,16 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .map-key .k-s{width:14px;height:2px;border-radius:0;background:#6FB7FF}
 /* basemap and layer chips: Dark / Satellite, then Quakes / Disasters / Radar / US alerts / Wildfires / Storms (every layer starts off) */
 .map-ch{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:var(--hm)}
+/* Hector 2026-09-16: "the maps have the same issue than TV had, too many buttons, the map shrinks". One Layers button in the header
+   (with how many are on); the basemap, the six layers and the status line open in a panel OVER the map; the legend sits on the map. */
+.hb-map .map-menu{position:absolute;inset:0;z-index:5;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:8px;margin:0;padding:10px;
+  overflow-y:auto;overscroll-behavior:contain;background:rgba(8,5,6,.95)}
+.hb-map .map-menu:not([hidden]){display:flex}
+.map-menu-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.map-cap{font-family:var(--mono);font-size:var(--fxs);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.map-menu .h-note{margin-top:2px}
+.hb-map .map-legend{position:absolute;left:8px;bottom:8px;z-index:4;flex-wrap:wrap;max-width:calc(100% - 16px);gap:4px 12px;padding:4px 8px;pointer-events:none;
+  font-family:var(--mono);font-size:var(--fxs);color:var(--ink-dim);background:rgba(8,5,6,.78);border:1px solid var(--rule)}
 .map-cg{display:flex;flex-wrap:wrap;gap:6px}
 /* MapLibre's chrome in the hub's colours */
 .map-box .maplibregl-canvas{outline:none}
@@ -434,7 +447,7 @@ body.carrying{user-select:none;-webkit-user-select:none}
 .hb-inbox.shut .ib-subj,.hb-news.shut .hl-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fm)}
 .hb-inbox.shut .ib-subj{margin-top:1px}
 .hb-news.shut .h-list li:nth-child(n+4),.hb-news.shut .hl-m{display:none}
-.hb-tv.shut .tv-top,.hb-tv.shut .tv-screen,.hb-map.shut .map-box,.hb-map.shut .map-key,.hb-map.shut .map-ch,.hb-map.shut .h-note{display:none}
+.hb-tv.shut .tv-top,.hb-tv.shut .tv-screen,.hb-map.shut .map-box,.hb-map.shut .map-pick{display:none}
 .hb-tv.shut .hb-h,.hb-map.shut .hb-h{margin-bottom:0}
 .hb-tools{display:none}
 .hub.arranging .hb{outline:1px dashed var(--rule-hot);outline-offset:-1px}
@@ -803,7 +816,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               </div>
             </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
-              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><a id="tv-yt" class="hb-link tv-ico" href="https://www.youtube.com/@LiveNOWFOX/live" target="_blank" rel="noopener" aria-label="Open on YouTube" title="Open on YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></a></span></div>
+              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><span id="tv-yt" class="hb-link tv-ico tv-air" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></span></span></div>
               <div id="tv-screen" class="tv-screen">
                 <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span></button>
                 <div id="tv-ch" class="tv-ch tv-menu" role="group" aria-label="Channel" hidden></div>
@@ -811,10 +824,11 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               <span id="tv-note" class="vh" aria-live="polite">Nothing loads until you press Play.</span>
             </section>
             <section class="hb hb-map" data-w="map" aria-labelledby="map-h">
-              <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><span class="map-key" aria-hidden="true"><span data-key="quakes" hidden><i class="k-q"></i>Quake</span><span data-key="gdacs" hidden><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span></span></div>
-              <div id="map-ch" class="map-ch"><span id="map-base" class="map-cg" role="group" aria-label="Basemap"></span><span id="map-lay" class="map-cg" role="group" aria-label="Layers"></span></div>
-              <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes, disaster alerts, weather and wildfires"></div>
-              <p id="map-note" class="h-note">The map loads when The Lounge is on screen.</p>
+              <div class="hb-h"><button id="map-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="map-box">World events</button><button id="map-pick" class="tv-pick map-pick" type="button" aria-expanded="false" aria-controls="map-ch" title="Map and layers"><span id="map-pick-t">Layers</span></button></div>
+              <div id="map-box" class="map-box" role="region" aria-label="Map of earthquakes, disaster alerts, weather and wildfires">
+                <div id="map-ch" class="map-ch map-menu" hidden><div class="map-menu-h"><span class="map-cap">Map</span><button id="map-done" class="hb-btn" type="button">Done</button></div><span id="map-base" class="map-cg" role="group" aria-label="Basemap"></span><span class="map-cap">Layers</span><span id="map-lay" class="map-cg" role="group" aria-label="Layers"></span><p id="map-note" class="h-note">The map loads when The Lounge is on screen.</p></div>
+                <span class="map-key map-legend" hidden aria-hidden="true"><span data-key="quakes" hidden><i class="k-q"></i>Quake</span><span data-key="gdacs" hidden><i class="k-a"></i>Disaster alert</span><span data-key="alerts" hidden><i class="k-w"></i>Weather alert</span><span data-key="fires" hidden><i class="k-f"></i>Wildfire</span><span data-key="storms" hidden><i class="k-s"></i>Storm track</span></span>
+              </div>
             </section>
             <section class="hb hb-cams" data-w="cams" aria-labelledby="cams-h">
               <div class="hb-h"><button id="cams-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="cams-grid">Live cameras</button><span class="cams-bar"><span id="cams-n" class="cams-n" role="group" aria-label="How many cameras"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button></span><button id="cams-play" class="hb-btn" type="button">Play</button><button id="cams-stop" class="hb-btn" type="button" hidden>Stop</button></span></div>
@@ -824,7 +838,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
             </section>
             <section class="hb hb-news" data-w="news" aria-labelledby="news-h">
               <div class="hb-h"><button id="news-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="h-list">News</button><button id="h-refresh" class="hb-btn" type="button">Refresh</button></div>
-              <div class="brief"><div class="brief-bar"><button id="brief-go" class="hb-btn" type="button">Summarize with Grok</button><span id="brief-meta" class="h-note"></span></div><ul id="brief-list" class="brief-list"></ul></div>
+              <div class="brief"><div class="brief-bar"><span id="brief-meta" class="h-note"></span></div><ul id="brief-list" class="brief-list"></ul></div>
               <ol id="h-list" class="h-list"></ol>
               <button id="h-more" class="hb-more" type="button" hidden></button>
               <p id="h-note" class="h-note"></p>
@@ -1519,6 +1533,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   }
   function hubView(on){
     var c=$('scr-chat'); c.classList.toggle('hubview', !!on); document.body.classList.toggle('hubbing', !!on);
+    if(on) setTimeout(function(){ fitAll(true) }, 0);   // the widgets are drawn now: measure what could not be measured folded away
     $('now').setAttribute('aria-expanded', on ? 'true' : 'false');
     if(on) startMap(); else toBottom();
   }
@@ -1805,6 +1820,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   // stocks and fuel (Hector 2026-09-16: "all the space wasted between the name and price"): one name column as wide as the longest name, one price column
   function alignRows(t){
     if(!t.matches || !t.matches('.hb-stocks,.hb-fuel')) return;
+    // only while it is drawn: measured inside the phone's folded-away hub every width reads 0, the columns shrank to nothing and the
+    // prices piled on top of each other (caught 2026-09-16); the hub opening measures again
+    if(!t.offsetWidth || !t.querySelector('.mk-n') || !t.querySelector('.mk-n').scrollWidth) return;
     t.style.removeProperty('--nw'); t.style.removeProperty('--vw'); t.style.removeProperty('--rw');
     var nw=0, vw=0, rw=0, rows=t.querySelectorAll('.mk');
     [].forEach.call(t.querySelectorAll('.mk-n'), function(e){ nw=Math.max(nw, e.scrollWidth) });
@@ -1930,7 +1948,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       b.setAttribute('data-k', c.k); bar.appendChild(b);
     });
     [].forEach.call(bar.children, function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===tvPick.k ? 'true' : 'false') });
-    $('tv-yt').href=tvPick.page; $('tv-play-t').textContent='Play '+tvPick.name; $('tv-pick-t').textContent=tvPick.short;
+    $('tv-play-t').textContent='Play '+tvPick.name; $('tv-pick-t').textContent=tvPick.short;
   }
   function tvPlay(){
     var scr=$('tv-screen'), f=scr.querySelector('iframe');
@@ -2239,7 +2257,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     return all.slice().sort(function(a,b){ return ts(b)-ts(a) }).slice(0,30).map(function(h){ return {src:h.src, title:h.title, age:ago(h.t)} });
   }
   function paintBrief(){
-    var ul=$('brief-list'), meta=$('brief-meta'), go=$('brief-go'), t=tile('news'), pts=(brief && brief.points) || [];
+    var ul=$('brief-list'), meta=$('brief-meta'), t=tile('news'), pts=(brief && brief.points) || [];
     ul.textContent='';
     if(t) t.classList.toggle('has-brief', pts.length>0);
     pts.forEach(function(p){
@@ -2250,10 +2268,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask'; b.setAttribute('data-text', p.text); m.appendChild(b);
       li.appendChild(m); ul.appendChild(li);
     });
-    go.disabled=briefing;
-    go.textContent=briefing ? 'Summarizing' : (pts.length ? 'Refresh brief' : 'Summarize with Grok');
     meta.textContent = briefing ? 'Grok is reading '+newsForBrief().length+' headlines…'
-      : (brief && brief.failed) ? (pts.length ? 'Grok did not answer. This brief is from '+clockText(new Date(brief.t))+'.' : 'Grok did not answer. Try again in a moment.')
+      : (brief && brief.failed) ? (pts.length ? 'Grok did not answer. This brief is from '+clockText(new Date(brief.t))+'.' : 'Grok did not answer. Tap Refresh to try again.')
       : pts.length ? 'Summarized '+clockText(new Date(brief.t))+' from '+brief.n+' headlines \u00B7 refreshes every 2 hours'
       : 'Grok sums up the headlines at login and every 2 hours (1 execution each).';
   }
@@ -2555,7 +2571,10 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     fill(bb, MAP_BASES, 'data-base'); fill(lb, MAP_LAYERS, 'data-lay');
     [].forEach.call(bb.children, function(c){ c.setAttribute('aria-pressed', c.getAttribute('data-base')===mapSet.base ? 'true' : 'false') });
     [].forEach.call(lb.children, function(c){ c.setAttribute('aria-pressed', mapSet.lay[c.getAttribute('data-lay')] ? 'true' : 'false') });
-    [].forEach.call(document.querySelectorAll('.map-key [data-key]'), function(k){ k.hidden=!mapSet.lay[k.getAttribute('data-key')] });
+    var on=0; [].forEach.call(document.querySelectorAll('.map-key [data-key]'), function(k){ k.hidden=!mapSet.lay[k.getAttribute('data-key')]; if(!k.hidden) on++ });
+    document.querySelector('.map-legend').hidden=!on;
+    var nOn=MAP_LAYERS.filter(function(l){ return mapSet.lay[l.k] }).length;
+    $('map-pick-t').textContent=(mapSet.base==='sat' ? 'Satellite' : 'Layers')+(nOn ? ' \u00B7 '+nOn : '');
   }
   // a layer switched on draws from what it fetched in the last 15 minutes, else fetches; switched off it empties its source
   function mapLayerApply(k){
@@ -2758,7 +2777,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     box.value='Tell me more about this headline from '+b.getAttribute('data-src')+': "'+b.getAttribute('data-title')+'"';
     send();
   });
-  $('h-refresh').addEventListener('click', refreshHub);
+  // Hector 2026-09-16: "we already have a refresh button ... get rid of the one right below the title" - News' Refresh brings the
+  // headlines and the inbox (1 execution), then the brief made from them (1 more, a grok-4.3 call, ~$0.004); the brief also runs on its own at unlock and every 2 hours
+  $('h-refresh').addEventListener('click', function(e){ refreshHub(e, true) });
   $('ib-refresh').addEventListener('click', refreshHub);
   $('ib-list').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
@@ -2865,7 +2886,6 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   }
   document.addEventListener('pointerup', dragEnd);
   document.addEventListener('pointercancel', dragEnd);
-  $('brief-go').addEventListener('click', runBrief);
   $('brief-list').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
     if(!b || busy) return;
@@ -2928,6 +2948,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     scPaint(); $('sc-list').textContent=''; $('sc-note').textContent='Loading '+scPick.name+'…'; loadScores();
   });
   scPaint();
+  function mapMenu(open){ $('map-ch').hidden=!open; $('map-pick').setAttribute('aria-expanded', open ? 'true' : 'false') }
+  $('map-pick').addEventListener('click', function(){ mapMenu($('map-ch').hidden) });
+  $('map-done').addEventListener('click', function(){ mapMenu(false) });
   $('map-ch').addEventListener('click', function(e){
     var c=e.target.closest ? e.target.closest('button[data-base],button[data-lay]') : null; if(!c) return;
     if(c.hasAttribute('data-base')){ mapSet.base=c.getAttribute('data-base'); mapSave(); mapBaseApply() }

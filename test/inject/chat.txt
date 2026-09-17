@@ -430,6 +430,22 @@
       var hdr=R(document.querySelector('.head')), hdEl=document.querySelector('.head'), firstT=[].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).map(function(t){ return R(t).t }).sort(function(a,b){ return a-b })[0];
       T(vis($('hub-pet')) && vis($('hub-arrange')) && R($('hub-arrange')).b<=hdr.b && R($('hub-pet')).t>=hdr.t && !vis($('hub').querySelector('.hub-bar')) && firstT-hdr.b<=10,
         'the hub open: VaderClawd and Arrange sit in the header, and the first widget starts right under it ('+Math.round(firstT-hdr.b)+'px)');
+      if(mode==='hub' || mode==='hubfail') setTimeout(function(){
+        // what a phone does: the prices land while the hub is folded away (every width reads 0 then), and he opens it later
+        if($('scr-chat').classList.contains('hubview')) $('now').click();   // folded away, whatever state it was in
+        if(window.__lounge && window.__lounge.fitAll) window.__lounge.fitAll(true);
+        $('now').click();   // and open
+        setTimeout(function(){
+          var bad=[];
+          ['st-crypto','st-stocks','fu-pump','fu-whole'].forEach(function(id){ [].forEach.call($(id).querySelectorAll('.mk'), function(li){
+            var n=li.querySelector('.mk-n'), v=li.querySelector('.mk-v'), rn=R(n), rv=R(v), rl=R(li), why='';
+            if(!(rn.r-rn.l>10)) why='name '+Math.round(rn.r-rn.l)+'px'; else if(n.scrollWidth>n.clientWidth+1) why='name cut '+n.scrollWidth+'>'+n.clientWidth;
+            else if(rv.l<rn.r-1) why='price over name'; else if(rv.r>rl.r+1) why='price past row '+Math.round(rv.r)+'>'+Math.round(rl.r);
+            if(why) bad.push(id+':'+n.textContent+' '+why);
+          }) });
+          T(!bad.length && $('st-stocks').querySelectorAll('.mk').length===7, 'phone: every stock, crypto and fuel row shows its whole name and its price beside it, nothing on top of anything ('+(bad.slice(0,3).join(', ')||'ok')+')');
+        }, 120);
+      }, 60);
       T(R($('hub-arrange')).r-R($('hub-arrange')).l<=36 && vis($('hub-arrange').querySelector('.ico')) && vis($('hub-pet').querySelector('.ico')) && hdEl.scrollWidth<=hdEl.clientWidth+1,
         'on a phone they are icons, and the header still fits ('+hdEl.scrollWidth+' in '+hdEl.clientWidth+')');
     }
@@ -508,9 +524,9 @@
         T(!!kept && kept.ok===true && kept.aaa && kept.aaa.la && kept.aaa.la.reg===6.0894 && kept.propane && kept.propane.usd===0.833 && !('mid' in kept.aaa.la), 'fuel prices are kept on this device for 12 hours, the figures the tile shows and nothing more');
       }
       // Hector 2026-09-15: "make it to load once at logging in, and refresh it's manually, maybe an auto-refresh every 2 hrs"
-      if(mode==='guard') T(briefCalls.length===1 && qa('brief-list').length===0 && /did not answer/.test(tx('brief-meta')) && /Summarize with Grok/.test(tx('brief-go')) && !$('brief-go').disabled,
-        'news: when the login brief fails it says so, and the button is ready ('+tx('brief-meta')+')');
-      else T(briefCalls.length===1 && qa('brief-list').length===3 && /Summarized/.test(tx('brief-meta')) && /every 2 hours/.test(tx('brief-meta')) && /Refresh brief/.test(tx('brief-go')),
+      if(mode==='guard') T(briefCalls.length===1 && qa('brief-list').length===0 && /did not answer/.test(tx('brief-meta')) && /Tap Refresh/.test(tx('brief-meta')),
+        'news: when the login brief fails it says so, and points to Refresh ('+tx('brief-meta')+')');
+      else T(briefCalls.length===1 && qa('brief-list').length===3 && /Summarized/.test(tx('brief-meta')) && /every 2 hours/.test(tx('brief-meta')) && !$('brief-go'),
         'news: the AI brief loads once at login, by itself ('+briefCalls.length+' call, '+tx('brief-meta')+')');
       var sentAtLogin=[]; try{ sentAtLogin=JSON.parse(briefCalls[0].heads||'[]') }catch(e){}
       // Hector 2026-09-15: "Just add fox US/politics, DW and arutz sheva. Make sure the news brief gets the new sources too."
@@ -1101,8 +1117,18 @@
     T(!!mc.map && mc.controls>=1, 'map: MapLibre drew the map with its zoom control');
     T(mc.markers.length===0 && hubCalls.indexOf('quakes')<0 && hubCalls.indexOf('gdacs')<0 && pressedL().length===0 && /clean map/i.test(tx('map-note')) && [].every.call(document.querySelectorAll('.map-key [data-key]'), function(k){ return k.hidden }),
       'map: at rest it is clean - no dots, no feed fetched, every chip off, an empty key ('+tx('map-note')+')');
+    // Hector 2026-09-16: "the maps have the same issue than TV had, too many buttons, the map shrinks"
+    var mpk=$('map-pick'), mch=$('map-ch'), mbx=$('map-box'), leg=document.querySelector('.map-legend'), mw=R(tile('map')), mbr=R(mbx);
+    T(!!mpk && !!mpk.closest('.hb-h') && mch.hidden && !!mch.closest('#map-box') && !!leg && !!leg.closest('#map-box') && leg.hidden && $('map-pick-t').textContent==='Layers',
+      'map: one Layers button in the widget header; the basemap, the layers and the note wait in a panel inside the map; the legend sits on the map, hidden with nothing on');
+    T((mbr.b-mbr.t)/(mw.b-mw.t)>=.7, 'map: the map takes most of the widget ('+Math.round((mbr.b-mbr.t)/(mw.b-mw.t)*100)+'%)');
+    mpk.click(); var mcr=R(mch);
+    T(!mch.hidden && mpk.getAttribute('aria-expanded')==='true' && Math.abs(mcr.t-mbr.t)<=2 && Math.abs(mcr.b-mbr.b)<=2 && vis(chipL('Quakes')) && vis($('map-note')), 'map: Layers opens the panel over the map, chips and note inside');
     var h0=hubCalls.length; chipL('Quakes').click();
     T(hubCalls.slice(h0).join()==='quakes' && pressedL().join()==='Quakes' && /Loading events/.test(tx('map-note')), 'map: Quakes on fetches USGS alone, from the browser ('+hubCalls.slice(h0).join()+')');
+    T(!mch.hidden && $('map-pick-t').textContent==='Layers \u00B7 1' && !leg.hidden, 'map: the panel stays open for more, the button counts the layer on, the legend shows on the map ('+$('map-pick-t').textContent+')');
+    $('map-done').click();
+    T(mch.hidden && mpk.getAttribute('aria-expanded')==='false', 'map: Done closes the panel');
     chipL('Disasters').click();
     T(hubCalls.slice(h0).join()==='quakes,gdacs' && pressedL().join()==='Quakes,Disasters', 'map: Disasters on fetches GDACS, once');
     setTimeout(function(){
@@ -1181,7 +1207,9 @@
     T($('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='ABC News', 'TV: picking a channel closes the list and names it on the button');
     f=scr.querySelectorAll('iframe');
     T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
-    T($('tv-yt').href==='https://www.youtube.com/@ABCNews/live' && localStorage.getItem('lounge_tv')==='abc', 'TV: the YouTube button follows the channel, and the pick is remembered');
+    // Hector 2026-09-16: "I like that it gets lit up when its playing. Just cancel the link option ... I just clicked by mistake"
+    T($('tv-yt').tagName==='SPAN' && !$('tv-yt').closest('a') && !$('tv-yt').hasAttribute('href') && getComputedStyle($('tv-yt')).pointerEvents==='none' && localStorage.getItem('lounge_tv')==='abc',
+      'TV: the YouTube logo is a light, not a link (a tap next to Sound opens nothing), and the pick is remembered');
     $('tv-stop').click();
     T(!document.querySelector('iframe') && !$('tv-play').hidden && /ABC/.test($('tv-play-t').textContent) && $('tv-sound').hidden, 'TV: Stop removes the player completely, and the Sound button with it');
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: and the red goes out');
@@ -1222,16 +1250,17 @@
     if(mode==='arrange'){ arrangeOK(); floorOK('arrange'); layout('arrange'); holdOK(); return done(); }
     if(mode==='hub'){
       if(!WIDE) $('now').click();
-      var n0=calls.length; $('h-refresh').click();
-      var nb=briefCalls.length; tap('brief-go');
-      var bc=briefCalls[nb], sentHeads=[]; try{ sentHeads=JSON.parse((bc && bc.heads) || '[]') }catch(e){}
+      // Hector 2026-09-16: "get rid of the one right below the title, i clicked by mistake trying to unfold the news" - one Refresh, the brief comes with it
+      var nw=tile('news'), nh=nw.querySelector('.hb-h'), below=[].filter.call(nw.querySelectorAll('button'), function(b){ return vis(b) && !nh.contains(b) && !b.closest('.brief-list') && !b.closest('.h-list') && b.id!=='h-more' });
+      T(!$('brief-go') && below.length===0, 'news: no button under the title - Refresh in the header is the one ('+below.map(function(b){ return b.id||b.textContent }).join(',')+')');
+      var n0=calls.length, nb=briefCalls.length; $('h-refresh').click();
       T(calls[n0] && calls[n0].a==='login' && calls.length===n0+1, 'Refresh asks n8n once, through the login call');
       T(!!calls[n0] && calls[n0].fuel===null, 'Refresh does not ask for the pump prices again: they are kept 12 hours');
-      T(!!bc && briefCalls.length===nb+1 && sentHeads.length>=6 && sentHeads.some(function(h){ return h.src==='Fox News' }) && sentHeads.some(function(h){ return h.src==='BBC' })
-        && ['Fox US','Fox Politics','DW','Arutz Sheva'].every(function(sn){ return sentHeads.some(function(h){ return h.src===sn }) })
-        && sentHeads.every(function(h){ return typeof h.title==='string' && !('link' in h) }), 'Refresh brief sends every headline to the brief path, the new sources included, one call, titles only ('+sentHeads.length+')');
-      T(!!$('brief-go') && $('brief-go').disabled && /reading/.test(tx('brief-meta')), 'while Grok reads, the button waits');
       setTimeout(function(){
+        var bc=briefCalls[nb], sentHeads=[]; try{ sentHeads=JSON.parse((bc && bc.heads) || '[]') }catch(e){}
+        T(!!bc && briefCalls.length===nb+1 && sentHeads.length>=6 && sentHeads.some(function(h){ return h.src==='Fox News' }) && sentHeads.some(function(h){ return h.src==='BBC' })
+          && ['Fox US','Fox Politics','DW','Arutz Sheva'].every(function(sn){ return sentHeads.some(function(h){ return h.src===sn }) })
+          && sentHeads.every(function(h){ return typeof h.title==='string' && !('link' in h) }), 'Refresh then sends every headline to the brief path, the new sources included, one call, titles only ('+sentHeads.length+')');
         T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
         T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
         tvOK();
@@ -1254,7 +1283,7 @@
         T([].map.call(bps[1] ? bps[1].querySelectorAll('.bp-s') : [], function(x){ return x.textContent }).join('|')==='Fox News|Times of Israel' && !!bps[0].querySelector('.hl-ask'), 'each point names its sources and has Ask');
         T(tile('news').classList.contains('has-brief') && tile('news').classList.contains('shut') && !vis($('h-list')) && vis($('h-more')) && tx('h-more')==='Show all '+qa('h-list').length+' headlines' && qa('h-list').length>=6,
           'with a brief, the headline list folds away behind "Show all" ('+$('h-more').textContent+')');
-        T(/Summarized/.test(tx('brief-meta')) && /7 headlines/.test(tx('brief-meta')) && !!$('brief-go') && !$('brief-go').disabled && /Refresh brief/.test(tx('brief-go')), 'it says when, and from how many headlines ('+tx('brief-meta')+')');
+        T(/Summarized/.test(tx('brief-meta')) && /7 headlines/.test(tx('brief-meta')) && !$('brief-go'), 'it says when, and from how many headlines ('+tx('brief-meta')+')');
         T((localStorage.getItem('lounge_brief')||'').indexOf('Point two')>-1, 'the brief is kept on this device');
         $('h-more').click();
         T(vis($('h-list')) && !tile('news').classList.contains('shut'), '"Show all" opens the headlines under the brief');
