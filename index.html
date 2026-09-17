@@ -1309,6 +1309,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var i=log.indexOf(mine.note); if(i>=0) log.splice(i, 1);
       log.push({r:'jarvis', m:text, t:new Date(at).toISOString(), rec:true});
       lost=null; saveLog(); render(); vc('reply');
+      // login lands in the hub on a phone, but a recovered answer is the thing he was waiting for: bring it forward
+      if(!isWide() && $('scr-chat').classList.contains('hubview')) hubView(false);
     }).catch(function(){
       if(lost!==mine) return;
       mine.busy=false;
