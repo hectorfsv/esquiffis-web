@@ -1322,9 +1322,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(lost || !pw || !log.length) return;
     var last=log[log.length-1];
     if(!last || last.r!=='note' || !LOST_NOTE.test(last.m)) return;
-    var q=''; for(var i=log.length-2;i>=0;i--){ if(log[i].r==='me'){ q=log[i].m; break } if(log[i].r==='jarvis') break }
+    var q='', asked=0;
+    for(var i=log.length-2;i>=0;i--){ if(log[i].r==='me'){ q=log[i].m; asked=Date.parse(log[i].t||'')||0; break } if(log[i].r==='jarvis') break }
+    // the answer only has to be newer than the QUESTION: iOS often reports the dropped request minutes late, so the
+    // note's own time can be after Jarvis had already finished (his 2026-09-17 turn), and that would refuse the answer
     var when=Date.parse(last.t||'')||0;
-    lost={note:last, sent:when, q:q, last:0, busy:false};
+    lost={note:last, sent:asked || when, q:q, last:0, busy:false};
     if(!last.act){ last.act='last'; saveLog(); render() }
     if(when && Date.now()-when < 24*3600*1000) recoverLast(true);   // still recent: ask once, by itself
   }

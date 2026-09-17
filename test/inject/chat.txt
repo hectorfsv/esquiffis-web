@@ -35,7 +35,9 @@
     {r:'esq',m:'You asked about the brisket timing.',t:'2026-09-14T10:00:20Z'},
     // a turn a PREVIOUS page lost (Hector 2026-09-17: his phone dropped one and the note had no way back to the answer)
     {r:'me',m:'what is happening at the western wall',t:new Date(Date.now()-600000).toISOString()},
-    {r:'note',m:'Something failed on the way back. Try again.',t:new Date(Date.now()-599000).toISOString()}])) }
+    // iOS reported the dropped request late: the note is stamped AFTER Jarvis had finished (300 s ago), so only the
+    // question's own time can tell the page whether the answer waiting on the server is this turn's
+    {r:'note',m:'Something failed on the way back. Try again.',t:new Date(Date.now()-120000).toISOString()}])) }
   // a layout saved on the device, with junk in it: a duplicate, unknown names, a bad size
   if(mode==='arrange') localStorage.setItem('lounge_hub', JSON.stringify({order:['map','bogus','map','tv'], size:{map:'L', tv:'XL', bogus:'S'}, span:{weather:2, inbox:1}, density:'dense', h:{tv:900},
     hidden:['dodgers','nope'], shut:{inbox:false, bogus:true}}));
