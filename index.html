@@ -1142,6 +1142,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   }
   function enter(fresh){
     moveOldNames(); show('scr-chat'); loadLog(); render(); setStatus('Ready','ok'); startHub(fresh);
+    // On a phone the hub IS the Lounge: unlocking lands there, not in the chat (Hector 2026-09-17: "once i login i go
+    // straight to the lounge? Don't open jarvis first"). The clock still swaps back to the conversation.
+    if(!isWide()) hubView(true);
     if(fresh) setTimeout(function(){ vc('greet') }, 900);
     // a focused field on the phone pops the keyboard over the conversation; only the desktop wants it
     if(window.matchMedia && matchMedia('(pointer:fine)').matches) setTimeout(function(){ box.focus() }, 50);

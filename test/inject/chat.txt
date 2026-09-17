@@ -1459,6 +1459,14 @@
       return done();
     }
     T($('scr-chat').classList.contains('on'), 'the right passphrase opens the conversation');
+    // Hector 2026-09-17: "once i login i go straight to the lounge? Don't open jarvis first(chat)". On a phone the hub is
+    // what he lands on; every check below reads the conversation, so the clock swaps back to it first.
+    if(!WIDE){
+      T($('scr-chat').classList.contains('hubview') && vis($('hub')) && !vis($('log')) && $('now').getAttribute('aria-expanded')==='true',
+        'on a phone, unlocking lands in the Lounge, not in the chat');
+      $('now').click();
+      T(!$('scr-chat').classList.contains('hubview') && vis($('log')) && !vis($('hub')), 'and the clock swaps to the conversation');
+    }
     T(calls.length===1 && calls[0].a==='login', 'login is its own call, no chat turn behind it');
     T(!calls[0].json, 'sent as form data, not JSON (no CORS preflight)');
     petOK('chat', true);
