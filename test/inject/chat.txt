@@ -1250,6 +1250,27 @@
               'map: the storm is a 3-point track ending at its last position, with its NHC link');
             T([].filter.call(document.querySelectorAll('.map-key [data-key]'), function(k){ return !k.hidden }).length===5 && document.querySelectorAll('.map-key [data-key]').length===5,
               'map: every key entry belongs to a layer, and the key shows the five that are on');
+            // Hector 2026-09-17, with a photo of his phone: the key was eating the bottom of the map. Measured as he sees it:
+            // the hub open, the map unfolded and on screen (a legend that is not drawn measures 0 and would pass anything).
+            var wasHub=$('scr-chat').classList.contains('hubview');
+            if(!WIDE && !wasHub) $('now').click();
+            var mt=tile('map'), wasShut=mt.classList.contains('shut'); if(wasShut) $('map-h').click();
+            mt.scrollIntoView({block:'center'});
+            var kel=document.querySelector('.map-legend'), kr=R(kel), mr=R($('map-box')), share=Math.round((kr.r-kr.l)*(kr.b-kr.t)/Math.max(1,(mr.r-mr.l)*(mr.b-mr.t))*100);
+            var drawn=(kr.r-kr.l)>0 && (kr.b-kr.t)>0;
+            var tops=[].filter.call(kel.querySelectorAll('[data-key]'), function(k){ return !k.hidden }).map(function(k){ return Math.round(R(k).t) });
+            var lines=tops.filter(function(v,i,a){ return a.indexOf(v)===i }).length;   // rows the entries actually sit on (a height in px counts the padding too)
+            var shown=[].filter.call(kel.querySelectorAll('[data-key]'), function(k){ return !k.hidden }).map(function(k){
+              return [].filter.call(k.childNodes, function(n){ return n.nodeType===3 || (n.nodeType===1 && getComputedStyle(n).display!=='none') }).map(function(n){ return n.textContent }).join('') }).join(' / ');
+            if(WIDE){
+              T(drawn && /Disaster alert/.test(shown) && /Storm track/.test(shown), 'map: on a wide screen the key keeps the full words ('+shown+')');
+            } else {
+              T(drawn && lines===1 && (kr.b-kr.t)<=24 && share<=10 && kr.b<=mr.b+1 && kr.r<=mr.r+1, 'map: on a phone the key is one small line on the map, not a third of it ('+Math.round(kr.r-kr.l)+'x'+Math.round(kr.b-kr.t)+' = '+share+'% of the map, '+lines+' row of entries)');
+              T(drawn && /Disaster/.test(shown) && !/Disaster alert/.test(shown) && !/Storm track/.test(shown) && /Storm/.test(shown) && /Quake/.test(shown) && /Wildfire/.test(shown),
+                'map: on a phone the key drops the qualifying word - the colour beside it says the rest ('+shown+')');
+            }
+            if(wasShut) $('map-h').click();
+            if(!WIDE && !wasHub) $('now').click();
             if(allowAsk && tor && !window.__lounge.busy){ var n=calls.length; window.__lounge.popupFor(tor.properties.id).querySelector('.hl-ask').click();
               T(calls.length===n+1 && calls[n].a==='chat' && /NWS/.test(calls[n].msg||'') && /Tornado Warning/.test(calls[n].msg||''), 'map: Ask hands the alert to Jarvis'); }
             // a tap on a feature opens its popup on the map
