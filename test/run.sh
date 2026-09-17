@@ -5,6 +5,16 @@
 # The harness is REGENERATED from index.html on every run; test/build is disposable.
 set -u
 cd "$(dirname "$0")/.."
+# One suite at a time. Three overlapping runs on 2026-09-17 took this Mac to load average 199 and every headless
+# run crawled; an earlier round killed the shell outright (exit 137). A second run now says so and stops.
+LOCK="$PWD/test/build/.running"
+mkdir -p "$PWD/test/build"
+if [ -f "$LOCK" ] && kill -0 "$(cat "$LOCK" 2>/dev/null)" 2>/dev/null; then
+  echo "A suite is already running (pid $(cat "$LOCK")). Wait for it, or: kill $(cat "$LOCK")"
+  exit 2
+fi
+echo $$ > "$LOCK"
+trap 'rm -f "$LOCK"' EXIT INT TERM
 B="$PWD/test/build"; INJ="$PWD/test/inject"; mkdir -p "$B"
 CHR="$HOME/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-x64/chrome-headless-shell"
 [ -x "$CHR" ] || { echo "chrome-headless-shell not found at $CHR"; exit 2; }
