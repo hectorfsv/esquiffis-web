@@ -39,6 +39,11 @@ def main():
     for name, im in out.items():
         im.save(os.path.join(ROOT, name), optimize=True)
         print('wrote', name, im.size)
+    # favicon.ico as well: Safari asks for one by that name when it wants a site's icon for a bookmark (Hector 2026-09-17:
+    # his Safari bookmark still showed a letter). 48, 32 and 16 in the one file.
+    ico = tab.resize((48, 48), Image.LANCZOS)
+    ico.save(os.path.join(ROOT, 'favicon.ico'), sizes=[(48, 48), (32, 32), (16, 16)])
+    print('wrote favicon.ico', os.path.getsize(os.path.join(ROOT, 'favicon.ico')), 'bytes')
     buf = io.BytesIO(); out['face.png'].save(buf, 'PNG', optimize=True)
     print('face data URI', len('data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()), 'chars')
 
