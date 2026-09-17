@@ -71,7 +71,7 @@ button{cursor:pointer}
 
 /* ---------- header ---------- */
 .head{position:relative;flex:none;display:flex;align-items:center;gap:10px;
-  padding:10px max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left));padding-top:max(10px,env(safe-area-inset-top));
+  padding:5px max(14px,env(safe-area-inset-right)) 5px max(14px,env(safe-area-inset-left));padding-top:max(5px,env(safe-area-inset-top));min-height:49px;
   border-bottom:1px solid var(--rule);background:linear-gradient(90deg,rgba(224,27,27,.10),transparent 62%),var(--panel-hi)}
 .who{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
 .face{width:38px;height:38px;object-fit:cover;flex:none;display:block;border:1px solid var(--rule)}
@@ -338,6 +338,7 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
   clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
 .tv-tri::after{content:'';position:absolute;left:23px;top:12px;border-left:15px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent}
 .tv-play:hover .tv-tri{filter:brightness(1.15)}
+.tv-err{max-width:88%;font-family:var(--mono);font-size:var(--fxs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--red);text-align:center}
 /* Hector 2026-09-16: "all the buttons of the channels are wasting a lot of space, the screen is too small ... with a deployable menu".
    The channel is one button in the header; its list opens OVER the screen and closes on a pick. */
 .tv-top{display:flex;align-items:center;gap:6px;min-width:0}
@@ -347,9 +348,11 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 .tv-pick::after{content:'';flex:none;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor}
 .tv-pick[aria-expanded="true"]::after{border-top:0;border-bottom:5px solid currentColor}
 .tv-pick:hover{border-color:var(--red)}
-.hb-tv .tv-menu{position:absolute;inset:0;z-index:3;display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));align-content:start;gap:6px;margin:0;padding:10px;
+.hb-tv .tv-menu{position:absolute;inset:0;z-index:3;display:block;margin:0;padding:10px;
   overflow-y:auto;overscroll-behavior:contain;background:rgba(8,5,6,.95)}
-.hb-tv .tv-menu .tv-c{text-align:left;padding:7px 9px}
+.hb-tv .tv-menu .lib-c{padding:5px 9px}
+.hb-tv .tv-menu .lib-c b{font-size:13px}
+.hb-tv .tv-menu .lib-c span{font-size:11.5px}
 /* Hector 2026-09-16: "I can't see the volume button, I have to rotate my phone". YouTube's own mute button only shows after a tap
    on the video and hides again (measured at his 357px); the TV has its own Sound button, always there while it plays. It talks to
    the player through YouTube's iframe API and shows what the player reports back. Stop and YouTube became icons to make room. */
@@ -662,7 +665,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   .brk{display:block;position:absolute;width:16px;height:16px;pointer-events:none;z-index:5}
   .brk.tr{top:6px;right:6px;border-top:2px solid var(--red);border-right:2px solid var(--red)}
   .brk.bl{bottom:6px;left:6px;border-bottom:2px solid var(--red);border-left:2px solid var(--red)}
-  .head{padding:14px 18px}
+  .head{padding:5px 18px;min-height:57px}   /* the strip keeps the height it had before the identity grew (Hector 2026-09-17: "i did not tell you to make the red strip bigger") */
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): only the browser's chrome goes. The page keeps its whole frame -
      border, shadow, tape rail, notch, brackets - and the frame reaches the screen edges (Hector 2026-09-17: "dont make the frame
      smaller, just scale it to real fullscreen", then "push it more to the edge ... even the strip on the left has a gap") */
@@ -694,7 +697,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 @media (max-height:500px){
   :root{--pet:72px;--petc:64px}
   .frame{padding-top:8px}
-  .head{padding-top:6px;padding-bottom:6px}
+  .head{padding-top:4px;padding-bottom:4px;min-height:41px}
+  .face{width:32px;height:32px}
+  .name{font-size:19px}
   .sub{display:none}
   .lock-form{padding-top:10px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
 }
@@ -871,7 +876,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
               <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><span id="tv-yt" class="hb-link tv-ico tv-air" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></span></span></div>
               <div id="tv-screen" class="tv-screen">
-                <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span></button>
+                <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span><span id="tv-err" class="tv-err" hidden></span></button>
                 <div id="tv-ch" class="tv-ch tv-menu" role="group" aria-label="Channel" hidden></div>
               </div>
               <span id="tv-note" class="vh" aria-live="polite">Nothing loads until you press Play.</span>
@@ -1294,6 +1299,25 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {k:'dw',     src:'DW',           url:'https://rss.dw.com/rdf/rss-en-all'},
     {k:'arutz',  src:'Arutz Sheva',  url:'https://www.israelnationalnews.com/Rss.aspx'}
   ];
+  /* Hector's order of interest (2026-09-17): "i want the main focus to be USA news, then second place Israel and the
+     middle east. then 3erd mexico internationally." A headline's rank is the BETTER (lower) of its source's own beat
+     and what its title is about, so a Jerusalem Post story about Washington sits with the US stories and a Fox World
+     story about Gaza sits with the Middle East ones. It orders the list in the tile AND the headlines the brief is
+     written from, and the brief request carries the same order (n8n `Build Brief Request`). */
+  var FOCUS_US=0, FOCUS_ME=1, FOCUS_MX=2, FOCUS_REST=3;
+  var FOCUS_SRC={'Fox US':FOCUS_US, 'Fox Politics':FOCUS_US, 'Jerusalem Post':FOCUS_ME, 'Arutz Sheva':FOCUS_ME, 'Times of Israel':FOCUS_ME, 'Mexico News Daily':FOCUS_MX};
+  var FOCUS_WORDS=[
+    [FOCUS_US, /\b(United States|Americans?|American|Washington|White House|Trump|Vance|Congress|Senate|House Republicans?|House Democrats?|Supreme Court|Pentagon|State Department|Homeland Security|National Guard|Republicans?|Democrats?|Congressman|Senator|Governor|California|Texas|Florida|New York|Chicago|Los Angeles|Wall Street|Federal Reserve)\b/i],
+    [FOCUS_US, /\b(U\.S\.|US|USA|GOP|FBI|CIA|DOJ|ICE|IRS|CDC|NASA|Fed)\b/],
+    [FOCUS_ME, /\b(Israel|Israeli|Israelis|Gaza|Hamas|Hezbollah|IDF|Netanyahu|West Bank|Jerusalem|Tel Aviv|Iran|Iranian|Tehran|Lebanon|Beirut|Syria|Damascus|Yemen|Houthis?|Saudi|Riyadh|Qatar|Doha|Emirates|Dubai|Egypt|Cairo|Jordan|Middle East|Hormuz)\b/i],
+    [FOCUS_MX, /\b(Mexico|M\u00E9xico|Mexican|Mexicans|Sheinbaum|cartel|cartels|CJNG|Sinaloa|Tijuana|Ju\u00E1rez|Monterrey|Guadalajara|Oaxaca|Canc\u00FAn|Cancun|Yucat\u00E1n|Quintana Roo|Michoac\u00E1n)\b/i]];
+  function newsRank(h){
+    var src=(h && h.src) || '', r=Object.prototype.hasOwnProperty.call(FOCUS_SRC, src) ? FOCUS_SRC[src] : FOCUS_REST;
+    var t=String((h && h.title) || '');
+    for(var i=0;i<FOCUS_WORDS.length;i++) if(FOCUS_WORDS[i][0]<r && FOCUS_WORDS[i][1].test(t)) r=FOCUS_WORDS[i][0];
+    return r;
+  }
+  var FOCUS_TAG=['US','ME','MX',''];
   var REFRESH_MS=15*60*1000, MLB_MS=30*60*1000;
   var hubOn=false, serverNews=null, webNews={}, newsSaid=false, hotSaid=false, lastWx=0, lastFeeds=0, lastMlb=0;
   function twoDigits(n){ return (n<10 ? '0' : '')+n }
@@ -1385,7 +1409,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function paintNews(){
     var all=((serverNews&&serverNews.items)||[]).concat(webItems()), per={}, pick=[];
     function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }   // future-dated stories count as now
-    all.sort(function(a,b){ return ts(b)-ts(a) });
+    all.sort(function(a,b){ return (newsRank(a)-newsRank(b)) || (ts(b)-ts(a)) });   // the US first, then Israel and the Middle East, then Mexico; newest inside each
     all.forEach(function(h){ per[h.src]=(per[h.src]||0)+1; if(per[h.src]<=1 && pick.length<12) pick.push(h) });   // one per source (Hector: the brief sums up the rest)
     var ol=$('h-list'); ol.textContent='';
     pick.forEach(function(h){
@@ -2082,34 +2106,50 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      FOX refuses that form, so FOX plays its current live video by id; when FOX ends that stream the id goes stale,
      and the YouTube button always opens the channel's live page. Fox News itself does not stream on YouTube. */
   var TV=[
-    {k:'fox', short:'FOX LiveNOW', name:'LiveNOW from FOX', vid:'oNxmNtKwIVA',   /* v6dJAqft5NU ended 2026-09-16 ('recording is not available'); oNxmNtKwIVA measured live and playing embedded that night */ page:'https://www.youtube.com/@LiveNOWFOX/live'},
-    {k:'abc', short:'ABC News', name:'ABC News Live', ch:'UCBi2mrWuNuyYy4gbM6fU18Q', page:'https://www.youtube.com/@ABCNews/live'},
-    {k:'aje', short:'Al Jazeera', name:'Al Jazeera English', vid:'gCNeDWCI0vo', page:'https://www.youtube.com/@aljazeeraenglish/live'},   // in NBC's place (Hector 2026-09-15); its channel-live embed did not play
-    {k:'cbs', short:'CBS News', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
-    {k:'bbg', short:'Bloomberg', name:'Bloomberg', ch:'UCIALMKvObZNtJ6AmdCLP7Lg', page:'https://www.youtube.com/@markets/live'},
-    {k:'mmty', short:'Multimedios MTY', name:'Multimedios Monterrey', vid:'SM864ZgPpG8', page:'https://www.youtube.com/@Multimedios/live'},   // Canal 6 Monterrey, the official Multimedios live stream (Hector 2026-09-15)
-    // Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB" - the two 24/7 streams keep one video id;
-    // Canal 5's channel-live embed played from the live origin (measured), so it follows restarts by itself.
-    {k:'tdep', short:'Telemundo Deportes', name:'Telemundo Deportes Ahora 24/7', vid:'iOdDkZltnJE', page:'https://www.youtube.com/@deportes/live'},
-    {k:'c5', short:'Canal 5', name:'Canal 5 · Me Caigo de Risa 24/7', ch:'UCRZSTf9laa2wkHPOaiOoldA', page:'https://www.youtube.com/@canal5_mx/live'},
-    {k:'lomlb', short:'Locked On MLB', name:'Locked On MLB 24/7 (baseball talk, not games)', vid:'BSU7OK-T_LQ', page:'https://www.youtube.com/@LockedOnMLB/live'},
-    // Hector 2026-09-16: "the best space shots, spaceX, nasa" - measured live and embeddable that morning; SpaceX itself streams on X, not YouTube.
+    // United States
+    {k:'fox', group:'United States', short:'FOX LiveNOW', note:'Breaking news 24/7', name:'LiveNOW from FOX', vid:'C96oohpWBGw',   /* oNxmNtKwIVA died within a day (YouTube error 150, measured 2026-09-17); C96oohpWBGw played embedded that morning */ page:'https://www.youtube.com/@LiveNOWFOX/live'},
+    {k:'cnn', group:'United States', short:'CNN', note:'CNN Headlines 24/7', name:'CNN Headlines \u00B7 24/7 live news', ch:'UCupvZG-5ko_eiXAupbDfxWw', page:'https://www.youtube.com/@CNN/live'},   // Hector 2026-09-17; the channel-live form plays, so it follows the stream when it restarts
+    {k:'abc', group:'United States', short:'ABC News', note:'ABC News Live 24/7', name:'ABC News Live', vid:'iipR5yUp36o',   /* its channel-live embed answered 150 on 2026-09-17 (it played on 09-15); the video id plays */ page:'https://www.youtube.com/@ABCNews/live'},
+    {k:'cbs', group:'United States', short:'CBS News', note:'CBS News 24/7', name:'CBS News 24/7', ch:'UC8p1vwvWtl6T73JiExfWs1g', page:'https://www.youtube.com/@CBSNews/live'},
+    // World
+    {k:'dw', group:'World', short:'DW News', note:'Deutsche Welle, English', name:'DW News livestream', ch:'UCknLrEdhRCp1aegoMqRaCZg', page:'https://www.youtube.com/@dwnews/live'},   // Hector 2026-09-17
+    {k:'aje', group:'World', short:'Al Jazeera', note:'Al Jazeera English', name:'Al Jazeera English', vid:'gCNeDWCI0vo', page:'https://www.youtube.com/@aljazeeraenglish/live'},   // in NBC's place (Hector 2026-09-15); its channel-live embed did not play
+    {k:'bbg', group:'World', short:'Bloomberg', note:'Markets and business', name:'Bloomberg', ch:'UCIALMKvObZNtJ6AmdCLP7Lg', page:'https://www.youtube.com/@markets/live'},
+    // Mexico
+    {k:'azteca', group:'M\u00E9xico', short:'Azteca Noticias', note:'TV Azteca, en vivo', name:'Azteca Noticias en vivo', vid:'0j-UwUPyJO4', page:'https://www.youtube.com/@AztecaNoticias/live'},   // Hector 2026-09-17; Azteca streams a NEW video every day and refuses the channel-live embed, so this id goes stale - the tile says so when it does
+    {k:'mmty', group:'M\u00E9xico', short:'Multimedios MTY', note:'Canal 6 Monterrey', name:'Multimedios Monterrey', vid:'SM864ZgPpG8', page:'https://www.youtube.com/@Multimedios/live'},   // the official Multimedios live stream (Hector 2026-09-15)
+    {k:'c5', group:'M\u00E9xico', short:'Canal 5', note:'Me Caigo de Risa 24/7', name:'Canal 5 \u00B7 Me Caigo de Risa 24/7', ch:'UCRZSTf9laa2wkHPOaiOoldA', page:'https://www.youtube.com/@canal5_mx/live'},
+    // Sports (Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB" - no league streams live on YouTube)
+    {k:'tdep', group:'Sports', short:'Telemundo Deportes', note:'Deportes 24/7, en espa\u00F1ol', name:'Telemundo Deportes Ahora 24/7', vid:'iOdDkZltnJE', page:'https://www.youtube.com/@deportes/live'},
+    {k:'lomlb', group:'Sports', short:'Locked On MLB', note:'Baseball talk, not games', name:'Locked On MLB 24/7 (baseball talk, not games)', vid:'BSU7OK-T_LQ', page:'https://www.youtube.com/@LockedOnMLB/live'},
+    // Space (Hector 2026-09-16: "the best space shots, spaceX, nasa"; SpaceX itself streams on X, not YouTube).
     // Every ISS camera is dark about 40 minutes of each 93-minute orbit (the station is in Earth's shadow), Sen's 4K cameras included.
-    {k:'sen', short:'Sen 4K \u00B7 ISS', name:'Sen \u00B7 live 4K Earth from the ISS', vid:'fO9e9jnhYK8', page:'https://www.youtube.com/@sen/live'},
-    {k:'nasa', short:'NASA ISS', name:'NASA \u00B7 live from the International Space Station', vid:'M3HKLzjvKPc', page:'https://www.youtube.com/@NASA/live'},
-    {k:'starbase', short:'Starbase Live', name:'NASASpaceflight \u00B7 Starbase Live 24/7 (Starship)', vid:'mhJRzQsLZGg', page:'https://www.youtube.com/@NASASpaceflight/live'},
-    {k:'cape', short:'Space Coast Live', name:'NASASpaceflight \u00B7 Space Coast Live 24/7 (the Cape)', vid:'Jm8wRjD3xVA', page:'https://www.youtube.com/@NASASpaceflight/live'}];
+    {k:'sen', group:'Space', short:'Sen 4K \u00B7 ISS', note:'Live 4K Earth from orbit', name:'Sen \u00B7 live 4K Earth from the ISS', vid:'fO9e9jnhYK8', page:'https://www.youtube.com/@sen/live'},
+    {k:'nasa', group:'Space', short:'NASA ISS', note:'Live from the station', name:'NASA \u00B7 live from the International Space Station', vid:'M3HKLzjvKPc', page:'https://www.youtube.com/@NASA/live'},
+    {k:'starbase', group:'Space', short:'Starbase Live', note:'Starship, 24/7', name:'NASASpaceflight \u00B7 Starbase Live 24/7 (Starship)', vid:'mhJRzQsLZGg', page:'https://www.youtube.com/@NASASpaceflight/live'},
+    {k:'cape', group:'Space', short:'Space Coast Live', note:'The Cape, 24/7', name:'NASASpaceflight \u00B7 Space Coast Live 24/7 (the Cape)', vid:'Jm8wRjD3xVA', page:'https://www.youtube.com/@NASASpaceflight/live'}];
   var K_TV='lounge_tv', tvPick=TV[0];
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
   function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1'
     +(/^https?:/.test(location.origin || '') ? '&origin='+encodeURIComponent(location.origin) : '') }   // the iframe API: the Sound button talks to the player   // Hector: the TV starts on his click, muted
   function tvPaint(){
+    // grouped like the camera picker (Hector 2026-09-17: "can you arrange the channels the same way you have the live cameras?")
     var bar=$('tv-ch');
-    if(!bar.children.length) TV.forEach(function(c){
-      var b=document.createElement('button'); b.type='button'; b.className='tv-c'; b.textContent=c.short; b.title=c.name;
-      b.setAttribute('data-k', c.k); bar.appendChild(b);
-    });
-    [].forEach.call(bar.children, function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===tvPick.k ? 'true' : 'false') });
+    if(!bar.children.length){
+      var groups=[]; TV.forEach(function(c){ if(groups.indexOf(c.group)<0) groups.push(c.group) });
+      groups.forEach(function(g){
+        var grp=document.createElement('div'); grp.className='lib-g';
+        var h=document.createElement('div'); h.className='lib-r'; h.textContent=g; grp.appendChild(h);
+        var chips=document.createElement('div'); chips.className='lib-chips';
+        TV.filter(function(c){ return c.group===g }).forEach(function(c){
+          var b=document.createElement('button'); b.type='button'; b.className='lib-c'; b.title=c.name; b.setAttribute('data-k', c.k);
+          var nm=document.createElement('b'); nm.textContent=c.short; var nt=document.createElement('span'); nt.textContent=c.note;
+          b.appendChild(nm); b.appendChild(nt); chips.appendChild(b);
+        });
+        grp.appendChild(chips); bar.appendChild(grp);
+      });
+    }
+    [].forEach.call(bar.querySelectorAll('.lib-c'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===tvPick.k ? 'true' : 'false') });
     $('tv-play-t').textContent='Play '+tvPick.name; $('tv-pick-t').textContent=tvPick.short;
   }
   function tvPlay(){
@@ -2122,6 +2162,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       scr.appendChild(f);
     }
     f.src=tvSrc(tvPick);
+    $('tv-err').hidden=true;
     tvMuted=true; $('tv-sound').hidden=false; soundPaint();   // every channel starts muted (Hector: the TV starts on his click, muted)
     $('tv-play').hidden=true; $('tv-stop').hidden=false; $('tv-note').textContent=tvPick.name;
     $('tv-screen').parentNode.classList.add('playing');
@@ -2416,7 +2457,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function newsForBrief(){
     var all=((serverNews && serverNews.items) || []).concat(webItems());   // every source the hub holds, the free feeds included
     function ts(h){ return Math.min(Date.parse(h.t)||0, Date.now()) }
-    return all.slice().sort(function(a,b){ return ts(b)-ts(a) }).slice(0,30).map(function(h){ return {src:h.src, title:h.title, age:ago(h.t)} });
+    return all.slice().sort(function(a,b){ return (newsRank(a)-newsRank(b)) || (ts(b)-ts(a)) }).slice(0,30)
+      .map(function(h){ return {src:h.src, title:h.title, age:ago(h.t), focus:FOCUS_TAG[newsRank(h)]} });   // n8n groups the list by focus and writes the points in that order
   }
   function paintBrief(){
     var ul=$('brief-list'), meta=$('brief-meta'), t=tile('news'), pts=(brief && brief.points) || [];
@@ -3139,7 +3181,16 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var f=$('tv-screen').querySelector('iframe'); if(!f || e.source!==f.contentWindow || !/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin)) return;
     var d=null; try{ d=typeof e.data==='string' ? JSON.parse(e.data) : e.data }catch(err){ return }
     if(d && d.info && typeof d.info.muted==='boolean' && d.info.muted!==tvMuted){ tvMuted=d.info.muted; soundPaint() }
+    // a channel that keeps ONE video id goes stale when the stream restarts (FOX's did overnight, Azteca starts a new one every
+    // day): the player answers with an error and the tile says so instead of sitting on a black box (Hector 2026-09-17)
+    var err=d && (d.event==='onError' ? d.info : (d.info && d.info.errorCode)); if(err) tvDead(err);
   });
+  function tvDead(code){
+    var name=tvPick.name;
+    tvStop();
+    $('tv-err').hidden=false; $('tv-err').textContent='That stream has ended. Pick another channel.';
+    $('tv-note').textContent=name+' is not playing (YouTube error '+code+'). The stream it points at has ended \u2014 pick another channel.';
+  }
   function tvMenu(open){ $('tv-ch').hidden=!open; $('tv-pick').setAttribute('aria-expanded', open ? 'true' : 'false') }
   $('tv-pick').addEventListener('click', function(){ tvMenu($('tv-ch').hidden) });
   tvPaint();
@@ -3265,7 +3316,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms,
+  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms, newsRank:newsRank, newsForBrief:newsForBrief, TV:TV,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
     get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll, topicEmoji:topicEmoji };

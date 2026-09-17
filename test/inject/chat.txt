@@ -41,6 +41,8 @@
   // what n8n returns with the login: 4 BBC (one too many), 1 Times of Israel, 1 with a bad link
   var HEADS=[{src:'BBC',title:'BBC one',link:'https://www.bbc.com/news/1',t:ago(60)},{src:'BBC',title:'BBC two',link:'https://www.bbc.com/news/2',t:ago(120)},
     {src:'BBC',title:'BBC three',link:'https://www.bbc.com/news/3',t:ago(180)},{src:'BBC',title:'BBC four',link:'https://www.bbc.com/news/4',t:ago(240)},
+    {src:'BBC',title:'The Senate votes in Washington',link:'https://www.bbc.com/news/5',t:ago(180)},
+    {src:'Mexico News Daily',title:'Sheinbaum meets the governors',link:'https://mexiconewsdaily.com/one',t:ago(15)},
     {src:'Times of Israel',title:'ToI one',link:'https://www.timesofisrael.com/one',t:ago(20)},{src:'Evil',title:'bad',link:'javascript:alert(2)',t:null}];
   // the inbox glance n8n returns: 6 unread; one bad thread id (no link); one malformed (sender is not text)
   function at(h){ var d=new Date(Date.now()+h*3600000); var off=-d.getTimezoneOffset(), sg=off>=0?'+':'-', a=Math.abs(off); function p(n){ return (n<10?'0':'')+n }
@@ -486,7 +488,7 @@
       T($('h-cond').textContent==='Mostly clear' && /H 88/.test($('h-range').textContent) && /L 60/.test($('h-range').textContent), 'sky and high/low ('+$('h-range').textContent+')');
       var lis=$('h-list').querySelectorAll('li'), srcs=[].map.call(lis, function(l){ return l.querySelector('.hl-s').textContent });
       // every source the hub can reach: n8n brings BBC and Times of Israel, the browser reads the five free feeds
-      var WANT=['BBC','Times of Israel','Fox News','Fox US','Fox Politics','DW','Arutz Sheva'];
+      var WANT=['BBC','Times of Israel','Mexico News Daily','Fox News','Fox US','Fox Politics','DW','Arutz Sheva'];
       T(lis.length===WANT.length && WANT.every(function(sn){ return srcs.filter(function(x){ return x===sn }).length===1 }),
         'headlines: exactly one per source, bad links dropped ('+lis.length+': '+srcs.join(', ')+')');
       // newest first, read off the ages actually printed - no story named, so adding a feed cannot make this lie
@@ -495,9 +497,16 @@
         var sp=li.querySelectorAll('.hl-m span'), m=String(sp[1] ? sp[1].textContent : '').match(/^(\d+)([mhd])$/);
         return m ? +m[1]*(m[2]==='m'?1:m[2]==='h'?60:1440) : NaN;
       }
-      var ages=[].map.call(lis, mins), sorted=ages.every(function(v,i){ return i===0 || !(v<ages[i-1]) });
-      T(lis.length && ages.every(function(v){ return isFinite(v) }) && sorted, 'newest first, every headline carrying its age ('+ages.join('<=')+')');
-      T(lis.length && /10m/.test(lis[0].textContent), 'the newest story leads ('+lis[0].textContent.replace(/\s+/g,' ').slice(0,70)+')');
+      // Hector 2026-09-17: "i want the main focus to be USA news, then second place Israel and the middle east. then 3erd mexico
+      // internationally" - the source's own beat, beaten by what the headline is about (the BBC story about Washington leads the US group)
+      var order=[].map.call(lis, function(l){ return l.querySelector('.hl-s').textContent });
+      T(order.join(' | ')==='Fox US | Fox Politics | BBC | Arutz Sheva | Times of Israel | Mexico News Daily | DW | Fox News',
+        'news: the US first, then Israel and the Middle East, then Mexico, then the rest ('+order.join(', ')+')');
+      T(lis.length>2 && /Washington/.test(lis[2].textContent) && /Sheinbaum/.test(lis[5].textContent),
+        'news: a BBC story about Washington is read as US news and a newer Mexican one still waits its turn ('+lis[2].textContent.replace(/\s+/g,' ').slice(0,40)+')');
+      var ages=[].map.call(lis, mins), grp=[[0,3],[3,5],[5,6],[6,8]];
+      T(ages.every(function(v){ return isFinite(v) }) && grp.every(function(g){ var a=ages.slice(g[0],g[1]); return a.every(function(v,i){ return i===0 || !(v<a[i-1]) }) }),
+        'news: newest first inside each group, every headline carrying its age ('+ages.join(', ')+')');
       T([].every.call($('h-list').querySelectorAll('a'), function(a){ return /^https?:/.test(a.href) && a.target==='_blank' && /noopener/.test(a.rel) }), 'every headline opens safely in a new tab');
       T(!$('h-mlb').hidden && !!$('h-dod') && !$('h-dod').hidden && /Dodgers 5, Padres 2/.test($('h-last').textContent) && /at Giants/.test($('h-next').textContent), 'the Dodgers lines ('+$('h-last').textContent+' / '+$('h-next').textContent+')');
       scoresOK();
@@ -553,6 +562,10 @@
       var NEWSRC=['Fox News','Fox US','Fox Politics','DW','Arutz Sheva'];
       T(NEWSRC.every(function(sn){ return sentAtLogin.some(function(h){ return h.src===sn }) }) && sentAtLogin.some(function(h){ return h.src==='BBC' }),
         'news: the login brief waits for all five free feeds, so it covers every source ('+sentAtLogin.length+' headlines)');
+      var RK={US:0, ME:1, MX:2, '':3}, tg=sentAtLogin.map(function(h){ return h.focus });
+      T(tg.length>=8 && tg.every(function(x){ return RK[x]!==undefined }) && tg.every(function(x,i){ return i===0 || RK[x]>=RK[tg[i-1]] })
+        && tg[0]==='US' && tg.indexOf('ME')>0 && tg.indexOf('MX')>tg.indexOf('ME'),
+        'news: the brief is sent the headlines in his order of interest, each tagged US / ME / MX ('+tg.join(',')+')');
       var srcs=[].map.call(qa('h-list','.hl-s'), function(e){ return e.textContent });
       T(NEWSRC.every(function(sn){ return srcs.filter(function(x){ return x===sn }).length===1 }) && srcs.length===srcs.filter(function(x,i,a){ return a.indexOf(x)===i }).length,
         'news: Fox US, Fox Politics, DW and Arutz Sheva each show exactly one headline ('+srcs.join(', ')+')');
@@ -614,6 +627,11 @@
     T(te('Dodgers beat the Giants in ten innings')==='\u26BE' && te('Israel strikes Hezbollah targets')==='\uD83C\uDDEE\uD83C\uDDF1' && te('SpaceX launches Starship again')==='\uD83D\uDE80' && te('Wildfire spreads north of Santa Clarita')==='\uD83D\uDD25',
       'news: a plain topic gets its one subtle mark (baseball, Israel, space, wildfire)');
     T(te('BBC one')==='' && te('Council debates the budget for next year')==='' && te('')==='', 'news: no topic, no emoji ("not too many")');
+    var nr=window.__lounge.newsRank || function(){ return -1 };   // an older page has no ranking: this check fails, the rest still run
+    T(nr({src:'Fox News',title:'Senate passes the bill'})===0 && nr({src:'Jerusalem Post',title:'Trump calls the prime minister'})===0
+      && nr({src:'BBC',title:'Gaza talks resume'})===1 && nr({src:'Fox US',title:'Storm hits the coast'})===0
+      && nr({src:'DW',title:'Sheinbaum meets the governors'})===2 && nr({src:'BBC',title:'Floods in Jakarta'})===3 && nr({src:'Arutz Sheva',title:'Knesset sits late'})===1,
+      'news: a headline is ranked US, then Israel and the Middle East, then Mexico - by its source and by what it says');
     var lis=[].slice.call($('h-list').querySelectorAll('li.hl')), many=lis.filter(function(li){ return li.querySelectorAll('.hl-e').length>1 }), marked=lis.filter(function(li){ return li.querySelector('.hl-e') });
     T(many.length===0 && marked.length<=Math.ceil(lis.length/2) && [].every.call(document.querySelectorAll('.hl-e'), function(e){ return e.getAttribute('aria-hidden')==='true' && parseFloat(getComputedStyle(e).opacity)<1 }),
       'news: at most one mark per headline, on at most half of them, hidden from a screen reader, faded ('+marked.length+' of '+lis.length+')');
@@ -1356,21 +1374,30 @@
     $('tv-pick').click();
     var mR=R($('tv-ch'));
     T(!$('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='true' && Math.abs(mR.t-scrR.t)<=2 && Math.abs(mR.b-scrR.b)<=2 && Math.abs(mR.l-scrR.l)<=2, 'TV: the channel list opens over the screen, not under it');
-    var chips=$('tv-ch').querySelectorAll('button'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
-    T(chips.length===13 && !!on && on.textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: thirteen channels with clear names, FOX first');
+    var chips=$('tv-ch').querySelectorAll('.lib-c'), on=$('tv-ch').querySelector('[aria-pressed="true"]');
+    T(chips.length===16 && !!on && on.querySelector('b').textContent==='FOX LiveNOW' && /ABC News/.test($('tv-ch').textContent) && /CBS News/.test($('tv-ch').textContent), 'TV: sixteen channels with clear names, FOX first ('+chips.length+')');
+    // Hector 2026-09-17: "can you arrange the channels the same way you have the live cameras?"
+    var tvg=[].map.call($('tv-ch').querySelectorAll('.lib-g .lib-r'), function(e){ return e.textContent });
+    T(tvg.join('|')==='United States|World|México|Sports|Space' && $('tv-ch').querySelectorAll('.lib-g').length===5
+      && [].every.call(chips, function(b){ return !!b.querySelector('b') && !!b.querySelector('span') && b.querySelector('span').textContent.length>3 }),
+      'TV: the channels are grouped and named like the cameras ('+tvg.join(', ')+')');
+    // Hector 2026-09-17: "channels add as well, DW news, try to find and add CNN and MSNBC news. azteca noticias to the mexican section"
+    function tvIn(k){ var b=$('tv-ch').querySelector('[data-k="'+k+'"]'); return b ? b.closest('.lib-g').querySelector('.lib-r').textContent+': '+b.querySelector('b').textContent : 'missing' }
+    T(tvIn('cnn')==='United States: CNN' && tvIn('dw')==='World: DW News' && tvIn('azteca')==='México: Azteca Noticias',
+      'TV: CNN with the US channels, DW News with the world ones, Azteca Noticias in the Mexican section ('+[tvIn('cnn'),tvIn('dw'),tvIn('azteca')].join(' / ')+')');
     // Hector 2026-09-16: "the best space shots, spaceX, nasa ... add them to the tv"
     T(['sen','nasa','starbase','cape'].every(function(k){ var c=$('tv-ch').querySelector('[data-k="'+k+'"]'); return !!c && vis(c) }) && /Sen 4K/.test(tx('tv-ch')) && /NASA ISS/.test(tx('tv-ch')) && /Starbase Live/.test(tx('tv-ch')) && /Space Coast Live/.test(tx('tv-ch')),
       'TV: the four space streams are on the TV (Sen 4K, NASA ISS, Starbase, Space Coast)');
     var mm=$('tv-ch').querySelector('[data-k="mmty"]');
-    T(!!mm && mm.textContent==='Multimedios MTY', 'TV: Multimedios Monterrey is on the TV');
+    T(!!mm && mm.querySelector('b').textContent==='Multimedios MTY', 'TV: Multimedios Monterrey is on the TV');
     // Hector 2026-09-15 night: "add telemundo deportes, canal 5 24/7, and the MLB"
     var td=$('tv-ch').querySelector('[data-k="tdep"]'), c5=$('tv-ch').querySelector('[data-k="c5"]'), lo=$('tv-ch').querySelector('[data-k="lomlb"]');
-    T(!!td && td.textContent==='Telemundo Deportes' && !!c5 && c5.textContent==='Canal 5' && !!lo && lo.textContent==='Locked On MLB', 'TV: Telemundo Deportes, Canal 5 and Locked On MLB are on the TV');
+    T(!!td && td.querySelector('b').textContent==='Telemundo Deportes' && !!c5 && c5.querySelector('b').textContent==='Canal 5' && !!lo && lo.querySelector('b').textContent==='Locked On MLB', 'TV: Telemundo Deportes, Canal 5 and Locked On MLB are on the TV');
     T(!!$('tv-ch').querySelector('[data-k="aje"]') && !$('tv-ch').querySelector('[data-k="nbc"]') && /Al Jazeera/.test($('tv-ch').querySelector('[data-k="aje"]').textContent), 'TV: Al Jazeera English in NBC\'s place');
     T(!tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor!=='rgb(224, 27, 27)', 'TV: the YouTube frame is dark while nothing plays');
     $('tv-play').click();
     var f=scr.querySelectorAll('iframe');
-    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/oNxmNtKwIVA?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, muted, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/C96oohpWBGw?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1' && /autoplay/.test(f[0].getAttribute('allow')) && f[0].referrerPolicy==='strict-origin-when-cross-origin', 'TV: Play loads FOX by its live video, muted, telling YouTube which site it is on ('+(f[0]&&f[0].src)+')');
     T($('tv-play').hidden && !$('tv-stop').hidden, 'TV: Play becomes Stop');
     // Hector 2026-09-16: "I can't see the volume button, I have to rotate my phone"
     var snd=$('tv-sound'), hh=tile('tv').querySelector('.hb-h');
@@ -1388,7 +1415,14 @@
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
     T($('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='ABC News', 'TV: picking a channel closes the list and names it on the button');
     f=scr.querySelectorAll('iframe');
-    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q&autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
+    T(f.length===1 && f[0].src==='https://www.youtube.com/embed/iipR5yUp36o?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1' && abc.getAttribute('aria-pressed')==='true', 'TV: a channel tap switches the same player to ABC\'s live stream');
+    // a stream that has ended answers the player with an error: the tile says so instead of sitting on a black box
+    // (FOX's saved id died overnight and Azteca starts a new stream every day - measured 2026-09-17)
+    window.dispatchEvent(new MessageEvent('message', {data:JSON.stringify({event:'onError', info:150}), origin:'https://www.youtube.com', source:f[0].contentWindow}));
+    T(!document.querySelector('#tv-screen iframe') && !$('tv-err').hidden && /ended/i.test(tx('tv-err')) && /ABC/.test(tx('tv-note')) && /150/.test(tx('tv-note')),
+      'TV: a dead stream stops the player and says the stream has ended ('+tx('tv-err')+')');
+    $('tv-play').click();
+    T($('tv-err').hidden && !!document.querySelector('#tv-screen iframe'), 'TV: Play clears that note and loads the player again');
     // Hector 2026-09-16: "I like that it gets lit up when its playing. Just cancel the link option ... I just clicked by mistake"
     T($('tv-yt').tagName==='SPAN' && !$('tv-yt').closest('a') && !$('tv-yt').hasAttribute('href') && getComputedStyle($('tv-yt')).pointerEvents==='none' && localStorage.getItem('lounge_tv')==='abc',
       'TV: the YouTube logo is a light, not a link (a tap next to Sound opens nothing), and the pick is remembered');
@@ -1523,7 +1557,12 @@
     (function(){
       var nm=document.querySelector('.name'), md=document.querySelector('.model'), hd=document.querySelector('.head'), hr=document.querySelector('.head-r');
       var fs=parseFloat(getComputedStyle(nm).fontSize), fw=R(fc).r-R(fc).l, ms=parseFloat(getComputedStyle(md).fontSize);
-      T(fw>=(WIDE?44:30) && fs>=(WIDE?24:20) && ms>=12, 'the header identity is the bigger one: the Vader square '+Math.round(fw)+'px, the name '+fs+'px, Jarvis '+ms+'px');
+      var SHORT=innerHeight<=500;
+      T(fw>=(WIDE?44:SHORT?30:30) && fs>=(WIDE?24:SHORT?18:20) && ms>=12, 'the header identity is the bigger one: the Vader square '+Math.round(fw)+'px, the name '+fs+'px, Jarvis '+ms+'px');
+      // Hector 2026-09-17: "i told you to make the icon and letter of the header bigger, i did not tell you to make the red strip bigger"
+      // - the strip is exactly the height it was before the identity grew (49 on a phone, 57 wide, 41 on a short screen), measured in WebKit
+      var wantH=SHORT ? 41 : innerWidth>=760 ? 57 : 49, gotH=R(hd).b-R(hd).t;
+      T(Math.abs(gotH-wantH)<=1, 'the red strip keeps its old height, only the identity inside it grew ('+Math.round(gotH)+'px, was '+wantH+')');
       T(R(nm).r<=R(hr).l+1 && hd.scrollWidth<=hd.clientWidth+1, 'and it still clears the header buttons, nothing spills ('+Math.round(R(hr).l-R(nm).r)+'px of room, spill '+(hd.scrollWidth-hd.clientWidth)+')');
       if(WIDE) T(vis(md) && /JARVIS/i.test(md.textContent), 'JARVIS is spelled out beside the name on a wide screen');
     })();
