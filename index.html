@@ -189,6 +189,11 @@ button{cursor:pointer}
 /* a note from the page itself (never from Jarvis) */
 .m.note{align-self:flex-start;max-width:60ch}
 .m.note .body{color:var(--ink-dim);border-left:3px solid var(--ink-faint);padding:2px 0 2px 14px}
+/* an answer his phone dropped: the page fetches it back from the session log (Hector 2026-09-17) */
+.note-go{margin:8px 0 0 17px;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink);border:1px solid var(--rule-hot);background:rgba(224,27,27,.14);padding:5px 10px}
+.note-go:hover{border-color:var(--red)}
+.m .tag.rec{color:var(--ink-faint)}
 
 .dock{position:relative;z-index:2;flex:none}
 /* Clear screen belongs to the conversation, not the header (Hector 2026-09-16: "inside the chat only") */
@@ -1213,6 +1218,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     }
     if(m.r!=='note'){ var tm=document.createElement('time'); tm.className='when'; tm.dateTime=m.t||''; tm.textContent=when(m.t); art.appendChild(tm) }
     if(m.g){ var tag=document.createElement('span'); tag.className='tag'; tag.textContent='The fabrication guard replaced this reply'; art.appendChild(tag) }
+    if(m.rec){ var rt=document.createElement('span'); rt.className='tag rec'; rt.textContent='Fetched back after the connection dropped'; art.appendChild(rt) }
+    if(m.r==='note' && m.act==='last'){ var gb=document.createElement('button'); gb.type='button'; gb.className='note-go'; gb.setAttribute('data-act','last'); gb.textContent='Get the answer'; art.appendChild(gb) }
     return art;
   }
   function render(){
@@ -1245,6 +1252,46 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     else setStatus('Ready','ok');
   }
 
+  /* ---------- an answer that never made it back ----------
+     Hector 2026-09-17: a real turn answered in 30 s on n8n and the reply never reached his iPhone - iOS kills a
+     pending request when the tab goes to the background or the screen locks, and nothing on this side can stop that.
+     The turn is finished and logged on the server either way, so the page asks for it back: `action=last` reads the
+     newest assistant line out of the session log (1 execution, no agent, no Grok) and drops it in where the note was.
+     It tries by itself, again when he comes back to the tab, and leaves a button when it cannot. */
+  var lost=null;   // {note, sent, last, busy} while an answer is missing
+  function recoverLast(force){
+    if(!lost || !pw || lost.busy) return;
+    if(!force && Date.now()-lost.last < 20000) return;   // never a burst of executions
+    lost.busy=true; lost.last=Date.now();
+    var mine=lost;
+    post({action:'last', password:pw}).then(function(r){
+      if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); throw new Error('401') }
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.json();
+    }).then(function(d){
+      var text=(d && d.ok===true && typeof d.text==='string') ? d.text.trim() : '';
+      var at=Date.parse((d && d.at) || '') || 0;
+      if(!text || at < mine.sent-5000) throw new Error('not the answer to that turn');   // older than the question: not ours
+      var i=log.indexOf(mine.note); if(i>=0) log.splice(i, 1);
+      log.push({r:'jarvis', m:text, t:new Date(at).toISOString(), rec:true});
+      lost=null; saveLog(); render(); vc('reply');
+    }).catch(function(){
+      if(lost!==mine) return;
+      mine.busy=false;
+      if(mine.note.fail){ mine.note.m=mine.note.fail; delete mine.note.fail }
+      mine.note.act='last'; saveLog(); render();
+    });
+  }
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) recoverLast(false) });
+  window.addEventListener('focus', function(){ recoverLast(false) });
+  $('col').addEventListener('click', function(e){
+    var b=e.target.closest ? e.target.closest('.note-go') : null;
+    if(!b) return;
+    b.disabled=true; b.textContent='Getting it\u2026';
+    if(lost) lost.busy=false;
+    recoverLast(true);
+  });
+
   /* ---------- sending ---------- */
   function send(e){
     if(e) e.preventDefault();
@@ -1255,6 +1302,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     box.value=''; box.style.height='auto';
     add({r:'me', m:text, t:new Date().toISOString()});
     setBusy(true); vc('thinking');
+    var sentAt=Date.now();
     aborter = (typeof AbortController!=='undefined') ? new AbortController() : null;
     var timer=setTimeout(function(){ if(aborter) aborter.abort() }, WAIT_MS);
     post({action:'chat', password:pw, message:text, source:'web'}, aborter&&aborter.signal)
@@ -1272,11 +1320,15 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       })
       .catch(function(err){
         if(!pw) return;   // already locked out
-        var why = (err && err.name==='AbortError')
-          ? 'No reply in two minutes. Jarvis may still finish it on his side; ask again in a moment.'
-          : 'Something failed on the way back. Try again.';
-        add({r:'note', m:why, t:new Date().toISOString()});
-        vc('failed');
+        var abort=!!(err && err.name==='AbortError');
+        var why = abort ? 'No reply in two minutes. Jarvis may still be finishing it \u2014 looking for it\u2026'
+                        : 'The answer got lost on the way back. Jarvis finished it \u2014 getting it\u2026';
+        var fail = abort ? 'No reply in two minutes. Jarvis may have finished it on his side \u2014 tap to get it.'
+                         : 'The answer got lost on the way back. Jarvis finished it \u2014 tap to get it.';
+        var note={r:'note', m:why, fail:fail, t:new Date().toISOString()};
+        add(note); vc('failed');
+        lost={note:note, sent:sentAt, last:0, busy:false};
+        recoverLast(true);   // the turn is in the session log: ask for it (1 execution, no agent)
       })
       .finally(function(){ clearTimeout(timer); aborter=null; if(pw) setBusy(false); });
   }

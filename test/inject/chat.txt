@@ -210,7 +210,17 @@
       var askFuel=(b&&b.get) ? b.get('fuel')==='1' : false;   // the pump prices ride the login only when the page asks (once a day); guard mode: n8n could not read them
       return res(200,{ok:true,headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX, reminders:(mode==='hub' && logins>1) ? {ok:false, items:[]} : REMS, fuel:askFuel ? (mode==='guard' ? {ok:true,aaa:{ok:false,why:'test'},propane:{ok:false,why:'test'}} : FUEL) : null});
     }
+    // Hector 2026-09-17: his iPhone dropped a real turn while n8n answered it. `action=last` reads the answer back.
+    if(a==='last'){
+      lastCalls.push({pwd:pwd, msg:(b&&b.get)?b.get('message'):null});
+      if(pwd!=='right') return res(401,{error:'unauthorized'});
+      var stale=lastCalls.length===1;   // the first try finds an OLDER answer: not the one he is waiting for
+      return res(200,{ok:true, text: stale ? 'Something Jarvis said yesterday.' : LOSTANS,
+        at:new Date(Date.now()-(stale ? 600000 : 1000)).toISOString()});
+    }
     if(a==='chat'){
+      // iOS killed the request: a real fetch rejects with a TypeError, not an AbortError
+      if(mode==='lost') return Promise.reject(new TypeError('Load failed'));
       // never answers - but like a real fetch it REJECTS with AbortError when the page gives up
       if(mode==='timeout') return new Promise(function(_,rej){
         if(o&&o.signal) o.signal.addEventListener('abort', function(){ var e=new Error('aborted'); e.name='AbortError'; rej(e) });
@@ -221,6 +231,7 @@
     }
     return Promise.reject(new Error('no net'));
   };
+  var lastCalls=[], LOSTANS='The brisket goes on at 04:00 and the porch light stays on for the neighbours.';
   function layout(tag){
     var d=document.documentElement;
     T(d.scrollWidth<=innerWidth, tag+': no horizontal overflow ('+d.scrollWidth+'<='+innerWidth+')');
@@ -1591,6 +1602,31 @@
     T($('send').disabled && !$('sweep').hidden, 'while waiting: Send is off and the sweep is on');
     T(/Thinking/.test($('status').textContent), 'the status says Thinking ('+$('status').textContent+')');
     T($('box').value==='', 'the box is cleared on send');
+    if(mode==='lost'){
+      // Hector 2026-09-17: "Something failed on the way back, try again" - the answer was finished and thrown away.
+      setTimeout(function(){
+        var notes=document.querySelectorAll('#col .m.note');
+        T(notes.length===1 && /lost on the way back/.test(notes[0].textContent), 'a dropped turn says the answer got lost, not "try again" ('+(notes[0]?notes[0].textContent.slice(0,46):'none')+')');
+        T(lastCalls.length===1 && lastCalls[0].pwd==='right' && !lastCalls[0].msg, 'the page asks the server for that answer by itself: one call, the passphrase, no question re-sent');
+        T(calls.filter(function(c){ return c.a==='chat' }).length===1, 'and the turn is never sent again (no second execution, no second Grok turn)');
+        var btn=document.querySelector('.note-go');
+        T(!!btn && /Get the answer/i.test(btn.textContent) && !document.querySelector('#col .m.jarvis'),
+          'an answer older than the question is refused, and the note offers to try again ('+(btn?btn.textContent:'no button')+')');
+        btn.click();
+        setTimeout(function(){
+          T(lastCalls.length===2, 'the button asks once more ('+lastCalls.length+' calls)');
+          T(!document.querySelector('#col .m.note'), 'the note is gone once the answer lands');
+          var ms=document.querySelectorAll('#col .m.jarvis');
+          T(ms.length===1 && ms[0].querySelector('.body').textContent.indexOf('porch light stays on')>-1,
+            'the answer he lost is in the conversation, word for word ('+(ms[0]?ms[0].querySelector('.body').textContent.slice(0,40):'none')+')');
+          T(!!ms[0] && /Fetched back/.test(ms[0].textContent), 'and it says it was fetched back after the connection dropped');
+          T(/porch light stays on/.test(localStorage.getItem('lounge_log')||''), 'it is remembered with the transcript');
+          T(!$('send').disabled && $('sweep').hidden && $('status').textContent==='Ready', 'and the page is usable again');
+          done();
+        }, 250);
+      }, 250);
+      return;
+    }
     if(mode==='timeout'){
       // two minutes of virtual time pass in the runner; check after
       setTimeout(function(){

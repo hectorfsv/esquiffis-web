@@ -19,8 +19,8 @@ title(){ "$CHR" --headless --disable-gpu --hide-scrollbars --virtual-time-budget
   --window-size="$1","$2" --dump-dom "$3" 2>/dev/null | tr -d '\n' | sed -n 's/.*<title>§\(.*\)§<\/title>.*/\1/p'; }
 WHAT="${1:-all}"; PASS=0; FAIL=0
 if [ "$WHAT" = all ] || [ "$WHAT" = chat ]; then
-  echo "CHAT  (9 modes x 4 viewports)"
-  for m in ok badpw expired persist guard hub hubfail arrange timeout; do
+  echo "CHAT  (10 modes x 4 viewports)"
+  for m in ok badpw expired persist guard hub hubfail arrange lost timeout; do
     for v in "393 700" "393 852" "852 393" "2026 1037"; do set -- $v
       budget=8000; [ "$m" = timeout ] && budget=140000; [ "$m" = hub ] && budget=30000   # hub: VaderClawd's climb and drop take real (virtual) seconds
       R=$(title "$1" "$2" "file://$B/c.html?t=$m" $budget)
