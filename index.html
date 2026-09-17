@@ -6,6 +6,11 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A0708">
 <title>The Lounge</title>
+<!-- The Lounge's icons, cut from the Vader painting by tools/build-icon.py (Hector's pick, 2026-09-16) -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="The Lounge">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -871,7 +876,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   var PW_TTL_MS=2*60*60*1000;   // sessionStorage never expires on iOS by itself: timestamp it
   var LOG_MAX=80;               // what a reload shows; Jarvis's own memory lives on the server
   var WAIT_MS=120*1000;         // real turns run 6-78 s; the webhook connection is cut near 100 s
-  var FACE='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QKORXhpZgAATU0AKgAAAAgAAwEOAAIAAAD4AAAAMgE7AAIAAAAlAAABKodpAAQAAAABAAABUAAAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AGNhZTYyMWY4LTVmN2QtNGFhNC1iZDMwLTI0YzFhMGE5NWI0NgAAAASShgAHAAAA/wAAAYagAQADAAAAAQABAACgAgAEAAAAAQAAACqgAwAEAAAAAQAAAFAAAAAAQVNDSUkAAABTaWduYXR1cmU6IGtXZE80dnBHUHNpZkdEZm9FcExNMGNrbFdpem9GOExEclgxYTFlMHZLdlhia1JtRUl5K2xjZlZqb0x0RFN0SEV2YmlSSHpYN0JpdTJhRy9wRjBSdFpMcjRIYVY5ckxDSmJMbVVxQ3cvQzdka0JUNXdmTklNR005QzJhMW40UUdyK3BidWhDRWV6WDFOSnJCS3ZuT3RLL1R3V1ZUbDVsYVViMjZpS3l5L2psVjdzQTZjbitxM2hvL3kwSmFtUysvaWJvamlhMHRPOFh0Qys0L3VzazNEM1MydVpKMFhONmRybTduMHJPQ09vclU9AP/tADhQaG90b3Nob3AgMy4wADhCSU0EBAAAAAAAADhCSU0EJQAAAAAAENQdjNmPALIE6YAJmOz4Qn7/wAARCABQACoDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMDAwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQHBAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAD/9oADAMBAAIRAxEAPwD+f+iiigAooooAKKUqw5IpKAP/0P5/6KKKACtCxtDcPgVTiTzHCk4HfvXsvwv8Cap418VaV4W0SIz3mq3EcEK9t0jADJ9B1J7CoqTUU2zrwWFlWqxpQ3Zgal4K1TTtFtNau7SSK0vt4glZSEkMeA+0ng7SRnHSuDMKgkYr68/aZ8YaReeI7fwX4UlEnhvwbbrpViy9JvJJM9x9Z5i8n0IHavkMzqSTWWGqSlDmkehnuEo0MQ6VJ3S0+fX8T//R/n/q5p9jPqV5DY2w3STMqKOOSxwOuB+ZqnXTeHNT/s3U7GW0tlnuI5Q4DgENID8gIJAKg8kHg9+2BAdvoXgR410nUrieK40/WlAikUHcsynDRsDjG08EjIr7C+F+lw/CL4Y+KPjTOQmo3vmaD4fPGftFxH/plwv/AFwgbYCOjyKeoryTwZZXXi9NC8JaLqiXniC8vNk9g8aQRRTGZhGYJDIyyFjKxbaseBwVYjcO4/aw8W6Raa5p3wm8JXCzeH/h9a/2ZC6H5Li7B3Xtzx182ctg/wBxVHavNxc3OSpI+54fpQw1CePk9UrR9X/X59j4v8RXzXE7ZOdxrk6t3cpllZjVSvRirKx8XWqOUnJn/9L+f+nI7RsHQlWU5BHBBHpTaKAPSPDfi64bxBeazqgNxf3MUjRuh8qT7SR8rpsGN5Iyemee5rltQ1i4vSzzOXZuSSckn1rCR3jdZI2KuhBBHBBHQimkk8mlZbmntZcvLfQUnJzSUUUzM//T/n/ooooAKKKKACiiigD/2Q==';
+  var FACE='face.png';   // the helmet-and-blade close-up of the Vader painting, 56px for the 28-point square (tools/build-icon.py)
 
   function $(id){return document.getElementById(id)}
   var pw='', log=[], busy=false, tick=null, t0=0, aborter=null, waited=false;
