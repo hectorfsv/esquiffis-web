@@ -291,6 +291,24 @@ button{cursor:pointer}
 .hb-sports:not(.shut) #sc-more{display:none}
 /* the inbox: newest first, unread marked by a lit dot and brighter type */
 .ib-count{color:var(--red);margin-left:10px}
+/* Reminders (Hector 2026-09-17): the pending rows of his reminders table, riding the login; a tap opens the reminder with its details */
+.rm-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
+.rm{display:flex;align-items:baseline;gap:10px;width:100%;padding:0;background:none;border:0;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.rm-when{flex:none;min-width:92px;font-family:var(--mono);font-size:var(--fx);letter-spacing:.04em;color:var(--ink-faint)}
+.rm.due .rm-when{color:var(--red)}
+.rm.over .rm-when{color:var(--red-hot)}
+.rm-t{min-width:0;font-size:var(--fl);line-height:1.35;overflow-wrap:anywhere}
+.rm-x{flex:none;font-family:var(--mono);font-size:var(--fxs);color:var(--ink-faint)}
+.rm:hover .rm-t{color:#fff}
+.hb-rem.shut .rm-list>li:nth-child(n+4){display:none}
+.rm-detail{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;gap:8px;padding:var(--tp) var(--tpx);background:rgba(10,7,8,.97);overflow:auto}
+.rm-dh{display:flex;align-items:center;gap:10px}
+.rm-dt{font-size:var(--fl2);line-height:1.35;color:var(--ink);overflow-wrap:anywhere}
+.rm-dw{font-family:var(--mono);font-size:var(--fx);letter-spacing:.04em;color:var(--ink-dim)}
+.rm-dw b{color:var(--red);font-weight:600}
+.rm-dn{font-size:var(--fs);line-height:1.45;color:var(--ink-dim);white-space:pre-wrap;overflow-wrap:anywhere}
+.rm-dn:empty{display:none}
+.rm-da{display:flex;gap:8px;margin-top:auto}
 .ib-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
 .ib{position:relative;padding-left:15px}
 .ib::before{content:'';position:absolute;left:0;top:5px;width:6px;height:6px;border-radius:50%;border:1px solid var(--ink-faint)}
@@ -419,6 +437,9 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
    On a narrower screen they are icons in the header, shown while the hub is open (Done stays a word while arranging); the
    connection light steps aside for them, it is about the chat. The hub's own bar only exists while arranging. */
 @media (max-width:1099px){
+  .map-box .maplibregl-popup-content{min-width:0;max-width:190px;padding:6px 8px;font-size:11px;line-height:1.3}   /* a phone: the dot's details take less of the map (Hector 2026-09-17) */
+  .map-box .maplibregl-popup-content .ev-t{font-size:12px}
+  .map-box .maplibregl-popup-close-button{font-size:15px;padding:0 4px}
   body:not(.hubbing) .head-tools>.tool-btn,body:not(.hubbing) #hub-pet{display:none}
   .tool-btn{padding:5px 7px;line-height:0}
   .tool-btn .ico{display:block}
@@ -811,6 +832,20 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               <button id="ib-more" class="hb-more" type="button" hidden></button>
               <p id="ib-note" class="h-note"></p>
             </section>
+            <section class="hb hb-rem" data-w="rem" aria-labelledby="rm-h">
+              <div class="hb-h"><button id="rm-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="rm-list">Reminders<span id="rm-count" class="ib-count"></span></button><button id="rm-refresh" class="hb-btn" type="button">Refresh</button></div>
+              <ol id="rm-list" class="rm-list"></ol>
+              <button id="rm-more" class="hb-more" type="button" hidden></button>
+              <p id="rm-note" class="h-note"></p>
+              <div id="rm-detail" class="rm-detail" hidden>
+                <div class="rm-dh"><button id="rm-back" class="hb-btn" type="button">&lsaquo; Back</button><span class="mk-cap">Reminder</span></div>
+                <div id="rm-dt" class="rm-dt"></div>
+                <div id="rm-dw" class="rm-dw"></div>
+                <div id="rm-dn" class="rm-dn"></div>
+                <div id="rm-ds" class="h-note"></div>
+                <div class="rm-da"><button id="rm-ask" class="hb-btn" type="button">Ask Jarvis</button><button id="rm-cancel" class="hb-btn" type="button">Cancel it&hellip;</button></div>
+              </div>
+            </section>
             <section class="hb hb-markets" data-w="markets" aria-labelledby="mk-h">
               <div class="hb-h"><span id="mk-h">Markets</span></div>
               <div class="mk-grid">
@@ -933,7 +968,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      cannot answer. ?dev=1 talks to the DEV copy. */
   var PROD='https://hectorfsv.app.n8n.cloud/webhook/jarvis-access';
   var BASE=/[?&]dev=1(&|$)/.test(location.search) ? PROD+'-dev' : PROD;
-  var K_PW='lounge_pw', K_LOG='lounge_log', K_NEWS='lounge_news', K_INBOX='lounge_inbox';
+  var K_PW='lounge_pw', K_LOG='lounge_log', K_NEWS='lounge_news', K_INBOX='lounge_inbox', K_REM='lounge_rem';
   var PW_TTL_MS=2*60*60*1000;   // sessionStorage never expires on iOS by itself: timestamp it
   var LOG_MAX=80;               // what a reload shows; Jarvis's own memory lives on the server
   var WAIT_MS=120*1000;         // real turns run 6-78 s; the webhook connection is cut near 100 s
@@ -1068,13 +1103,13 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
         if(!r.ok){ lockMsg('Jarvis did not answer ('+r.status+'). Try again.', true); return }
         pw=v; savePw(v);
         // the login answer also carries the hub's headlines (fetched by n8n in this same call)
-        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setFuel(d && d.fuel); enter(true) });
+        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); enter(true) });
       })
       .catch(function(){ lockMsg("Can't reach Jarvis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
-    pw=''; clearPw(); clearInbox(); tvStop(); camsStop(); setBusy(false); if(hub) placeTools();
+    pw=''; clearPw(); clearInbox(); clearReminders(); tvStop(); camsStop(); setBusy(false); if(hub) placeTools();
     show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
   }
   function show(id){
@@ -1495,7 +1530,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     $('sc-note').textContent=rows.length ? (live ? live+' live  ·  ' : '')+fin+' final  ·  '+(rows.length-live-fin)+' coming  ·  ESPN, '+clockText(new Date()) : 'No '+pick.name+' games today.';
   }
   function startHub(fresh){
-    hubInit(); applyTalk(); loadServerNews(); loadInbox(); clock(); paintNews(); paintInbox();
+    hubInit(); applyTalk(); loadServerNews(); loadInbox(); loadReminders(); clock(); paintNews(); paintInbox(); paintReminders();
     mapLoadSaved(); mapChipsPaint(); scLoadSaved(); scPaint();   // his basemap, layers and league, read at unlock like the hub layout
     if(hubOn){ if(fresh){ lastServerTry=Date.now(); runBrief() } return }   // unlocking again in the same tab: a new brief, the rest is already running
     hubOn=true;
@@ -1618,6 +1653,84 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       : inbox.failed ? 'Gmail did not answer at '+clockText(new Date(inbox.failed))+'. Showing '+clockText(new Date(inbox.t))+'.'
       : 'Updated '+clockText(new Date(inbox.t))+' \u00B7 refreshes every 2 hours';
   }
+  /* ---------- reminders (Hector 2026-09-17: "the tile to be able to open the reminder by clicking it ... the tile has to give me details") ----------
+     The pending rows of his reminders table ride the login call (0 extra executions), like the inbox: kept for this tab only,
+     forgotten on lock, refreshed every 2 hours and by Refresh. A row is a button; it opens the reminder over the list with the
+     time, the recurrence, the notes he gave Jarvis and when it was set. Ask sends it to Jarvis; Cancel only writes the request
+     in the box for him to send ("i can go through jarvis for the reminder"). */
+  var rems=null, remOpen=null;
+  function setReminders(rm){
+    if(!rm || typeof rm!=='object') return;   // an older workflow sends none
+    if(rm.ok!==true){
+      if(rems && rems.ok) rems.failed=Date.now();
+      else rems={t:Date.now(), ok:false, items:[]};
+    } else {
+      rems={t:Date.now(), ok:true, items:(Array.isArray(rm.items) ? rm.items : []).filter(function(r){ return r && typeof r.text==='string' && r.text && typeof r.at==='string' && r.id!=null })
+        .map(function(r){ return {id:String(r.id), text:r.text, at:r.at, recurrence:(typeof r.recurrence==='string' && r.recurrence && r.recurrence!=='none') ? r.recurrence : '', notes:typeof r.notes==='string' ? r.notes : '', set:typeof r.set==='string' ? r.set : ''} })
+        .sort(function(a,b){ return remTime(a)-remTime(b) }).slice(0,40)};
+    }
+    try{ sessionStorage.setItem(K_REM, JSON.stringify(rems)) }catch(e){}
+    if(hubOn) paintReminders();
+  }
+  function loadReminders(){
+    if(rems) return;
+    try{ var s=JSON.parse(sessionStorage.getItem(K_REM)||'null'); if(s && Array.isArray(s.items) && s.t && Date.now()-s.t<PW_TTL_MS) rems=s }catch(e){}
+  }
+  function clearReminders(){ rems=null; remOpen=null; try{ sessionStorage.removeItem(K_REM) }catch(e){} paintReminders() }
+  function remTime(r){ var t=Date.parse(r.at); return isFinite(t) ? t : 8.64e15 }
+  var DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], MONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function sameDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate() }
+  // when it is due, short: "Today 12:00", "Tomorrow 09:00", "Fri 19 Sep 12:00", "Overdue Tue 14:00"
+  function remWhen(r, long){
+    var t=remTime(r); if(t>=8e15) return {text:'No time', cls:''};
+    var d=new Date(t), now=new Date(), tm=new Date(now.getTime()+86400000), over=t<now.getTime();
+    var day=sameDay(d,now) ? 'Today' : sameDay(d,tm) ? 'Tomorrow' : (long ? DAYS[d.getDay()] : DAYS[d.getDay()].slice(0,3))+' '+d.getDate()+' '+MONS[d.getMonth()]+(d.getFullYear()!==now.getFullYear() ? ' '+d.getFullYear() : '');
+    var rel=over ? 'overdue' : (t-now.getTime()<3600000 ? 'in '+Math.max(1, Math.round((t-now.getTime())/60000))+' min' : t-now.getTime()<86400000 ? 'in '+Math.round((t-now.getTime())/3600000)+' h' : 'in '+Math.round((t-now.getTime())/86400000)+' d');
+    return {text:(over ? 'Overdue ' : '')+day+' '+clockText(d), cls:over ? 'over' : sameDay(d,now) ? 'due' : '', rel:rel, long:day+', '+clockText(d)};
+  }
+  function paintReminders(){
+    var ol=$('rm-list'), note=$('rm-note'); ol.textContent=''; $('rm-count').textContent=''; $('rm-more').hidden=true;
+    if(remOpen && !(rems && rems.items.some(function(r){ return r.id===remOpen }))) remDetail(null);
+    if(!rems){ note.textContent='Your reminders come with the login. Tap Refresh.'; return }
+    if(!rems.ok){ note.textContent='The reminders table did not answer. Tap Refresh to try again.'; return }
+    var due=rems.items.filter(function(r){ return remWhen(r).cls }).length;
+    $('rm-count').textContent=rems.items.length ? (due ? due+' today' : String(rems.items.length)) : '';
+    rems.items.forEach(function(r){
+      var w=remWhen(r), li=document.createElement('li');
+      var b=document.createElement('button'); b.type='button'; b.className='rm'+(w.cls ? ' '+w.cls : ''); b.setAttribute('data-id', r.id); b.setAttribute('aria-label', 'Open reminder: '+r.text);
+      var wh=document.createElement('span'); wh.className='rm-when'; wh.textContent=w.text; b.appendChild(wh);
+      var tx=document.createElement('span'); tx.className='rm-t'; tx.textContent=r.text; b.appendChild(tx);
+      if(r.recurrence || r.notes){ var x=document.createElement('span'); x.className='rm-x'; x.textContent=[r.recurrence ? '\u21BB '+r.recurrence : '', r.notes ? 'notes' : ''].filter(Boolean).join(' \u00B7 '); b.appendChild(x) }
+      li.appendChild(b); ol.appendChild(li);
+    });
+    $('rm-more').hidden=rems.items.length<=IB_SHUT; $('rm-more').textContent=(rems.items.length-IB_SHUT)+' more';
+    note.textContent = !rems.items.length ? 'Nothing pending. Ask Jarvis to remind you of something.'
+      : rems.failed ? 'The table did not answer at '+clockText(new Date(rems.failed))+'. Showing '+clockText(new Date(rems.t))+'.'
+      : 'Updated '+clockText(new Date(rems.t))+' \u00B7 refreshes every 2 hours';
+  }
+  function remDetail(id){
+    var d=$('rm-detail'), r=(id && rems) ? rems.items.filter(function(x){ return x.id===id })[0] : null;
+    remOpen=r ? r.id : null; d.hidden=!r;
+    if(!r) return;
+    var w=remWhen(r, true);
+    $('rm-dt').textContent=r.text;
+    $('rm-dw').textContent=''; var bb=document.createElement('b'); bb.textContent=w.long; $('rm-dw').appendChild(bb);
+    $('rm-dw').appendChild(document.createTextNode(' \u00B7 '+w.rel+(r.recurrence ? ' \u00B7 repeats '+r.recurrence : '')));
+    $('rm-dn').textContent=r.notes || '';
+    $('rm-ds').textContent=(r.notes ? '' : 'No details. ')+(r.set && isFinite(Date.parse(r.set)) ? 'Set '+(function(s){ return DAYS[s.getDay()].slice(0,3)+' '+s.getDate()+' '+MONS[s.getMonth()]+' '+clockText(s) })(new Date(Date.parse(r.set))) : '');
+    try{ $('rm-back').focus({preventScroll:true}) }catch(e){ $('rm-back').focus() }   // the hub must not jump to the tile
+  }
+  $('rm-list').addEventListener('click', function(e){ var b=e.target.closest ? e.target.closest('button.rm') : null; if(b) remDetail(b.getAttribute('data-id')) });
+  $('rm-back').addEventListener('click', function(){ remDetail(null) });
+  $('rm-ask').addEventListener('click', function(){
+    var r=rems && rems.items.filter(function(x){ return x.id===remOpen })[0]; if(!r || busy) return;
+    box.value='About my reminder "'+r.text+'" ('+remWhen(r, true).long+'): tell me what I should know or prepare for it.'; remDetail(null); send();
+  });
+  $('rm-cancel').addEventListener('click', function(){   // written in the box, not sent: he confirms
+    var r=rems && rems.items.filter(function(x){ return x.id===remOpen })[0]; if(!r) return;
+    box.value='Cancel my reminder "'+r.text+'" set for '+remWhen(r, true).long+'.'; remDetail(null); box.focus();
+  });
+  $('rm-refresh').addEventListener('click', refreshHub);
   // one login call brings the headlines AND the inbox: 1 execution, whichever Refresh you tap - and every 2 hours by itself
   // (Hector 2026-09-15: "The inbox, same than the headlines, just update every 2 hrs and manually"). thenBrief: the brief
   // was due at the same moment, so it runs once the fresh headlines have landed.
@@ -1625,14 +1738,14 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function refreshHub(e, thenBrief){
     if(refreshing || !pw) return;
     refreshing=true; lastServerTry=Date.now();
-    var btns=[$('h-refresh'), $('ib-refresh')];
+    var btns=[$('h-refresh'), $('ib-refresh'), $('rm-refresh')];
     btns.forEach(function(b){ b.disabled=true; b.textContent='Refreshing' });
     loadFeeds();
     post(loginFields(pw)).then(function(r){
       if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
       if(!r.ok) throw new Error('http '+r.status);
-      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setFuel(d && d.fuel) });
-    }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.' })
+      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel) });
+    }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.'; $('rm-note').textContent='Could not refresh. Try again.' })
       .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }); if(thenBrief === true) runBrief() });
   }
 
@@ -1647,7 +1760,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   var WIDGETS=[{w:'time', name:'Clock', span:3, minH:40}, {w:'weather', name:'Weather', span:3, minH:40}, {w:'dodgers', name:'Sports', span:3, minH:40, shut:true},
     {w:'inbox', name:'Inbox', span:3, minH:40, shut:true}, {w:'tv', name:'Live news', span:6, minH:40}, {w:'map', name:'World events', span:6, minH:40},
     {w:'markets', name:'Markets', span:12, minH:40}, {w:'cams', name:'Live cameras', span:6, minH:40}, {w:'news', name:'News', span:6, minH:40, shut:true},
-    {w:'stocks', name:'Stocks & crypto', span:6, minH:40}, {w:'fuel', name:'Fuel & energy', span:6, minH:40}, {w:'iss', name:'ISS overhead', span:6, minH:40}];   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
+    {w:'stocks', name:'Stocks & crypto', span:6, minH:40}, {w:'fuel', name:'Fuel & energy', span:6, minH:40}, {w:'iss', name:'ISS overhead', span:6, minH:40},
+    {w:'rem', name:'Reminders', span:3, minH:40, shut:true}];   // last by default so the first screen stays as it was; a saved layout gets it below the rest (Hector 2026-09-17)   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
   // widths are 96ths of the hub (Hector 2026-09-17: "FREE RANGEEEE" - in twelfths a sixth-wide Sports jumped straight to a twelfth, measured),
   // down to a 24th; the width button still cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full. U = one twelfth.
   var K_HUB='lounge_hub', COLS=96, U=8, SPANS=[8,16,24,32,48,64,72,96], SPAN_WORD={8:'a twelfth', 16:'a sixth', 24:'a quarter', 32:'a third', 48:'half', 64:'two thirds', 72:'three quarters', 96:'the full width'},
@@ -2567,7 +2681,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       ['events-c','alerts-f','fires-c','storms-c','storms-l'].forEach(function(id){
         MAP.on('click', id, function(e){
           var f=e.features && e.features[0], ev=f && f.properties && evs[f.properties.id]; if(!ev) return;
-          new maplibregl.Popup({maxWidth:'300px'}).setLngLat(e.lngLat).setDOMContent(evPopup(ev)).addTo(MAP);
+          new maplibregl.Popup({maxWidth:isWide() ? '300px' : '190px'}).setLngLat(e.lngLat).setDOMContent(evPopup(ev)).addTo(MAP);   // smaller on a phone
         });
         MAP.on('mouseenter', id, function(){ try{ MAP.getCanvas().style.cursor='pointer' }catch(err){} });
         MAP.on('mouseleave', id, function(){ try{ MAP.getCanvas().style.cursor='' }catch(err){} });
