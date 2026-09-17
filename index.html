@@ -74,9 +74,9 @@ button{cursor:pointer}
   padding:10px max(14px,env(safe-area-inset-right)) 10px max(14px,env(safe-area-inset-left));padding-top:max(10px,env(safe-area-inset-top));
   border-bottom:1px solid var(--rule);background:linear-gradient(90deg,rgba(224,27,27,.10),transparent 62%),var(--panel-hi)}
 .who{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
-.face{width:28px;height:28px;object-fit:cover;flex:none;display:block;border:1px solid var(--rule)}
-.name{font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;text-shadow:0 0 22px rgba(224,27,27,.5)}
-.model{display:none;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--red);text-transform:uppercase;white-space:nowrap}
+.face{width:38px;height:38px;object-fit:cover;flex:none;display:block;border:1px solid var(--rule)}
+.name{font-weight:700;font-size:21px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;text-shadow:0 0 22px rgba(224,27,27,.5)}
+.model{display:none;font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.2em;color:var(--red);text-transform:uppercase;white-space:nowrap}
 .head-r{display:flex;align-items:center;gap:8px;flex:none}
 .chip{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border:1px solid var(--rule);font-family:var(--mono);font-size:11px;font-weight:600;
   letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -446,6 +446,12 @@ a.ib-subj:hover{text-decoration:underline;text-decoration-color:var(--red);text-
 /* Hector 2026-09-16: "move the vaderclawd and arrange buttons, i want the widgets to be all the way up, right below the header strip".
    On a narrower screen they are icons in the header, shown while the hub is open (Done stays a word while arranging); the
    connection light steps aside for them, it is about the chat. The hub's own bar only exists while arranging. */
+/* a phone narrower than his (a 375 or 360): the bigger title would run under the header's buttons, so it steps down there
+   - measured in WebKit at 320/360/375/393 (Hector 2026-09-17 asked for a bigger icon and title, and his is a 393) */
+@media (max-width:389px){
+  .face{width:clamp(24px,7.4vw,30px);height:clamp(24px,7.4vw,30px)}
+  .name{font-size:clamp(13px,4.2vw,17px)}
+}
 @media (max-width:1099px){
   body:not(.hubbing) .head-tools>.tool-btn,body:not(.hubbing) #hub-pet{display:none}
   .tool-btn{padding:5px 7px;line-height:0}
@@ -661,7 +667,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      border, shadow, tape rail, notch, brackets - and the frame reaches the screen edges (Hector 2026-09-17: "dont make the frame
      smaller, just scale it to real fullscreen", then "push it more to the edge ... even the strip on the left has a gap") */
   body.full .frame{padding:0}
-  .name{font-size:18px}
+  .face{width:46px;height:46px}
+  .name{font-size:25px}
   .model{display:inline}
   .gbtn .more{display:inline}
   .art img{height:150%;top:-24%;left:50%}
