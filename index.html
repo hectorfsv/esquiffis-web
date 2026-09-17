@@ -211,14 +211,14 @@ button{cursor:pointer}
    from compact"): headers as they were, the tightest padding, gaps and margins, type one step down. tp/tpx tile padding,
    tg the gap between tiles (mirrored in the grid maths as GAP), hhm the header's margin, hm every other margin, bp button
    padding, fh header type, fx small mono, fxs captions, fsm small figures, fs body, fm medium, fl large, fl2 the game/sky lines. */
-.hub{--tp:7px;--tpx:9px;--tg:6px;--hhm:10px;--hm:5px;--bp:2px 7px;--fh:11px;--fx:10.5px;--fxs:10px;--fsm:11.5px;--fs:12.5px;--fm:13px;--fl:14px;--fl2:15px;--ftime:52px;--ftemp:48px;--rg:6px;--rgs:3px}
+.hub{--tp:7px;--tpx:9px;--tg:6px;--hhm:10px;--hm:5px;--bp:2px 7px;--fh:12.5px;--fx:12px;--fxs:11.5px;--fsm:13px;--fs:14px;--fm:14.5px;--fl:15.5px;--fl2:16.5px;--ftime:62px;--ftemp:54px;--rg:6px;--rgs:3px}   /* type 1.5px up across the hub, the clock bigger and wider (Hector 2026-09-17: "the time a lil bit bigger, wider ... fonts in general 1 or 2 points bigger") */
 .chat.hubview .hub{display:flex;flex:1;padding-bottom:calc(var(--petc) + 6px)}   /* he stands above the chat box: the last headline stays above him */
 .chat.hubview .log{display:none}
 .chat.hubview .talk{flex:none}
 .hb{padding:16px max(18px,env(safe-area-inset-left));border-bottom:1px solid var(--rule)}
 .hb-h{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:var(--fh);font-weight:600;
   letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:var(--hhm)}
-.h-time{font-family:var(--word);font-size:var(--ftime);line-height:.88;letter-spacing:.02em;color:var(--ink);text-shadow:0 0 30px rgba(224,27,27,.25);font-variant-numeric:tabular-nums}
+.h-time{font-family:var(--word);font-size:var(--ftime);line-height:.88;letter-spacing:.07em;color:var(--ink);text-shadow:0 0 30px rgba(224,27,27,.25);font-variant-numeric:tabular-nums}
 .h-date{color:var(--ink-dim);font-size:var(--fm);margin-top:6px}
 /* the corner (Hector 2026-09-16: "to the right of the clock ... to the right of the weather"): beside the clock a sun
    crossing its arc by day (a moon by night), sunrise and sunset at the arc's ends, the countdown inside it; beside the
@@ -494,7 +494,6 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
    nothing is scaled. The content-scaling FIT of 2026-09-16 is gone. */
 @container tm (max-width:300px){ .hub .hb-time.sized .sky{display:block} }   /* a small clock keeps its sun arc: the fit shrinks both */
 /* the TV on air: its frame and the YouTube button light red (Hector) */
-.hb-tv.playing .tv-screen{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(224,27,27,.4)}
 .hb-tv.playing .hb-link{color:#fff;border-color:var(--red);background:rgba(224,27,27,.24);box-shadow:0 0 12px rgba(224,27,27,.55)}
 /* markets: metals and currencies, each with its change since yesterday */
 .mk-note{font-family:var(--mono);font-size:var(--fxs);font-weight:500;letter-spacing:.04em;text-transform:none;color:var(--ink-faint)}   /* only when something failed (Hector 2026-09-17: no text beside the titles) */
@@ -578,7 +577,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 .lib-in{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--red)}
 .cam-screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--rule);overflow:hidden}
 .cam-screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
-.hb-cams.playing .cam-screen{border-color:var(--red)}
+/* no red frame around a playing screen (Hector 2026-09-17: "get rid of the red frame around youtube screen when it plays. on cameras too") */
 .hb-cams.shut .cams-grid,.hb-cams.shut .cams-bar,.hb-cams.shut .h-note,.hb-cams.shut .cams-lib{display:none}
 .hb-cams.shut .hb-h{margin-bottom:0}
 .hb-cams.sized .cams-grid{flex:1 1 auto;min-height:0;grid-auto-rows:minmax(0,1fr)}
@@ -625,8 +624,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   .brk.bl{bottom:6px;left:6px;border-bottom:2px solid var(--red);border-left:2px solid var(--red)}
   .head{padding:14px 18px}
   /* Full screen (Hector 2026-09-15, after WorldMonitor's button): only the browser's chrome goes. The page keeps its whole frame -
-     padding, border, shadow, tape rail, notch, brackets - at the size of the screen (Hector 2026-09-17: "dont make the frame smaller,
-     just scale it to real fullscreen"; the thinner frame of 2026-09-16 looked smaller to him) */
+     border, shadow, tape rail, notch, brackets - and the frame reaches the screen edges (Hector 2026-09-17: "dont make the frame
+     smaller, just scale it to real fullscreen", then "push it more to the edge ... even the strip on the left has a gap") */
+  body.full .frame{padding:0}
   .name{font-size:18px}
   .model{display:inline}
   .gbtn .more{display:inline}
@@ -1622,7 +1622,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   // down to a 24th; the width button still cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full. U = one twelfth.
   var K_HUB='lounge_hub', COLS=96, U=8, SPANS=[8,16,24,32,48,64,72,96], SPAN_WORD={8:'a twelfth', 16:'a sixth', 24:'a quarter', 32:'a third', 48:'half', 64:'two thirds', 72:'three quarters', 96:'the full width'},
       SPAN_GLYPH={8:'1/12', 16:'\u2159', 24:'\u00BC', 32:'\u2153', 48:'\u00BD', 64:'\u2154', 72:'\u00BE', 96:'1'},
-      LEGACY_SPAN={S:24, M:48, L:96}, MIN_SPAN=4, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=2;   // GAP mirrors the CSS --tg (a tile's right and bottom margin on the 96-grid); LOOK stamps a layout measured under the current look
+      LEGACY_SPAN={S:24, M:48, L:96}, MIN_SPAN=4, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=3;   // GAP mirrors the CSS --tg (a tile's right and bottom margin on the 96-grid); LOOK stamps a layout measured under the current look
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
   function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
   function wname(w){ var x=winfo(w); return x ? x.name : w }

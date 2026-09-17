@@ -393,8 +393,8 @@
       var firstTop=Math.min.apply(null, [].filter.call($('hub').querySelectorAll('.hb[data-w]'), vis).map(function(t){ return R(t).t }));
       T(firstTop-R($('hub')).t<=8, 'the first tiles start right at the top of the hub ('+Math.round(firstTop-R($('hub')).t)+'px)');
       var stRow=$('st-stocks').querySelector('.mk-n');
-      T(getComputedStyle(tile('news')).paddingTop==='7px' && !!stRow && getComputedStyle(stRow).fontSize==='12.5px' && getComputedStyle($('st-h')).fontSize==='11px' && (getComputedStyle($('hub')).columnGap==='6px' || (getComputedStyle($('hub')).columnGap==='0px' && getComputedStyle(tile('news')).marginRight==='6px')),
-        'one look: dense padding and gaps, compact type, roomy headers (7px, 12.5px, 11px, gap 6px - on the 96-grid the tile\'s own margin)');
+      T(getComputedStyle(tile('news')).paddingTop==='7px' && !!stRow && getComputedStyle(stRow).fontSize==='14px' && getComputedStyle($('st-h')).fontSize==='12.5px' && (getComputedStyle($('hub')).columnGap==='6px' || (getComputedStyle($('hub')).columnGap==='0px' && getComputedStyle(tile('news')).marginRight==='6px')),
+        'one look: dense padding and gaps, type a notch up (7px, 14px, headers 12.5px, gap 6px - on the 96-grid the tile\'s own margin)');
       // Hector 2026-09-15: "the chat can be half that size, in the right corner of the whole window. and center the vader image to the chat"
       var sc=R($('scr-chat')), tk=R(document.querySelector('.talk')), sd=R(document.querySelector('.side')), want=Math.min(640, Math.max(400, .25*(sc.r-sc.l)));
       T(Math.abs((tk.r-tk.l)-want)<=2 && Math.abs(tk.r-sc.r)<=1, 'the conversation is the right quarter of the window ('+Math.round(tk.r-tk.l)+' of '+Math.round(sc.r-sc.l)+')');
@@ -922,6 +922,7 @@
     tap('cams-lib-x'); T(!vis(lib), 'cameras: Done closes the list');
     $('cams-play').click();
     var ifr=g.querySelectorAll('iframe');
+    window.__camBorder=getComputedStyle(document.querySelector('.cam-screen')).borderTopColor;
     T(ifr.length===2 && ifr[0].src==='https://www.youtube.com/embed/77akujLn4k8?autoplay=1&mute=1&playsinline=1&rel=0' && /7tf7p5LCtXY/.test(ifr[1].src) && ifr[0].referrerPolicy==='strict-origin-when-cross-origin' && tile('cams').classList.contains('playing'),
       'cameras: Play starts the frames on screen, muted');
     $('cams-n').querySelector('[data-n="4"]').click();
@@ -937,6 +938,7 @@
     if(WIDE){ var a3=R(frames[2]), gr3=R(g); T(Math.abs((a3.r-a3.l)-(gr3.r-gr3.l))<=2, 'cameras: with three, the third runs the full width'); }
     $('cams-stop').click();
     T(!g.querySelector('iframe') && !$('cams-play').hidden && !tile('cams').classList.contains('playing'), 'cameras: Stop removes every player');
+    T(window.__camBorder!==undefined && window.__camBorder!=='rgb(224, 27, 27)', 'cameras: no red frame around a playing camera (Hector 2026-09-17; was '+window.__camBorder+')');
     var sv=JSON.parse(localStorage.getItem('lounge_cams')||'{}');
     T(sv.n===3 && Array.isArray(sv.picks) && sv.picks[3]==='iss' && sv.picks[1]==='zocalo', 'cameras: the count and the picks are remembered');
     var spill=[].filter.call(g.querySelectorAll('.cam-city,.cam-place'), function(e){ return vis(e) && getComputedStyle(e).textOverflow!=='ellipsis' && e.scrollWidth>e.clientWidth+1 });
@@ -1016,8 +1018,8 @@
     b.click(); T(asked.join()==='in', 'full: it asks the browser for full screen');
     fake=de; document.dispatchEvent(new Event('fullscreenchange'));
     var fr=getComputedStyle(document.querySelector('.frame')), pn=getComputedStyle(document.querySelector('.panel')), fr0=window.__frameBefore||{};
-    T(document.body.classList.contains('full') && b.getAttribute('aria-pressed')==='true' && b.getAttribute('aria-label')==='Exit full screen' && !vis(fin) && vis(fout) && b.textContent.trim()==='' && fr.paddingTop===fr0.paddingTop && fr.paddingLeft===fr0.paddingLeft && pn.borderTopWidth===fr0.border && pn.boxShadow===fr0.shadow && vis(document.querySelector('.brk.tr')) && vis(document.querySelector('.brk.bl')) && vis(document.querySelector('.rail')),
-      'full: in full screen the corners turn inward and the page keeps its whole frame - padding '+fr.paddingTop+'/'+fr.paddingLeft+', border '+pn.borderTopWidth+', shadow, rail, notch, brackets (Hector 2026-09-17: "dont make the frame smaller")');
+    T(document.body.classList.contains('full') && b.getAttribute('aria-pressed')==='true' && b.getAttribute('aria-label')==='Exit full screen' && !vis(fin) && vis(fout) && b.textContent.trim()==='' && fr.paddingTop==='0px' && fr.paddingLeft==='0px' && fr.paddingBottom==='0px' && R(document.querySelector('.rail')).l<=0.5 && R(document.querySelector('.panel')).r>=innerWidth-0.5 && pn.borderTopWidth===fr0.border && pn.boxShadow===fr0.shadow && vis(document.querySelector('.brk.tr')) && vis(document.querySelector('.brk.bl')) && vis(document.querySelector('.rail')),
+      'full: in full screen the corners turn inward and the frame reaches the screen edges (rail at x='+Math.round(R(document.querySelector('.rail')).l)+', panel to '+Math.round(R(document.querySelector('.panel')).r)+' of '+innerWidth+') keeping its border '+pn.borderTopWidth+', shadow, rail, notch and brackets (Hector 2026-09-17: "push it more to the edge")');
     b.click(); T(asked.join()==='in,out', 'full: pressed again it asks to leave');
     fake=null; document.dispatchEvent(new Event('fullscreenchange'));
     T(!document.body.classList.contains('full') && b.getAttribute('aria-label')==='Full screen' && vis(fin) && !vis(fout) && getComputedStyle(document.querySelector('.frame')).paddingTop!=='0px', 'full: and the frame comes back');
@@ -1283,7 +1285,7 @@
     T(snd.getAttribute('aria-pressed')==='false', 'TV: the button shows what the player reports (it said muted)');
     window.dispatchEvent(new MessageEvent('message', {data:JSON.stringify({event:'infoDelivery', info:{muted:false}}), origin:'https://evil.example', source:window}));
     T(snd.getAttribute('aria-pressed')==='false', 'TV: a message from anywhere but the player changes nothing');
-    T(tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor==='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).borderTopColor==='rgb(224, 27, 27)', 'TV: while it plays, the YouTube frame lights red');
+    T(tile('tv').classList.contains('playing') && getComputedStyle($('tv-yt')).borderTopColor==='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).borderTopColor!=='rgb(224, 27, 27)' && getComputedStyle($('tv-screen')).boxShadow==='none', 'TV: while it plays, the YouTube frame lights red');
     if($('tv-ch').hidden) $('tv-pick').click();
     var abc=$('tv-ch').querySelector('[data-k="abc"]'); abc.click();
     T($('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='ABC News', 'TV: picking a channel closes the list and names it on the button');
