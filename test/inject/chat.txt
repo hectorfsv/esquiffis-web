@@ -1024,6 +1024,18 @@
     pickBtn(1).click();
     var chips=lib.querySelectorAll('.lib-c'), regions=[].map.call(lib.querySelectorAll('.lib-r'), function(x){ return x.textContent });
     T(vis(lib) && /frame 2/.test(tx('cams-lib-t')) && pickBtn(1).getAttribute('aria-expanded')==='true', 'cameras: tapping a frame opens the camera list for that frame');
+    // Hector 2026-09-17: "the channel and camera selector behave different. On tv the menu displays on the screen. On live
+    // cameras it deploys below the screen. Make em equal." Both lists cover the thing they belong to, and neither grows its tile.
+    var lr=R(lib), gr=R(g);   // measured before the scroll, then again after it for the hit test
+    T(getComputedStyle(lib).position==='absolute' && Math.abs(lr.t-gr.t)<=2 && Math.abs(lr.l-gr.l)<=2 && Math.abs(lr.r-gr.r)<=2 && lr.b>=gr.b-2,
+      'cameras: the list covers the frames, like the TV\'s covers its screen ('+Math.round(lr.r-lr.l)+'x'+Math.round(lr.b-lr.t)+' over '+Math.round(gr.r-gr.l)+'x'+Math.round(gr.b-gr.t)+')');
+    // elementFromPoint answers null for a point off screen (the cameras sit below the fold on a phone): bring it into view first
+    tile('cams').scrollIntoView({block:'center'});
+    gr=R(g); lr=R(lib);
+    var camMid=document.elementFromPoint(Math.round((gr.l+gr.r)/2), Math.round(gr.t+12));
+    T(!!camMid && !!camMid.closest && !!camMid.closest('#cams-lib'), 'cameras: it is really on top - a press over the frames lands in the list');
+    var tvMenuPos=getComputedStyle($('tv-ch')).position;
+    T(tvMenuPos===getComputedStyle(lib).position, 'the two pickers behave the same way ('+tvMenuPos+' / '+getComputedStyle(lib).position+')');
     T(chips.length===18 && regions.join('|')==='Middle East|United States|México|US–Mexico border|Europe|Space', 'cameras: 18 camera buttons grouped by region ('+regions.join(', ')+')');
     // Hector 2026-09-17: "i want live cameras from space stations, i want to see earth or space from up there"
     var space=[].filter.call(lib.querySelectorAll('.lib-g'), function(g){ return g.querySelector('.lib-r').textContent==='Space' })[0];

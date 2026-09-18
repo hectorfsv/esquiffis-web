@@ -636,7 +636,12 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   .cam-place{flex:0 0 100%}
   .cam-chg{display:none}
 }
-.cams-lib{margin-top:10px;padding:10px 12px;background:rgba(0,0,0,.4);border:1px solid var(--rule-hot)}
+/* Hector 2026-09-17: "the channel and camera selector behave different ... make em equal. I don't care which one you
+   choose." The TV's list covers its screen, so the camera list covers its frames: same place, same dark ground, same
+   way out. It also keeps the tile from growing, which a frozen-height tile cannot do anyway. */
+.cams-box{position:relative;display:flex;flex-direction:column;min-height:0}
+.cams-lib{position:absolute;inset:0;z-index:5;margin:0;padding:10px 12px;overflow-y:auto;overscroll-behavior:contain;
+  background:rgba(8,5,6,.95);border:1px solid var(--rule-hot)}
 .cams-lib-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-weight:600;font-size:14px}
 .lib-g+.lib-g{margin-top:10px}
 .lib-r{margin-bottom:6px;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
@@ -654,6 +659,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
 /* no red frame around a playing screen (Hector 2026-09-17: "get rid of the red frame around youtube screen when it plays. on cameras too") */
 .hb-cams.shut .cams-grid,.hb-cams.shut .cams-bar,.hb-cams.shut .h-note,.hb-cams.shut .cams-lib{display:none}
 .hb-cams.shut .hb-h{margin-bottom:0}
+.hb-cams.sized .cams-box{flex:1 1 auto;min-height:0}
 .hb-cams.sized .cams-grid{flex:1 1 auto;min-height:0;grid-auto-rows:minmax(0,1fr)}
 .hb-cams.sized .cam-screen{flex:1 1 auto;aspect-ratio:auto;min-height:24px}
 /* below 1100px these wrappers do not exist as boxes: the hub is one column, exactly as before */
@@ -916,8 +922,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
             </section>
             <section class="hb hb-cams" data-w="cams" aria-labelledby="cams-h">
               <div class="hb-h"><button id="cams-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="cams-grid">Live cameras</button><span class="cams-bar"><span id="cams-n" class="cams-n" role="group" aria-label="How many cameras"><button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button><button type="button" data-n="4">4</button></span><button id="cams-play" class="hb-btn" type="button">Play</button><button id="cams-stop" class="hb-btn" type="button" hidden>Stop</button></span></div>
-              <div id="cams-grid" class="cams-grid" data-n="2"></div>
-              <div id="cams-lib" class="cams-lib" hidden><div class="cams-lib-h"><span id="cams-lib-t">Choose a camera</span><button id="cams-lib-x" class="hb-btn" type="button">Done</button></div><div id="cams-lib-list"></div></div>
+              <div class="cams-box"><div id="cams-grid" class="cams-grid" data-n="2"></div>
+              <div id="cams-lib" class="cams-lib" hidden><div class="cams-lib-h"><span id="cams-lib-t">Choose a camera</span><button id="cams-lib-x" class="hb-btn" type="button">Done</button></div><div id="cams-lib-list"></div></div></div>
               <p id="cams-note" class="h-note">Nothing loads until you press Play. Cameras play muted.</p>
             </section>
             <section class="hb hb-news" data-w="news" aria-labelledby="news-h">
