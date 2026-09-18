@@ -418,8 +418,11 @@
     // Hector 2026-09-16: "the button clear screen should be inside the chat only"
     T(!!$('clear').closest('.talk') && !$('clear').closest('.head') && vis($('clear')) && R($('clear')).t>=R($('scr-chat')).t-1, 'Clear screen lives inside the conversation column, not the header');
     // Hector 2026-09-16: "switch to military time"
-    T(!$('now').hidden && /^\d\d:\d\d$/.test($('now-time').textContent) && $('now-time').textContent===window.__lounge.clockText(new Date()) && !/[AP]M/.test($('now-time').textContent),
-      'the header shows the time, 24-hour ('+$('now-time').textContent+')');
+    // the minute can tick between the paint and this read, and that is the clock working, not a bug: accept now or the
+    // minute just gone (it failed twice today at exactly a minute boundary)
+    var nowTxt=$('now-time').textContent, ck=window.__lounge.clockText, okTime=(nowTxt===ck(new Date()) || nowTxt===ck(new Date(Date.now()-60000)));
+    T(!$('now').hidden && /^\d\d:\d\d$/.test(nowTxt) && okTime && !/[AP]M/.test(nowTxt),
+      'the header shows the time, 24-hour ('+nowTxt+' vs '+ck(new Date())+')');
     if(WIDE){
       T(vis($('hub')) && R($('hub')).r<=R($('log')).l+1, 'the hub sits beside the conversation');
       // Hector 2026-09-16: "the top section has some dead space ... put those on the red tape, next to chat"
@@ -994,10 +997,20 @@
         stT.scrollIntoView({block:'center'});
         E2.hub.span.stocks=2; E2.hub.h.stocks=90; E2.applyHub();
         var sr=R(stT), rowsSt=[].slice.call(stT.querySelectorAll('.mk')), fs1=getComputedStyle(stT.querySelector('.mk-n')).fontSize, fh1=getComputedStyle(stT.querySelector('.hb-h')).fontSize;
-        var outside=rowsSt.filter(function(li){ var r=R(li); return r.b>sr.b+1 }).length, painted=rowsSt.filter(function(li){ var r=R(li); if(r.b<=sr.b+1) return false; var at=document.elementFromPoint((r.l+r.r)/2, (r.t+r.b)/2); return !!at && li.contains(at) }).length;
+        // elementFromPoint answers null for a point OUTSIDE THE VIEWPORT (measured in WebKit: a point 10px below the fold
+        // still answers, one far below answers null), and a null here would count as "not painted" - the check would pass
+        // without testing anything. Only rows we can really look at count, and at least one has to be testable.
+        var below=rowsSt.filter(function(li){ return R(li).b>sr.b+1 }), outside=below.length, tested=0, painted=0;
+        below.forEach(function(li){
+          var r=R(li), x=Math.round((r.l+r.r)/2), y=Math.round((r.t+r.b)/2);
+          if(x<0 || y<0 || x>=innerWidth || y>=innerHeight) return;
+          tested++;
+          var at=document.elementFromPoint(x, y);
+          if(at && li.contains(at)) painted++;
+        });
         T(Math.abs((sr.b-sr.t)-90)<=1 && fs1===fs0 && fh1===fh0 && getComputedStyle(stT).scale==='none' && !stT.style.getPropertyValue('--fit'),
           'a small tile keeps the size it was given and its type stays the size it was: nothing scales ('+Math.round(sr.r-sr.l)+'x'+Math.round(sr.b-sr.t)+', rows '+fs0+' -> '+fs1+', header '+fh0+' -> '+fh1+', scale '+getComputedStyle(stT).scale+')');
-        T(rowsSt.length===10 && outside>0 && painted===0, 'the rows that do not fit are clipped by the tile, not drawn over what is below ('+outside+' past the bottom, '+painted+' painted)');
+        T(rowsSt.length===10 && outside>0 && tested>0 && painted===0, 'the rows that do not fit are clipped by the tile, not drawn over what is below ('+outside+' past the bottom, '+tested+' of them on screen to check, '+painted+' painted)');
         var rzr=R(stT.querySelector('.ht-resize'));
         T(Math.abs(rzr.r-sr.r)<=2 && Math.abs(rzr.b-sr.b)<=2 && Math.abs((rzr.r-rzr.l)-20)<=1, 'the red corner stays full size, in the corner ('+Math.round(rzr.r-rzr.l)+'px)');
         E2.hub.span.stocks=sp0; E2.hub.h.stocks=160; E2.applyHub();
