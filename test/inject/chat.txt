@@ -26,7 +26,11 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('lounge_pw'); sessionStorage.removeItem('lounge_inbox'); localStorage.removeItem('lounge_log'); localStorage.removeItem('lounge_news'); localStorage.removeItem('lounge_tv'); localStorage.removeItem('lounge_hub'); localStorage.removeItem('lounge_brief'); localStorage.removeItem('lounge_cams'); localStorage.removeItem('lounge_map'); localStorage.removeItem('lounge_scores'); localStorage.removeItem('lounge_pet') }catch(e){}
+  try{ sessionStorage.removeItem('lounge_pw'); sessionStorage.removeItem('lounge_inbox'); localStorage.removeItem('lounge_log'); localStorage.removeItem('lounge_news'); localStorage.removeItem('lounge_tv'); localStorage.removeItem('lounge_hub'); localStorage.removeItem('lounge_brief'); localStorage.removeItem('lounge_cams'); localStorage.removeItem('lounge_map'); localStorage.removeItem('lounge_scores'); localStorage.removeItem('lounge_pet'); localStorage.removeItem('lounge_social') }catch(e){}
+  // Social (2026-09-18): a saved list with junk in it - only the one good link may come back, and markup never becomes markup
+  if(mode==='arrange') localStorage.setItem('lounge_social', JSON.stringify([{k:'ig', id:'Cabc12345', path:'p', t:'Kept post', s:'p/Cabc12345', at:5}, {k:'ttp', id:'<img src=x onerror=alert(1)>', t:'x'},
+    {k:'evil', id:'123456789'}, {k:'ig', id:'Cabc12345', path:'javascript', t:'x'}, {k:'ttv', id:'12', t:'short id'}, {k:'ig', id:'Cabc12345', path:'p', t:'dup'}, 'junk', null]));
+  if(mode==='expired') localStorage.setItem('lounge_social', JSON.stringify([{k:'ig', id:'DaK6ri5Cswn', path:'p', t:'Instagram post', s:'p/DaK6ri5Cswn', at:5}]));
   if(mode==='hub') window.PET_FIGHT='always';   // the swarm comes the moment he lands on a widget edge (the fight is checked in edgesOK)
   // a map setting saved on the device, with junk in it: the retired 3D/Globe views, an unknown layer, a layer that is not exactly true; a saved league
   if(mode==='arrange'){ localStorage.setItem('lounge_map', JSON.stringify({base:'sat', view:{'3d':true, globe:true, bogus:true}, lay:{radar:true, quakes:true, bogus:true, alerts:'yes'}})); localStorage.setItem('lounge_scores', 'mx') }
@@ -197,6 +201,13 @@
     if(/api\.rainviewer\.com/.test(url)){ hubCalls.push('radar'); return FAIL_HUB ? res(503,'') : res(200,RADAR) }
     if(/api\.weather\.gov/.test(url)){ hubCalls.push('nws'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,NWS) }
     if(/eonet\.gsfc\.nasa\.gov/.test(url)){ hubCalls.push('eonet'); return FAIL_HUB ? res(503,'') : res(200,EONET) }
+    if(/www\.tiktok\.com\/oembed/.test(url)){   // Social: TikTok's oEmbed names a video and turns a short link into its id
+      hubCalls.push('ttoembed'); var tu=decodeURIComponent(url.split('url=')[1]||'');
+      if(/ZMdead/.test(tu)) return res(400, {message:'Something went wrong', code:400});
+      var tvid=/ZMshort/.test(tu) ? '7411111111111111111' : ((tu.match(/video\/(\d+)/)||[])[1]||'7400000000000000001');
+      return res(200, {version:'1.0', type:'video', title:'Brisket at  3am\n on the Gravity  #bbq', author_name:'Hector', author_url:'https://www.tiktok.com/@pitmaster_h',
+        html:'<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@pitmaster_h/video/'+tvid+'" data-video-id="'+tvid+'"><section></section></blockquote>'});
+    }
     if(/api\.coingecko\.com/.test(url)){ hubCalls.push('coingecko'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,CG) }
     if(/quote\.cnbc\.com/.test(url)){ hubCalls.push('cnbc'); return FAIL_HUB ? res(503,'') : res(200,CNBC) }
     if(/wheretheiss\.at/.test(url)){ hubCalls.push('tle'); return FAIL_HUB ? Promise.reject(new Error('down')) : res(200,TLE) }
@@ -737,6 +748,18 @@
   }
   function arrangeOK(){
     if(!WIDE) $('now').click();
+    var soIt=[].slice.call($('so-list').querySelectorAll('.so-it'));
+    T(soIt.length===1 && /Kept post/.test(soIt[0].textContent) && !$('so-list').querySelector('img'),
+      'social: a tampered saved list keeps only the one good link, and markup in it stays text ('+soIt.length+')');
+    (function(){   // a quiet moment: nothing else in this mode talks to n8n, so any call here would be Social's
+      var c0=calls.length, o0=hubCalls.filter(function(k){ return k==='ttoembed' }).length;
+      $('so-url').value='https://www.tiktok.com/@pitmaster_h/video/7400000000000000001'; var f=$('so-add'); if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', {cancelable:true}));
+      setTimeout(function(){
+        var o1=hubCalls.filter(function(k){ return k==='ttoembed' }).length, nc=calls.slice(c0).map(function(c){ return c.a });
+        T(o1===o0+1 && nc.length===0 && !!$('so-list').querySelector('[data-id="ttv:7400000000000000001"]'),
+          'social: a link is named by asking TikTok directly - no n8n execution (n8n calls: '+(nc.join(',')||'none')+', TikTok asked '+(o1-o0)+')');
+      }, 80);
+    })();
     T(ord('map')<ord('tv') && ord('tv')<ord('time') && ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('inbox')<ord('news'),
       'a saved layout comes back: map, TV, then the rest in their usual order');
     T(tile('map').getAttribute('data-size')==='L' && tile('tv').getAttribute('data-size')==='M', 'saved sizes kept, a bad size ignored');
@@ -822,7 +845,7 @@
     T(tile('tv').classList.contains('shut') && !$('tv-screen').querySelector('iframe') && !vis($('tv-screen')), 'folding the TV stops it and hides the screen');
     $('tv-h').click(); T(vis($('tv-screen')), 'unfolding brings the screen back');
     var saved=JSON.parse(localStorage.getItem('lounge_hub')||'{}');
-    T(Array.isArray(saved.order) && saved.order.length===13 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===72 && saved.u===96 && saved.hidden.join()==='dodgers',
+    T(Array.isArray(saved.order) && saved.order.length===14 && saved.order.indexOf('bogus')<0 && saved.shut && saved.shut.news===false && saved.span && saved.span.map===72 && saved.u===96 && saved.hidden.join()==='dodgers',
       'the layout is remembered on this device, cleaned ('+JSON.stringify(saved.order)+')');
     T(JSON.stringify(saved).indexOf('Masterbuilt')<0, 'the saved layout holds widget names only, no mail');
     if(WIDE){
@@ -1434,6 +1457,89 @@
     }, 60);
   }
   // the TV: nothing from YouTube until Play; one player; Stop removes it
+  // Hector 2026-09-18: "let's start with tik tok and instagram to be able to open posts or link for now ... all this is for the lounge"
+  function socialOK(){
+    var st=tile('social'), c0=calls.length;
+    if(!st){ T(false, 'social: the tile exists'); return T(true, 'social: all checks ran') }
+    T(st.querySelector('.hb-fold').textContent==='Social' && !st.querySelector('iframe'), 'social: a Social widget, nothing framed from TikTok or Instagram before a tap');
+    if(st.classList.contains('shut')) $('so-h').click();
+    T(vis($('so-empty')) && /TikTok profile link/.test(tx('so-empty')) && !$('so-list').children.length, 'social: empty, it says what to paste');
+    var fs=parseFloat(getComputedStyle($('so-url')).fontSize);
+    T(fs>=16, 'social: the link box is 16px or more, so iOS never zooms the page into it ('+fs+'px)');
+    function add(v){ $('so-url').value=v; var f=$('so-add'); if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', {cancelable:true})) }
+    function keys(){ return [].map.call($('so-list').querySelectorAll('.so-open'), function(b){ return b.getAttribute('data-id') }) }
+    add('javascript:alert(1)'); var e1=tx('so-note');
+    add('https://tiktok.com.evil.example/@pitmaster_h'); var e2=tx('so-note');
+    add('https://www.instagram.com/pitmaster_h/'); var e3=tx('so-note');
+    T(/Only TikTok and Instagram/.test(e1) && /Only TikTok and Instagram/.test(e2) && /will not open a profile/.test(e3) && $('so-note').classList.contains('bad') && !keys().length,
+      'social: a script, a look-alike domain and an Instagram profile are refused, each with the reason ('+e3+')');
+    add('https://www.instagram.com/p/DaK6ri5Cswn/?igsh=MTIzNDU2');
+    setTimeout(function(){
+      T(keys().join()==='ig:DaK6ri5Cswn' && /Instagram post/.test(tx('so-list')), 'social: an Instagram post is added from its share link ('+keys().join()+')');
+      add('tiktok.com/@Pitmaster_H?_t=8abcdef&_r=1');
+      setTimeout(function(){
+        T(keys()[0]==='ttp:Pitmaster_H' && /@Pitmaster_H/.test(tx('so-list')) && /TikTok profile/.test(tx('so-list')), 'social: his TikTok profile goes to the top, whatever order it was added in ('+keys().join()+')');
+        var o0=hubCalls.filter(function(k){ return k==='ttoembed' }).length;
+        add('https://www.tiktok.com/@pitmaster_h/video/7400000000000000001?is_from_webapp=1&sender_device=pc');
+        setTimeout(function(){
+          var o1=hubCalls.filter(function(k){ return k==='ttoembed' }).length, vb=$('so-list').querySelector('[data-id="ttv:7400000000000000001"]');
+          T(o1===o0+1 && !!vb && vb.querySelector('.so-t').textContent==='Brisket at 3am on the Gravity #bbq' && /@pitmaster_h/.test(vb.querySelector('.so-s').textContent),
+            'social: a TikTok video is named by TikTok itself - its title and its account ('+(vb ? vb.textContent : 'missing')+')');
+          add('https://vm.tiktok.com/ZMshort1/');
+          setTimeout(function(){
+            T(keys().indexOf('ttv:7411111111111111111')>-1, 'social: the short link the share button gives becomes its video');
+            var n=keys().length; add('vm.tiktok.com/ZMdead00');
+            setTimeout(function(){
+              T(keys().length===n && /did not say which video/.test(tx('so-note')) && $('so-note').classList.contains('bad') && !$('so-go').disabled,
+                'social: a short link TikTok cannot resolve is refused, and it says what to paste instead');
+              add('https://www.instagram.com/p/DaK6ri5Cswn/');
+              setTimeout(function(){
+                T(keys().length===n && /Already here/.test(tx('so-note')), 'social: the same post twice is kept once');
+                add('https://www.instagram.com/reel/Cxyz123abcd/?utm_source=ig_web_copy_link');
+                setTimeout(function(){ socialOpenOK(c0) }, 60);
+              }, 60);
+            }, 60);
+          }, 60);
+        }, 60);
+      }, 60);
+    }, 60);
+  }
+  function socialOpenOK(c0){
+    if(!WIDE && !vis(tile('social'))) $('now').click();   // other hub checks run meanwhile and can swap a phone back to the conversation
+    var st=tile('social'), raw=localStorage.getItem('lounge_social')||'', sv=[]; try{ sv=JSON.parse(raw) }catch(e){}
+    T(sv.length===5 && !/igsh|_t=|utm_|is_from|javascript|evil/.test(raw) && /Instagram reel/.test(tx('so-list')), 'social: five kept on this device, the share tracking stripped ('+sv.length+')');
+    var nf=document.querySelectorAll('iframe[src*="tiktok"],iframe[src*="instagram"]').length, nc=calls.slice(c0).map(function(c){ return c.a+(c.msg ? ':'+String(c.msg).slice(0,24) : '') });
+    T(nf===0, 'social: adding five links framed nothing from TikTok or Instagram ('+nf+')');   // the n8n count lives in arrange mode: here the hub suite's own Ask turns run at the same time
+    $('so-list').querySelector('[data-id="ig:DaK6ri5Cswn"]').click();
+    var fs=st.querySelectorAll('iframe'), f=fs[0], sb=f ? (f.getAttribute('sandbox')||'') : '';
+    T(fs.length===1 && f.src==='https://www.instagram.com/p/DaK6ri5Cswn/embed/captioned/' && /allow-scripts/.test(sb) && !/allow-top-navigation/.test(sb) && f.referrerPolicy==='strict-origin-when-cross-origin',
+      'social: a tap opens the post inside the tile, in a sandbox that cannot navigate The Lounge ('+(f ? f.src : 'none')+')');
+    T($('so-body').hidden && !$('so-back').hidden && vis($('so-view')), 'social: the list steps aside and Back is in the header');
+    function post(data, origin, src){ window.dispatchEvent(new MessageEvent('message', {data:data, origin:origin, source:src})) }
+    var h0=f ? f.style.height : 'x';
+    if(f){ post(JSON.stringify({type:'MEASURE', details:{height:777}}), 'https://evil.example', f.contentWindow); post(JSON.stringify({type:'MEASURE', details:{height:778}}), 'https://www.instagram.com', window) }
+    var h1=f ? f.style.height : 'y';
+    if(f) post(JSON.stringify({type:'MEASURE', details:{height:779}}), 'https://www.instagram.com', f.contentWindow);
+    T(!!f && h1===h0 && f.style.height==='779px', 'social: the post takes the height Instagram reports - only from its own frame and its own site ('+h0+' -> '+(f ? f.style.height : '')+')');
+    $('so-back').click();
+    T(!st.querySelector('iframe') && !$('so-body').hidden && $('so-back').hidden, 'social: Back removes it and the list is back');
+    $('so-list').querySelector('[data-id="ttv:7400000000000000001"]').click();
+    var v=st.querySelector('iframe'), vr=R(v), tr=R(st), ratio=(vr.r-vr.l)/Math.max(1, vr.b-vr.t);
+    T(!!v && v.src==='https://www.tiktok.com/player/v1/7400000000000000001?rel=0' && Math.abs(ratio-9/16)<.03 && vr.b<=tr.b+1 && vr.r<=tr.r+1,
+      'social: a TikTok video plays in TikTok\'s own player, 9:16, inside the tile ('+Math.round(vr.r-vr.l)+'x'+Math.round(vr.b-vr.t)+')');
+    $('so-h').click();
+    T(!st.querySelector('iframe'), 'social: folding the tile removes what was playing, like the TV');
+    $('so-h').click();
+    var rx=$('so-list').querySelector('.so-x[data-id="ig:Cxyz123abcd"]'); if(rx) rx.click();
+    var sv2=[]; try{ sv2=JSON.parse(localStorage.getItem('lounge_social')||'[]') }catch(e){}
+    T(!!rx && !$('so-list').querySelector('[data-id="ig:Cxyz123abcd"]') && sv2.length===4, 'social: × removes one, here and in what is kept');
+    var pb=$('so-list').querySelector('[data-id="ttp:Pitmaster_H"]'); if(pb) pb.click();
+    var pf=st.querySelector('iframe');
+    T(!!pf && pf.src==='https://www.tiktok.com/embed/@Pitmaster_H', 'social: his TikTok profile opens as TikTok\'s own profile card');
+    $('so-back').click();
+    T(!document.querySelector('iframe[src*="tiktok"],iframe[src*="instagram"]'), 'social: nothing left framed');
+    T(true, 'social: all checks ran');
+  }
   function tvOK(){
     var scr=$('tv-screen');
     T(!document.querySelector('iframe'), 'TV: nothing loads from YouTube until you press Play');
@@ -1568,7 +1674,7 @@
         T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
         T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
         tvOK();
-        camsOK(); skyOK();
+        camsOK(); skyOK(); socialOK();
         if(WIDE){ fullOK(); grabOK(); }
         // "the stuff than can be refresh auto without execution from N8N, do it": 16 minutes on, the browser refreshes by itself
         // (the map's event feeds are not among them while their layers are off - Hector 2026-09-16, a clean map)
@@ -1683,6 +1789,11 @@
         im.onerror=function(){ bad.push(f+' missing'); if(!--left) T(false, 'every icon file loads at its size ('+bad.join(', ')+')') };
         im.src=f; });
     })();
+    if(mode==='expired'){   // a post open when the session expires: the lock screen must take it away (unfolded first, so folding cannot be what closed it)
+      if(tile('social') && tile('social').classList.contains('shut')) $('so-h').click();
+      var sob=$('so-list').querySelector('.so-open'); if(sob) sob.click();
+      T(!!document.querySelector('.hb-soc iframe[src*="instagram"]'), 'social: an Instagram post is open when the session expires');
+    }
     $('box').value='hello there';
     $('send').click();
     T(calls.length===2 && calls[1].a==='chat' && calls[1].msg==='hello there' && calls[1].src==='web', 'the turn goes up as a chat call with the message and source=web');
@@ -1744,6 +1855,7 @@
       T(sessionStorage.getItem('lounge_pw')===null, 'and the passphrase is forgotten');
       T(sessionStorage.getItem('lounge_inbox')===null && $('ib-list').children.length===0, 'and so is the inbox');
       T(sessionStorage.getItem('lounge_rem')===null && $('rm-list').children.length===0, 'and so are the reminders');
+      T(!document.querySelector('iframe[src*="instagram"],iframe[src*="tiktok"]'), 'and nothing from TikTok or Instagram stays framed behind the lock screen');
       T(vis($('vc-stage')) && $('now').hidden, 'back on the lock screen: VaderClawd on screen, the hub readout gone');
       return done();
     }

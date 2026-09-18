@@ -53,6 +53,7 @@ if [ "$WHAT" = all ] || [ "$WHAT" = chat ]; then
       [ "$m" = hub ] && [ "$1" = 2026 ] && { printf '%s' "$R" | grep -q 'edges: all checks ran' || { FAIL=$((FAIL+1)); echo "  t=hub ${1}x${2}: the edge checks never finished (virtual time ran out?)"; }; }
       { [ "$m" = hub ] || [ "$m" = hubfail ]; } && { printf '%s' "$R" | grep -q 'iss: all checks ran' || { FAIL=$((FAIL+1)); echo "  t=$m ${1}x${2}: the ISS checks never finished"; }; }
       [ "$m" = arrange ] && { printf '%s' "$R" | grep -q 'hold: all checks ran' || { FAIL=$((FAIL+1)); echo "  t=$m ${1}x${2}: the touch-hold checks never finished"; }; }
+      [ "$m" = hub ] && { printf '%s' "$R" | grep -q 'social: all checks ran' || { FAIL=$((FAIL+1)); echo "  t=$m ${1}x${2}: the Social checks never finished"; }; }
       [ -z "$R" ] && { FAIL=$((FAIL+1)); echo "  t=$m ${1}x${2}: NO RESULT (harness never reported)"; }
       [ "$f" != 0 ] && { echo "  t=$m ${1}x${2}"; printf '%s' "$R" | sed 's/FAIL/\nFAIL/g' | grep FAIL | sed 's/^/     /'; }
     done

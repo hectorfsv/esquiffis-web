@@ -352,6 +352,37 @@ button{cursor:pointer}
 .rm-dn{font-size:var(--fs);line-height:1.45;color:var(--ink-dim);white-space:pre-wrap;overflow-wrap:anywhere}
 .rm-dn:empty{display:none}
 .rm-da{display:flex;gap:8px;margin-top:auto}
+/* Social (Hector 2026-09-18): pasted TikTok and Instagram links; one opens INSIDE the tile, in a sandboxed frame */
+.so-body{display:flex;flex-direction:column;gap:8px}
+.so-add{display:flex;gap:8px;align-items:stretch}
+.so-add input{flex:1;min-width:0;font:inherit;font-size:16px;line-height:1.2;color:var(--ink);background:rgba(0,0,0,.35);border:1px solid var(--rule);border-radius:0;padding:7px 9px}   /* 16px: iOS zooms the whole page into a smaller field and never zooms back */
+.so-add input::placeholder{color:var(--ink-faint)}
+.so-add input:focus{outline:none;border-color:var(--rule-hot)}
+.so-note{margin-top:0}
+.so-note:empty{display:none}
+.so-note.bad{color:var(--red-hot)}
+.so-empty{font-size:var(--fs);line-height:1.45;color:var(--ink-dim)}
+.so-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
+.so-it{display:flex;align-items:center;gap:6px;border-left:3px solid #25F4EE;border-image:linear-gradient(#25F4EE,#FE2C55) 1}
+.so-it[data-k="ig"]{border-image:linear-gradient(#F58529,#DD2A7B,#8134AF) 1}
+.so-open{flex:1;min-width:0;padding:3px 0 3px 9px;text-align:left;color:var(--ink)}
+.so-tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+.so-t{font-size:var(--fl);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-s{font-family:var(--mono);font-size:var(--fxs);letter-spacing:.03em;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-open:hover .so-t{color:#fff}
+.so-x{flex:none;width:28px;height:28px;font-size:18px;line-height:1;color:var(--ink-faint)}
+.so-x:hover{color:var(--red-hot)}
+.so-view{display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;overscroll-behavior:contain;background:#000}
+.so-f{display:block;border:0;width:100%;background:#fff}
+.so-f.so-ttp{max-width:420px;height:400px}
+.so-f.so-ig{max-width:540px;height:640px}
+.so-f.so-ttv{background:#000;max-width:340px;height:auto;aspect-ratio:9/16}   /* a video fills the tile's height and takes its width from 9:16 (measured: 600 tall -> 338 wide) */
+.hub .hb-soc.sized .so-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}   /* ".hub" first: .hub .hb.sized>*{flex:none} sits LATER in this sheet at the same weight and won - measured, a video overran its tile */
+.hub .hb-soc.sized .so-view{flex:1 1 auto;min-height:0}
+.hub .hb-soc.sized .so-f.so-ttv{height:100%;width:auto;max-width:100%}
+.hb-soc.shut .so-body,.hb-soc.shut .so-view,.hb-soc.shut #so-back{display:none}
+.hb-soc.shut .hb-h{margin-bottom:0}
+@media (min-width:1100px){ .so-body{min-height:340px} }   /* its first height on the wide grid holds a TikTok card; drag it to taste */
 .ib-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
 .ib{position:relative;padding-left:15px}
 .ib::before{content:'';position:absolute;left:0;top:5px;width:6px;height:6px;border-radius:50%;border:1px solid var(--ink-faint)}
@@ -912,6 +943,16 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               </div>
               <p id="mk-note" class="h-note mk-note"></p>
             </section>
+            <section class="hb hb-soc" data-w="social" aria-labelledby="so-h">
+              <div class="hb-h"><button id="so-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="so-body">Social</button><button id="so-back" class="hb-btn" type="button" hidden>&lsaquo; Back</button></div>
+              <div id="so-body" class="so-body">
+                <form id="so-add" class="so-add" autocomplete="off" novalidate><input id="so-url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="Paste a TikTok or Instagram link" aria-label="TikTok or Instagram link"><button id="so-go" class="hb-btn" type="submit">Add</button></form>
+                <p id="so-note" class="h-note so-note" aria-live="polite"></p>
+                <p id="so-empty" class="so-empty">Paste your TikTok profile link and it stays here as your profile. Any TikTok or Instagram post or reel works too. Nothing loads until you tap it.</p>
+                <ul id="so-list" class="so-list"></ul>
+              </div>
+              <div id="so-view" class="so-view" hidden></div>
+            </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
               <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><span id="tv-yt" class="hb-link tv-ico tv-air" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></span></span></div>
               <div id="tv-screen" class="tv-screen">
@@ -1187,7 +1228,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
-    pw=''; clearPw(); clearInbox(); clearReminders(); tvStop(); camsStop(); setBusy(false); if(hub) placeTools();
+    pw=''; clearPw(); clearInbox(); clearReminders(); tvStop(); camsStop(); soClose(); setBusy(false); if(hub) placeTools();
     show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
   }
   function show(id){
@@ -1940,7 +1981,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     {w:'inbox', name:'Inbox', span:3, minH:40, shut:true}, {w:'tv', name:'Live news', span:6, minH:40}, {w:'map', name:'World events', span:6, minH:40},
     {w:'markets', name:'Markets', span:12, minH:40}, {w:'cams', name:'Live cameras', span:6, minH:40}, {w:'news', name:'News', span:6, minH:40, shut:true},
     {w:'stocks', name:'Stocks & crypto', span:6, minH:40}, {w:'fuel', name:'Fuel & energy', span:6, minH:40}, {w:'iss', name:'ISS overhead', span:6, minH:40},
-    {w:'rem', name:'Reminders', span:3, minH:40, shut:true}];   // last by default so the first screen stays as it was; a saved layout gets it below the rest (Hector 2026-09-17)   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
+    {w:'rem', name:'Reminders', span:3, minH:40, shut:true}, {w:'social', name:'Social', span:3, minH:40, shut:true}];   // last by default so the first screen stays as it was; a saved layout gets it below the rest (Hector 2026-09-17)   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
   // widths are 96ths of the hub (Hector 2026-09-17: "FREE RANGEEEE" - in twelfths a sixth-wide Sports jumped straight to a twelfth, measured),
   // down to a 24th; the width button still cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full. U = one twelfth.
   var K_HUB='lounge_hub', COLS=96, U=8, SPANS=[8,16,24,32,48,64,72,96], SPAN_WORD={8:'a twelfth', 16:'a sixth', 24:'a quarter', 32:'a third', 48:'half', 64:'two thirds', 72:'three quarters', 96:'the full width'},
@@ -1986,7 +2027,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function gridCols(){ var g=getComputedStyle($('hub')).gridTemplateColumns; return (g && g!=='none') ? g.split(' ').filter(Boolean).length : 1 }
   function hubInit(){
     if(hubReady) return;
-    hubReady=true; hub=hubLoad();
+    hubReady=true; hub=hubLoad(); soLoad();
     if(hub.look!==LOOK){   // the tiles changed shape since this layout was measured (round 21): keep his order and widths, measure the rest again
       hub.look=LOOK; hub.order=visualOrder();
       hub.order.forEach(function(w){ delete hub.h[w]; delete hub.hs[w]; delete hub.col[w]; delete hub.row[w] });
@@ -2215,6 +2256,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     }
     if(hub.shut.tv || hub.hidden.indexOf('tv')>-1) tvStop();   // a folded or hidden TV does not keep playing out of sight
     if(hub.shut.cams || hub.hidden.indexOf('cams')>-1) camsStop();
+    if(hub.shut.social || hub.hidden.indexOf('social')>-1) soClose();   // a folded Social tile does not keep TikTok or Instagram running
     alignAll();   // a stocks or fuel tile whose width changed measures its columns again
     startMap();   // a map that was unfolded, shown or resized redraws to its new box
     issStart();   // an ISS tile brought back works out its passes
@@ -2239,6 +2281,143 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     o.splice(after ? k+1 : k, 0, w);
     applyHub();
   }
+
+  /* ---------- social (Hector 2026-09-18: "let's start with tik tok and instagram to be able to open posts or link for now ...
+     all this is for the lounge") ----------
+     Links he pastes, kept on this device like the layout. A tap opens one INSIDE the tile; Back, folding or locking removes it
+     again - like the TV, nothing loads from TikTok or Instagram until then. MEASURED 2026-09-18 in WebKit from this page's own
+     address: TikTok's creator card (/embed/@handle: the profile, its numbers and a strip of recent videos), TikTok's player
+     (/player/v1/<id>) and Instagram's post embed (/<p|reel|tv>/<code>/embed/captioned/) all render as PLAIN iframes inside a
+     sandbox that cannot navigate this page - so neither site's embed.js ever runs here, where it could read what this page
+     keeps. Instagram draws NOTHING for a profile (measured), so Instagram is the posts and reels he picks; his whole profile
+     needs the Instagram API (later, after the Meta cleanup). The frame's address is BUILT from the id the parser pulls out,
+     never from the pasted text. TikTok's oEmbed answers any browser (CORS *) and names a video and its account - it also turns
+     the short link the share button gives into a video id; Instagram's names nothing without a token (measured), so an
+     Instagram pin is labelled by what it is. Both sites post their embed's height to the page; only a message from THAT
+     frame and THAT origin can size it. 0 n8n executions. */
+  var K_SO='lounge_social', SO_MAX=40, SO_SB='allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation';
+  var SO_ID={ttp:/^[A-Za-z0-9_.]{2,24}$/, ttv:/^\d{8,25}$/, ig:/^[A-Za-z0-9_-]{5,40}$/}, SO_IG={p:'post', reel:'reel', tv:'video'};
+  function soParse(raw){
+    var s=String(raw==null ? '' : raw).trim(), m, x;
+    if(!s) return {err:'Paste a TikTok or Instagram link.'};
+    if(!/^https?:\/\//i.test(s)) s='https://'+s;
+    if(!(m=s.match(/^https?:\/\/([^\/?#]+)(\/[^?#]*)?/i))) return {err:'That is not a link.'};
+    var host=m[1].toLowerCase(), path=(m[2]||'').replace(/\/+$/,'');   // the query (?_t=, ?igsh=) is share tracking: never kept
+    if(/^((www|m|vm|vt)\.)?tiktok\.com$/.test(host)){
+      if(/^(vm|vt)\./.test(host)) return /^\/[A-Za-z0-9]{5,20}$/.test(path) ? {k:'short', url:'https://'+host+path+'/'} : {err:'That TikTok link is not a profile or a video.'};
+      if((x=path.match(/^\/@([A-Za-z0-9_.]{2,24})\/(?:video|photo)\/(\d{8,25})$/))) return {k:'ttv', id:x[2], who:x[1]};
+      if((x=path.match(/^\/(?:embed(?:\/v2)?|player\/v1)\/(\d{8,25})$/))) return {k:'ttv', id:x[1]};
+      if((x=path.match(/^\/@([A-Za-z0-9_.]{2,24})$/))) return {k:'ttp', id:x[1]};
+      if(/^\/t\/[A-Za-z0-9]{5,20}$/.test(path)) return {k:'short', url:'https://www.tiktok.com'+path+'/'};
+      return {err:'That TikTok link is not a profile or a video.'};
+    }
+    if(/^((www|m)\.)?instagram\.com$/.test(host)){
+      if((x=path.match(/^(?:\/[A-Za-z0-9_.]{1,30})?\/(p|reels?|tv)\/([A-Za-z0-9_-]{5,40})$/))) return {k:'ig', id:x[2], path:x[1]==='reels' ? 'reel' : x[1]};
+      if(/^\/[A-Za-z0-9_.]{1,30}$/.test(path)) return {err:'Instagram will not open a profile inside another page. Paste a post or reel link.'};
+      return {err:'That Instagram link is not a post or a reel.'};
+    }
+    return {err:'Only TikTok and Instagram links open here.'};
+  }
+  function soSrc(it){
+    if(it.k==='ttp') return 'https://www.tiktok.com/embed/@'+it.id;
+    if(it.k==='ttv') return 'https://www.tiktok.com/player/v1/'+it.id+'?rel=0';
+    return 'https://www.instagram.com/'+it.path+'/'+it.id+'/embed/captioned/';
+  }
+  function soClean(x){   // what comes back from storage is checked like anything pasted
+    if(!x || typeof x!=='object' || !SO_ID[x.k] || typeof x.id!=='string' || !SO_ID[x.k].test(x.id)) return null;
+    if(x.k==='ig' && !SO_IG[x.path]) return null;
+    var c={k:x.k, id:x.id, t:String(x.t||'').slice(0,120), s:String(x.s||'').slice(0,80), at:typeof x.at==='number' && isFinite(x.at) ? x.at : 0};
+    if(x.k==='ig') c.path=x.path;
+    return c;
+  }
+  var so=[];
+  function soLoad(){   // at unlock, like the layout and the map
+    so=[];
+    try{ var sv=JSON.parse(localStorage.getItem(K_SO)||'[]'); if(Array.isArray(sv)) sv.forEach(function(x){ var c=soClean(x); if(c && so.length<SO_MAX && !so.some(function(y){ return y.k===c.k && y.id===c.id })) so.push(c) }) }catch(e){}
+    soPaint();
+  }
+  function soSave(){ try{ localStorage.setItem(K_SO, JSON.stringify(so)) }catch(e){} }
+  function soKey(it){ return it.k+':'+it.id }
+  function soText(v, n){ return String(v==null ? '' : v).replace(/\s+/g,' ').trim().slice(0, n) }
+  function soNote(t, bad){ var n=$('so-note'); n.textContent=t||''; n.classList.toggle('bad', !!bad) }
+  function soPaint(){
+    var ul=$('so-list'); ul.textContent='';
+    so.slice().sort(function(a,b){ return (a.k==='ttp' ? 0 : 1)-(b.k==='ttp' ? 0 : 1) || b.at-a.at }).forEach(function(it){   // his profile first, then newest
+      var li=document.createElement('li'); li.className='so-it'; li.setAttribute('data-k', it.k);
+      var b=document.createElement('button'); b.type='button'; b.className='so-open'; b.setAttribute('data-id', soKey(it));
+      var tx=document.createElement('span'); tx.className='so-tx';
+      var t=document.createElement('span'); t.className='so-t'; t.textContent=it.t;
+      var sb=document.createElement('span'); sb.className='so-s'; sb.textContent=it.s;
+      tx.appendChild(t); tx.appendChild(sb); b.appendChild(tx);
+      var x=document.createElement('button'); x.type='button'; x.className='so-x'; x.setAttribute('data-id', soKey(it)); x.setAttribute('aria-label', 'Remove '+it.t); x.title='Remove'; x.textContent='×';
+      li.appendChild(b); li.appendChild(x); ul.appendChild(li);
+    });
+    $('so-empty').hidden=so.length>0;
+  }
+  function soWithin(pr, ms){ return new Promise(function(ok, no){ var t=setTimeout(function(){ no(new Error('timeout')) }, ms); pr.then(function(v){ clearTimeout(t); ok(v) }, function(e){ clearTimeout(t); no(e) }) }) }
+  function soTikTok(url){ return soWithin(fetch('https://www.tiktok.com/oembed?url='+encodeURIComponent(url)).then(function(r){ if(!r.ok) throw new Error('oembed '+r.status); return r.json() }), 8000) }
+  function soAdd(raw){
+    var p=soParse(raw), go=$('so-go');
+    if(p.err){ soNote(p.err, true); return Promise.resolve(false) }
+    go.disabled=true; soNote(p.k==='short' ? 'Asking TikTok which video that is…' : 'Adding…', false);
+    var job;
+    if(p.k==='short' || (p.k==='ttv' && p.who)){
+      job=soTikTok(p.k==='short' ? p.url : 'https://www.tiktok.com/@'+p.who+'/video/'+p.id).then(function(d){
+        var vid=(String(d && d.html || '').match(/data-video-id="(\d{8,25})"/)||[])[1], who=(String(d && d.author_url || '').match(/tiktok\.com\/@([A-Za-z0-9_.]{2,24})/)||[])[1] || p.who;
+        if(p.k==='short' && !vid) throw new Error('no video id');
+        return {k:'ttv', id:p.k==='short' ? vid : p.id, t:soText(d && d.title, 120) || 'TikTok video', s:'TikTok video'+(who ? ' · @'+who : '')};
+      }, function(err){
+        if(p.k==='short') throw err;
+        return {k:'ttv', id:p.id, t:'TikTok video', s:'TikTok video · @'+p.who};   // TikTok did not answer: the link itself is enough to play it
+      });
+    } else if(p.k==='ttv') job=Promise.resolve({k:'ttv', id:p.id, t:'TikTok video', s:'TikTok video'});
+    else if(p.k==='ttp') job=Promise.resolve({k:'ttp', id:p.id, t:'@'+p.id, s:'TikTok profile'});
+    else job=Promise.resolve({k:'ig', id:p.id, path:p.path, t:'Instagram '+SO_IG[p.path], s:p.path+'/'+p.id});
+    return job.then(function(it){
+      go.disabled=false;
+      var c=soClean(Object.assign({at:Date.now()}, it));
+      if(!c){ soNote('That link did not give a usable id.', true); return false }
+      if(so.some(function(y){ return y.k===c.k && y.id===c.id })){ $('so-url').value=''; soNote('Already here.', false); return false }
+      so.unshift(c); if(so.length>SO_MAX) so.length=SO_MAX;
+      soSave(); $('so-url').value=''; soNote('Added. Tap it to open it here.', false); soPaint(); return true;
+    }, function(){
+      go.disabled=false;
+      soNote('TikTok did not say which video that short link is. Open it and copy the address with /video/ in it.', true); return false;
+    });
+  }
+  function soOpen(it){
+    soClose();
+    var v=$('so-view'), f=document.createElement('iframe');
+    f.title=it.k==='ttp' ? 'TikTok profile @'+it.id : it.k==='ttv' ? 'TikTok video' : 'Instagram '+SO_IG[it.path];
+    f.className='so-f so-'+it.k;
+    f.setAttribute('sandbox', SO_SB);   // their own code in their own origin; it can open a new tab but can never navigate The Lounge
+    f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture'); f.setAttribute('allowfullscreen', '');
+    f.referrerPolicy='strict-origin-when-cross-origin';
+    if(it.k==='ig') f.setAttribute('scrolling', 'no');
+    f.src=soSrc(it);
+    v.appendChild(f); v.hidden=false; $('so-body').hidden=true; $('so-back').hidden=false;
+    v.parentNode.classList.add('viewing');
+  }
+  function soClose(){
+    var v=$('so-view'), f=v.querySelector('iframe'); if(f) f.remove();
+    v.hidden=true; $('so-body').hidden=false; $('so-back').hidden=true; v.parentNode.classList.remove('viewing');
+  }
+  window.addEventListener('message', function(e){   // an embed reports its own height: only from that frame, only from its own site
+    var f=$('so-view').querySelector('iframe');
+    if(!f || e.source!==f.contentWindow || (e.origin!=='https://www.instagram.com' && e.origin!=='https://www.tiktok.com') || f.classList.contains('so-ttv')) return;
+    var d=null; try{ d=typeof e.data==='string' ? JSON.parse(e.data) : e.data }catch(err){ return }
+    var h=!d || typeof d!=='object' ? null : (d.type==='MEASURE' && d.details) ? d.details.height : d.height;
+    if(typeof h==='number' && isFinite(h) && h>=120 && h<=4000) f.style.height=Math.round(h)+'px';
+  });
+  $('so-add').addEventListener('submit', function(e){ e.preventDefault(); soAdd($('so-url').value) });
+  $('so-list').addEventListener('click', function(e){
+    if(!e.target.closest) return;
+    var x=e.target.closest('.so-x'), o=e.target.closest('.so-open');
+    if(x){ var id=x.getAttribute('data-id'); so=so.filter(function(y){ return soKey(y)!==id }); soSave(); soNote('', false); soPaint(); return }
+    if(o){ var it=so.filter(function(y){ return soKey(y)===o.getAttribute('data-id') })[0]; if(it) soOpen(it) }
+  });
+  $('so-back').addEventListener('click', soClose);
+  soPaint();
 
   /* ---------- live news TV ----------
      YouTube's own player, created when you press Play and removed on Stop: until then it downloads nothing and
@@ -3460,7 +3639,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms, newsRank:newsRank, newsForBrief:newsForBrief, TV:TV,
+  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms, newsRank:newsRank, newsForBrief:newsForBrief, TV:TV, soParse:soParse,
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
     get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll, topicEmoji:topicEmoji };
