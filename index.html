@@ -7,10 +7,17 @@
 <meta name="theme-color" content="#0A0708">
 <title>The Lounge</title>
 <!-- The Lounge's icons, cut from the Vader painting by tools/build-icon.py (Hector's pick, 2026-09-16) -->
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- Hector 2026-09-18: "i deleted the icons and add them again and still i dont see the icons ... just the R and L".
+     Every icon file served 200 and all four DECODED in real WebKit, so the files were never the problem: Safari keeps its
+     own site-icon store and deleting a bookmark does not clear it. These are names Safari has never asked for, so it has
+     no cached answer to hand back, and the manifest is a second, independent way in for the home screen. The old names
+     stay on disk so anything already holding them still resolves. Clearing his website data was NOT an option - his hub
+     layout and the rig's job history live in it. Next time, bump the token to v3. -->
+<link rel="icon" href="icon-v2.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32-v2.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icon-16-v2.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180-v2.png">
+<link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="The Lounge">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

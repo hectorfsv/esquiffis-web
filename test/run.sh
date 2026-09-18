@@ -25,6 +25,19 @@ assert src.count('</body>')==1
 open(sys.argv[2],'w').write(src.replace('</body>', inj+'\n</body>'))
 PY
 cp hero.webp "$B/hero.webp"; cp gargantua.jpg "$B/gargantua.jpg"; cp apple-touch-icon.png favicon-32.png favicon-16.png favicon.ico face.png "$B/"
+cp icon-v2.ico icon-32-v2.png icon-16-v2.png icon-180-v2.png icon-192-v2.png icon-512-v2.png "$B/"
+# The manifest is the home screen's second way in, and the harness runs from file:// where fetch() is blocked -
+# so it is checked here instead: real JSON, and every icon it names exists at the size it claims.
+python3 - <<'PY' || exit 1
+import json, os, struct
+m=json.load(open('manifest.json'))
+assert m['name']=='The Lounge' and m['start_url']=='/lounge/', m
+for ic in m['icons']:
+    p=ic['src']; assert os.path.exists(p), 'manifest names a missing file: '+p
+    w,h=struct.unpack('>II', open(p,'rb').read()[16:24])
+    assert '%dx%d'%(w,h)==ic['sizes'], '%s is %dx%d, manifest says %s'%(p,w,h,ic['sizes'])
+print('  manifest.json: %d icons, each present at its declared size' % len(m['icons']))
+PY
 title(){ "$CHR" --headless --disable-gpu --hide-scrollbars --virtual-time-budget="${4:-6000}" \
   --window-size="$1","$2" --dump-dom "$3" 2>/dev/null | tr -d '\n' | sed -n 's/.*<title>§\(.*\)§<\/title>.*/\1/p'; }
 WHAT="${1:-all}"; PASS=0; FAIL=0

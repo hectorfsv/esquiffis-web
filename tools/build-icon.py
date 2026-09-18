@@ -4,7 +4,14 @@ build-icon.py - The Lounge's icons from the Vader painting (hero.webp). Hector p
 Gargantua, and the version FITTED IN THE FRAME (preview version 3: "the second one that you fit in the frame"): the whole
 figure - helmet, cigarette smoke, hand and the full blade with its glow - centred on the painting's own black, nothing cut.
 
-  python3 tools/build-icon.py        # writes apple-touch-icon.png, favicon-32.png, favicon-16.png and face.png, prints the header's data URI size
+  python3 tools/build-icon.py        # writes the icon set and face.png, prints the header's data URI size
+
+2026-09-18 (Hector: "i went and deleted the icons and add them again and still i dont see the icons"): every icon file was
+correct and served 200, and all four DECODED in real WebKit - so the files were never the problem. Safari keeps its own site-icon
+store, which a deleted bookmark does not clear, and the only cure that does not wipe his website data (his hub layout and the
+rig's job history live in it) is an icon URL Safari has never asked for. So the set is written TWICE: the original names, which
+stay so nothing already cached 404s, and a -v2 set that the page actually declares. If Safari ever caches a miss again, bump
+the token to v3 - that is the whole mechanism.
 
 The painting's shadows are lifted a touch (gamma 0.78) so the black helmet keeps its shape at icon size; whites and red stay.
 Crops are in the painting's own pixels (736 x 1408).
@@ -35,15 +42,23 @@ def main():
     out = {'apple-touch-icon.png': home.resize((180, 180), Image.LANCZOS),
            'favicon-32.png': tab.resize((32, 32), Image.LANCZOS),
            'favicon-16.png': tab.resize((16, 16), Image.LANCZOS),
-           'face.png': tab.resize((56, 56), Image.LANCZOS)}   # the header's 28-point square, 2x
+           'face.png': tab.resize((56, 56), Image.LANCZOS),
+           # the names the page declares: a URL Safari has no cached answer for, plus the two sizes a
+           # web app manifest wants (192 and 512) so the home screen has a second, independent path in.
+           'icon-180-v2.png': home.resize((180, 180), Image.LANCZOS),
+           'icon-192-v2.png': home.resize((192, 192), Image.LANCZOS),
+           'icon-512-v2.png': home.resize((512, 512), Image.LANCZOS),
+           'icon-32-v2.png': tab.resize((32, 32), Image.LANCZOS),
+           'icon-16-v2.png': tab.resize((16, 16), Image.LANCZOS)}
     for name, im in out.items():
         im.save(os.path.join(ROOT, name), optimize=True)
         print('wrote', name, im.size)
     # favicon.ico as well: Safari asks for one by that name when it wants a site's icon for a bookmark (Hector 2026-09-17:
     # his Safari bookmark still showed a letter). 48, 32 and 16 in the one file.
     ico = tab.resize((48, 48), Image.LANCZOS)
-    ico.save(os.path.join(ROOT, 'favicon.ico'), sizes=[(48, 48), (32, 32), (16, 16)])
-    print('wrote favicon.ico', os.path.getsize(os.path.join(ROOT, 'favicon.ico')), 'bytes')
+    for name in ('favicon.ico', 'icon-v2.ico'):
+        ico.save(os.path.join(ROOT, name), sizes=[(48, 48), (32, 32), (16, 16)])
+        print('wrote', name, os.path.getsize(os.path.join(ROOT, name)), 'bytes')
     buf = io.BytesIO(); out['face.png'].save(buf, 'PNG', optimize=True)
     print('face data URI', len('data:image/png;base64,' + base64.b64encode(buf.getvalue()).decode()), 'chars')
 
