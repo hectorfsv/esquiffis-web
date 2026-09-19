@@ -19,6 +19,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180-v2.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="The Lounge">
+<!-- The home-screen app gets an OPAQUE status bar (Hector 2026-09-18, iPhone 18 Pro Max: "still blurry on the top"): as a
+     home-screen app iOS 26 blurs whatever page content sits under the status bar, which smeared the header strip's top edge
+     into a fade that Safari, on the same page, does not show. With the bar opaque nothing of the page is under it, so there
+     is nothing to blur; env(safe-area-inset-top) reads 0 in the app and the strip starts at the top with its clean edge.
+     Safari ignores both tags. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
