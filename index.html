@@ -389,16 +389,80 @@ button{cursor:pointer}
 .so-open:hover .so-t{color:#fff}
 .so-x{flex:none;width:28px;height:28px;font-size:18px;line-height:1;color:var(--ink-faint)}
 .so-x:hover{color:var(--red-hot)}
-.so-view{display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;overscroll-behavior:contain;background:#000}
-.so-f{display:block;border:0;width:100%;background:#fff}
-.so-f.so-ttp{max-width:420px;height:400px}
-.so-f.so-ig{max-width:540px;height:640px}
-.so-f.so-ttv{background:#000;max-width:340px;height:auto;aspect-ratio:9/16}   /* a video fills the tile's height and takes its width from 9:16 (measured: 600 tall -> 338 wide) */
+/* the Viewer tile (Hector 2026-09-19: "replace social with the Viewer"): his TikTok profile drawn here in black - avatar, counts and
+   the newest covers from the login - the links he pastes, and the three streaming apps. A tap opens the Viewer, never Safari. */
+.tt-prof{display:flex;flex-direction:column;gap:8px}
+.tt-head{display:flex;align-items:center;gap:10px;min-width:0}
+.tt-av{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;background:#111}
+.tt-who{flex:1;min-width:0}
+.tt-name{font-weight:600;font-size:var(--fm);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt-stats{font-family:var(--mono);font-size:var(--fxs);letter-spacing:.03em;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.tt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:4px}
+.tt-v{position:relative;display:block;width:100%;aspect-ratio:9/16;padding:0;border:0;background:#111;overflow:hidden;cursor:pointer}
+.tt-v img{display:block;width:100%;height:100%;object-fit:cover}
+.tt-v .tt-p{position:absolute;left:5px;bottom:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.03em;color:#fff;text-shadow:0 1px 3px #000}
+.tt-v:hover img{filter:brightness(1.12)}
+.so-apps{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding-top:8px;border-top:1px solid var(--rule)}
+.so-apps .mk-cap{margin:0 4px 0 0}
+.so-app{font-family:var(--mono);font-size:var(--fx);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);text-decoration:none;border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:var(--bp)}
+.so-app:hover{color:var(--ink);border-color:var(--rule-hot)}
+.so-apps .h-note{margin:0;flex-basis:100%}
 .hub .hb-soc.sized .so-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}   /* ".hub" first: .hub .hb.sized>*{flex:none} sits LATER in this sheet at the same weight and won - measured, a video overran its tile */
-.hub .hb-soc.sized .so-view{flex:1 1 auto;min-height:0}
-.hub .hb-soc.sized .so-f.so-ttv{height:100%;width:auto;max-width:100%}
-.hb-soc.shut .so-body,.hb-soc.shut .so-view,.hb-soc.shut #so-back{display:none}
+.hb-soc.shut .so-body{display:none}
 .hb-soc.shut .hb-h{margin-bottom:0}
+/* THE VIEWER (Hector 2026-09-18/19: "i want everything to stay in the lounge ... i dont care if you pop up a screen on top of the lounge"):
+   a dark screen over the whole Lounge. TikToks play in TikTok's player, Instagram posts in Instagram's card, a news story as text in
+   the Lounge's own type (the sites refuse to be framed - measured), an email in a sandbox where none of its scripts run and every
+   link comes back through the Lounge's own policy. A site that refuses to open here says so and offers Safari on purpose. Nothing
+   inside can open a window on its own: the frames have no popup permission. */
+.viewer{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:#000;color:var(--ink)}
+.viewer[hidden]{display:none}
+.vw-head{flex:none;display:flex;align-items:center;gap:10px;min-height:49px;padding:6px max(12px,env(safe-area-inset-right)) 6px max(12px,env(safe-area-inset-left));border-bottom:1px solid var(--rule);background:var(--panel-hi)}
+.vw-close{flex:none;font-family:var(--mono);font-size:var(--fx);font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);border:1px solid var(--rule-hot);background:rgba(224,27,27,.12);padding:5px 10px}
+.vw-tt{flex:1;min-width:0}
+.vw-t{font-size:var(--fm);font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vw-s{font-family:var(--mono);font-size:var(--fxs);letter-spacing:.03em;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.vw-out{text-decoration:none;padding:5px 10px}
+.vw-body{flex:1;min-height:0;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:#000}
+.vw-body.vw-fill{align-items:stretch}
+.vw-f{display:block;border:0;width:100%;height:100%;min-height:0;background:#000}
+.vw-f.vw-ttv{align-self:center;width:min(100%,calc((100dvh - 49px) * 9 / 16));height:auto;max-height:100%;aspect-ratio:9/16;margin:0 auto}   /* TikTok's 9:16 player: as tall as the screen on a desktop, as wide as a phone, the other side from the ratio (never stretched: align-self) */
+.vw-f.vw-ig{max-width:540px;height:auto;min-height:640px;background:#fff}
+.vw-art{width:100%;max-width:720px;padding:18px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left));font-size:var(--fl);line-height:1.55;color:var(--ink)}
+.vw-art h2{font-size:26px;line-height:1.18;font-weight:700;margin:0 0 10px;overflow-wrap:anywhere}
+.vw-meta{font-family:var(--mono);font-size:var(--fx);letter-spacing:.04em;color:var(--ink-faint);margin-bottom:16px}
+.vw-meta b{color:var(--red);font-weight:600}
+.vw-img{display:block;width:100%;height:auto;margin:0 0 16px;background:#111}
+.vw-art p{margin:0 0 1em;overflow-wrap:anywhere}
+.vw-acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px}
+.vw-mail{width:100%;height:100%;display:flex;flex-direction:column}
+.vw-mh{flex:none;padding:10px max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));border-bottom:1px solid var(--rule);font-size:var(--fs);line-height:1.4}
+.vw-mh b{display:block;font-size:var(--fm);overflow-wrap:anywhere}
+.vw-mh span{color:var(--ink-dim)}
+.vw-mf{flex:1;min-height:0;width:100%;border:0;background:#fff}
+.vw-pre{flex:1;min-height:0;margin:0;padding:16px;font:inherit;font-size:var(--fs);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;overflow-y:auto;color:var(--ink)}
+.vw-note{width:100%;max-width:520px;padding:48px 24px;text-align:center;font-size:var(--fl);line-height:1.5;color:var(--ink-dim)}
+.vw-note b{display:block;color:var(--ink);font-size:var(--fl2);margin-bottom:10px;overflow-wrap:anywhere}
+body.viewing{overflow:hidden}
+/* YouTube in the TV (Hector 2026-09-19: "fusion the youtube API with TV, inside of tv the youtube search"): a search box under the
+   header; the results open over the screen like the channel list; a tap plays the video on the TV's own screen, muted at first
+   like a channel, with the same Sound button. 1 execution per search, the results kept for the tab. */
+.tv-search{display:flex;gap:6px;align-items:stretch;margin-bottom:6px}
+.tv-search input{flex:1;min-width:0;font:inherit;font-size:16px;line-height:1.2;color:var(--ink);background:rgba(0,0,0,.35);border:1px solid var(--rule);border-radius:0;padding:5px 9px}   /* 16px: iOS zooms the page into a smaller field and never zooms back */
+.tv-search input::placeholder{color:var(--ink-faint)}
+.tv-search input:focus{outline:none;border-color:var(--rule-hot)}
+.hb-tv .tv-res{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;gap:6px;margin:0;padding:8px;list-style:none;overflow-y:auto;overscroll-behavior:contain;background:rgba(8,5,6,.96)}
+.hb-tv .tv-res[hidden]{display:none}
+.yt-r{display:flex;gap:8px;align-items:flex-start;width:100%;padding:2px;background:none;border:0;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.yt-th{flex:none;width:96px;aspect-ratio:16/9;object-fit:cover;background:#111}
+.yt-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.yt-t{font-size:var(--fs);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.yt-m{font-family:var(--mono);font-size:var(--fxs);letter-spacing:.03em;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yt-m b{color:var(--red);font-weight:600}
+.yt-r:hover .yt-t{color:#fff}
+.tv-yt-note{margin-top:0;margin-bottom:6px}
+.tv-yt-note:empty{display:none}
+.hb-tv.shut .tv-search,.hb-tv.shut .tv-res,.hb-tv.shut .tv-yt-note{display:none}
 @media (min-width:1100px){ .so-body{min-height:340px} }   /* its first height on the wide grid holds a TikTok card; drag it to taste */
 .ib-list{list-style:none;display:flex;flex-direction:column;gap:var(--rg)}
 .ib{position:relative;padding-left:15px}
@@ -960,21 +1024,29 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
               </div>
               <p id="mk-note" class="h-note mk-note"></p>
             </section>
-            <section class="hb hb-soc" data-w="social" aria-labelledby="so-h">
-              <div class="hb-h"><button id="so-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="so-body">Social</button><button id="so-back" class="hb-btn" type="button" hidden>&lsaquo; Back</button></div>
+            <section class="hb hb-soc" data-w="viewer" aria-labelledby="so-h">
+              <div class="hb-h"><button id="so-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="so-body">Viewer</button></div>
               <div id="so-body" class="so-body">
+                <div id="tt-prof" class="tt-prof" hidden>
+                  <div class="tt-head"><img id="tt-av" class="tt-av" alt="" width="40" height="40" referrerpolicy="no-referrer" hidden><div class="tt-who"><div id="tt-name" class="tt-name"></div><div id="tt-stats" class="tt-stats"></div></div><button id="tt-x" class="so-x" type="button" aria-label="Remove your TikTok profile" title="Remove">&times;</button></div>
+                  <div id="tt-grid" class="tt-grid" aria-label="Your newest TikToks"></div>
+                  <p id="tt-note" class="h-note"></p>
+                </div>
                 <form id="so-add" class="so-add" autocomplete="off" novalidate><input id="so-url" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="Paste a TikTok or Instagram link" aria-label="TikTok or Instagram link"><button id="so-go" class="hb-btn" type="submit">Add</button></form>
                 <p id="so-note" class="h-note so-note" aria-live="polite"></p>
-                <p id="so-empty" class="so-empty">Paste your TikTok profile link and it stays here as your profile. Any TikTok or Instagram post or reel works too. Nothing loads until you tap it.</p>
+                <p id="so-empty" class="so-empty">Paste your TikTok profile link once and your newest videos show up here, in black. Any TikTok or Instagram post or reel works too. Everything opens in the Viewer, never in Safari.</p>
                 <ul id="so-list" class="so-list"></ul>
+                <div class="so-apps"><span class="mk-cap">Streaming</span><a class="so-app" href="https://www.netflix.com/" target="_blank" rel="noopener">Netflix</a><a class="so-app" href="https://www.disneyplus.com/" target="_blank" rel="noopener">Disney+</a><a class="so-app" href="https://www.hbomax.com/" target="_blank" rel="noopener">HBO Max</a><span class="h-note">They refuse to open inside another page (measured): these open their apps.</span></div>
               </div>
-              <div id="so-view" class="so-view" hidden></div>
             </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
-              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">Live news</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><span id="tv-yt" class="hb-link tv-ico tv-air" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></span></span></div>
+              <div class="hb-h"><button id="tv-h" class="hb-fold" type="button" aria-expanded="true" aria-controls="tv-screen">TV</button><span class="tv-top"><button id="tv-pick" class="tv-pick" type="button" aria-expanded="false" aria-controls="tv-ch" title="Choose a channel"><span id="tv-pick-t">Channel</span></button><button id="tv-sound" class="tv-ico" type="button" aria-pressed="false" aria-label="Turn the sound on" title="Turn the sound on" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5z"/><path class="off" d="M15.5 9.5l5 5M20.5 9.5l-5 5"/><path class="on" d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg></button><button id="tv-stop" class="tv-ico" type="button" aria-label="Stop" title="Stop" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect class="fill" x="7" y="7" width="10" height="10" rx="1"/></svg></button><span id="tv-yt" class="hb-link tv-ico tv-air" role="img" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.6C3 6.8 4.3 5.4 6.1 5.3 8 5.1 10 5 12 5s4 .1 5.9.3c1.8.1 3.1 1.5 3.1 3.3v6.8c0 1.8-1.3 3.2-3.1 3.3-1.9.2-3.9.3-5.9.3s-4-.1-5.9-.3C4.3 18.6 3 17.2 3 15.4z"/><path class="fill" d="M10 9.2l5 2.8-5 2.8z"/></svg></span></span></div>
+              <form id="tv-search" class="tv-search" autocomplete="off" novalidate><input id="tv-q" type="text" inputmode="search" enterkeyhint="search" autocapitalize="off" spellcheck="false" placeholder="Search YouTube" aria-label="Search YouTube"><button id="tv-q-go" class="hb-btn" type="submit">Search</button></form>
+              <p id="tv-yt-note" class="h-note tv-yt-note" aria-live="polite"></p>
               <div id="tv-screen" class="tv-screen">
                 <button id="tv-play" class="tv-play" type="button"><span class="tv-tri" aria-hidden="true"></span><span id="tv-play-t">Play</span><span id="tv-err" class="tv-err" hidden></span></button>
                 <div id="tv-ch" class="tv-ch tv-menu" role="group" aria-label="Channel" hidden></div>
+                <ol id="tv-res" class="tv-res" aria-label="YouTube results" hidden></ol>
               </div>
               <span id="tv-note" class="vh" aria-live="polite">Nothing loads until you press Play.</span>
             </section>
@@ -1054,6 +1126,14 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
         <div id="hub-floor" class="hub-floor" aria-hidden="true"></div>
       </section>
     </div>
+  </div>
+  <div id="viewer" class="viewer" role="dialog" aria-modal="true" aria-labelledby="vw-t" hidden>
+    <div class="vw-head">
+      <button id="vw-close" class="vw-close" type="button" aria-label="Back to The Lounge">&lsaquo; Lounge</button>
+      <div class="vw-tt"><div id="vw-t" class="vw-t"></div><div id="vw-s" class="vw-s"></div></div>
+      <a id="vw-out" class="hb-btn vw-out" target="_blank" rel="noopener" hidden>Open in Safari</a>
+    </div>
+    <div id="vw-body" class="vw-body"></div>
   </div>
   <div id="vc-stage" class="petbar" aria-hidden="true"><canvas id="vc-cv"></canvas></div>
 </div>
@@ -1239,13 +1319,13 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
         if(!r.ok){ lockMsg('Jarvis did not answer ('+r.status+'). Try again.', true); return }
         pw=v; savePw(v);
         // the login answer also carries the hub's headlines (fetched by n8n in this same call)
-        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); pendingHistory=(d && d.history) || null; enter(true) });
+        return r.json().catch(function(){ return {} }).then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); setTikTok(d && d.tiktok); pendingHistory=(d && d.history) || null; enter(true) });
       })
       .catch(function(){ lockMsg("Can't reach Jarvis. Check your connection.", true) })
       .finally(function(){ $('unlock').disabled=false });
   }
   function lockOut(why){
-    pw=''; clearPw(); clearInbox(); clearReminders(); tvStop(); camsStop(); soClose(); setBusy(false); if(hub) placeTools();
+    pw=''; clearPw(); clearInbox(); clearReminders(); tvStop(); camsStop(); vwClose(); setBusy(false); if(hub) placeTools();
     show('scr-lock'); $('pw').value=''; lockMsg(why||'', true);
   }
   function show(id){
@@ -1613,7 +1693,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var ol=$('h-list'); ol.textContent='';
     pick.forEach(function(h){
       var li=document.createElement('li'); li.className='hl';
-      var a=document.createElement('a'); a.className='hl-t'; a.href=h.link; a.target='_blank'; a.rel='noopener'; var em=emojiMark(h.title); if(em) a.appendChild(em); a.appendChild(document.createTextNode(h.title)); li.appendChild(a);
+      var a=document.createElement('a'); a.className='hl-t'; a.href=h.link; a.target='_blank'; a.rel='noopener'; a.setAttribute('data-title', h.title); a.setAttribute('data-src', h.src); var em=emojiMark(h.title); if(em) a.appendChild(em); a.appendChild(document.createTextNode(h.title)); li.appendChild(a);
       var meta=document.createElement('div'); meta.className='hl-m';
       var s=document.createElement('span'); s.className='hl-s'; s.textContent=h.src; meta.appendChild(s);
       var age=ago(h.t); if(age){ var w=document.createElement('span'); w.textContent=age; meta.appendChild(w) }
@@ -1879,8 +1959,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var b=document.createElement('button'); b.type='button'; b.className='hl-ask'; b.textContent='Ask';
       b.setAttribute('data-from', m.from); b.setAttribute('data-subject', m.subject); top.appendChild(b);
       li.appendChild(top);
-      var href=gmailLink(m), sj=document.createElement(href ? 'a' : 'span'); sj.className='ib-subj'; sj.textContent=m.subject;
-      if(href){ sj.href=href; sj.target='_blank'; sj.rel='noopener' }
+      var href=gmailLink(m), canOpen=/^[0-9a-f]{8,40}$/i.test(String(m.id||'')), sj=document.createElement((canOpen || href) ? 'a' : 'span'); sj.className='ib-subj'; sj.textContent=m.subject;
+      if(href){ sj.href=href; sj.target='_blank'; sj.rel='noopener' } else if(canOpen) sj.href='#';
+      if(canOpen) sj.setAttribute('data-id', String(m.id));   // a tap opens the email in the Viewer (Hector 2026-09-18); Gmail is a button inside it
       li.appendChild(sj);
       if(m.snippet){ var p=document.createElement('p'); p.className='ib-snip'; p.textContent=m.snippet; li.appendChild(p) }
       ol.appendChild(li);
@@ -1981,7 +2062,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     post(loginFields(pw)).then(function(r){
       if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return }
       if(!r.ok) throw new Error('http '+r.status);
-      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); setHistory(d && d.history) });
+      return r.json().then(function(d){ setServerNews(d && d.headlines); setInbox(d && d.inbox); setReminders(d && d.reminders); setFuel(d && d.fuel); setTikTok(d && d.tiktok); setHistory(d && d.history) });
     }).catch(function(){ $('h-note').textContent='Could not refresh. Try again.'; $('ib-note').textContent='Could not refresh. Try again.'; $('rm-note').textContent='Could not refresh. Try again.' })
       .finally(function(){ refreshing=false; btns.forEach(function(b){ b.disabled=false; b.textContent='Refresh' }); if(thenBrief === true) runBrief() });
   }
@@ -1995,15 +2076,15 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      move, so the TV keeps playing and the map keeps its view while widgets move or resize. */
   // minH is the floor a tile can be dragged down to (Hector 2026-09-16: as small as it goes); what it holds scrolls or clips inside
   var WIDGETS=[{w:'time', name:'Clock', span:3, minH:40}, {w:'weather', name:'Weather', span:3, minH:40}, {w:'dodgers', name:'Sports', span:3, minH:40, shut:true},
-    {w:'inbox', name:'Inbox', span:3, minH:40, shut:true}, {w:'tv', name:'Live news', span:6, minH:40}, {w:'map', name:'World events', span:6, minH:40},
+    {w:'inbox', name:'Inbox', span:3, minH:40, shut:true}, {w:'tv', name:'TV', span:6, minH:40}, {w:'map', name:'World events', span:6, minH:40},
     {w:'markets', name:'Markets', span:12, minH:40}, {w:'cams', name:'Live cameras', span:6, minH:40}, {w:'news', name:'News', span:6, minH:40, shut:true},
     {w:'stocks', name:'Stocks & crypto', span:6, minH:40}, {w:'fuel', name:'Fuel & energy', span:6, minH:40}, {w:'iss', name:'ISS overhead', span:6, minH:40},
-    {w:'rem', name:'Reminders', span:3, minH:40, shut:true}, {w:'social', name:'Social', span:3, minH:40, shut:true}];   // last by default so the first screen stays as it was; a saved layout gets it below the rest (Hector 2026-09-17)   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
+    {w:'rem', name:'Reminders', span:3, minH:40, shut:true}, {w:'viewer', name:'Viewer', span:3, minH:40, shut:true}];   // last by default so the first screen stays as it was; a saved layout gets it below the rest (Hector 2026-09-17)   // Hector 2026-09-16: "square or however i want" - 40px is the floor for every tile, what does not fit clips or scrolls
   // widths are 96ths of the hub (Hector 2026-09-17: "FREE RANGEEEE" - in twelfths a sixth-wide Sports jumped straight to a twelfth, measured),
   // down to a 24th; the width button still cycles 1/12, a sixth, a quarter, a third, half, two thirds, three quarters, full. U = one twelfth.
   var K_HUB='lounge_hub', COLS=96, U=8, SPANS=[8,16,24,32,48,64,72,96], SPAN_WORD={8:'a twelfth', 16:'a sixth', 24:'a quarter', 32:'a third', 48:'half', 64:'two thirds', 72:'three quarters', 96:'the full width'},
       SPAN_GLYPH={8:'1/12', 16:'\u2159', 24:'\u00BC', 32:'\u2153', 48:'\u00BD', 64:'\u2154', 72:'\u00BE', 96:'1'},
-      LEGACY_SPAN={S:24, M:48, L:96}, MIN_SPAN=4, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=3;   // GAP mirrors the CSS --tg (a tile's right and bottom margin on the 96-grid); LOOK stamps a layout measured under the current look
+      LEGACY_SPAN={S:24, M:48, L:96}, MIN_SPAN=4, MAX_H=1400, MIN_HS=30, IB_SHUT=3, HL_SHUT=3, GAP=6, LOOK=4;   // LOOK 4 (2026-09-19): the TV grew a search row, every saved height is measured again   // GAP mirrors the CSS --tg (a tile's right and bottom margin on the 96-grid); LOOK stamps a layout measured under the current look
   var hub=null, arranging=false, hubReady=false, drag=null, resizing=null;
   function winfo(w){ for(var i=0;i<WIDGETS.length;i++) if(WIDGETS[i].w===w) return WIDGETS[i]; return null }
   function wname(w){ var x=winfo(w); return x ? x.name : w }
@@ -2012,11 +2093,18 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     WIDGETS.forEach(function(x){ d.order.push(x.w); d.span[x.w]=x.span*U; d.shut[x.w]=!!x.shut });
     return d;
   }
+  // a widget renamed since the layout was saved keeps its place (2026-09-19: Social became the Viewer)
+  function hubRename(sv, from, to){
+    ['order','hidden'].forEach(function(k){ if(Array.isArray(sv[k])) sv[k]=sv[k].map(function(w){ return w===from ? to : w }) });
+    ['size','span','h','hs','col','row','shut','back'].forEach(function(k){ var o=sv[k]; if(o && typeof o==='object' && Object.prototype.hasOwnProperty.call(o, from) && !Object.prototype.hasOwnProperty.call(o, to)){ o[to]=o[from]; delete o[from] } });
+    if(sv.back && typeof sv.back==='object') Object.keys(sv.back).forEach(function(w){ var m=sv.back[w]; if(m && typeof m==='object' && m[from] && !m[to]){ m[to]=m[from]; delete m[from] } });
+  }
   function hubLoad(){
     var d=hubDefault();
     try{
       var sv=JSON.parse(localStorage.getItem(K_HUB)||'null');
       if(sv && typeof sv==='object'){
+        hubRename(sv, 'social', 'viewer');
         var order=(Array.isArray(sv.order) ? sv.order : []).filter(function(w,i,a){ return !!winfo(w) && a.indexOf(w)===i });
         d.order.forEach(function(w){ if(order.indexOf(w)<0) order.push(w) });   // a widget added later still shows up
         d.order=order;
@@ -2273,7 +2361,6 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     }
     if(hub.shut.tv || hub.hidden.indexOf('tv')>-1) tvStop();   // a folded or hidden TV does not keep playing out of sight
     if(hub.shut.cams || hub.hidden.indexOf('cams')>-1) camsStop();
-    if(hub.shut.social || hub.hidden.indexOf('social')>-1) soClose();   // a folded Social tile does not keep TikTok or Instagram running
     alignAll();   // a stocks or fuel tile whose width changed measures its columns again
     startMap();   // a map that was unfolded, shown or resized redraws to its new box
     issStart();   // an ISS tile brought back works out its passes
@@ -2299,20 +2386,17 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     applyHub();
   }
 
-  /* ---------- social (Hector 2026-09-18: "let's start with tik tok and instagram to be able to open posts or link for now ...
-     all this is for the lounge") ----------
-     Links he pastes, kept on this device like the layout. A tap opens one INSIDE the tile; Back, folding or locking removes it
-     again - like the TV, nothing loads from TikTok or Instagram until then. MEASURED 2026-09-18 in WebKit from this page's own
-     address: TikTok's creator card (/embed/@handle: the profile, its numbers and a strip of recent videos), TikTok's player
-     (/player/v1/<id>) and Instagram's post embed (/<p|reel|tv>/<code>/embed/captioned/) all render as PLAIN iframes inside a
-     sandbox that cannot navigate this page - so neither site's embed.js ever runs here, where it could read what this page
-     keeps. Instagram draws NOTHING for a profile (measured), so Instagram is the posts and reels he picks; his whole profile
-     needs the Instagram API (later, after the Meta cleanup). The frame's address is BUILT from the id the parser pulls out,
-     never from the pasted text. TikTok's oEmbed answers any browser (CORS *) and names a video and its account - it also turns
-     the short link the share button gives into a video id; Instagram's names nothing without a token (measured), so an
-     Instagram pin is labelled by what it is. Both sites post their embed's height to the page; only a message from THAT
-     frame and THAT origin can size it. 0 n8n executions. */
-  var K_SO='lounge_social', SO_MAX=40, SO_SB='allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation';
+  /* ---------- the Viewer tile: his TikTok, the links he pastes, the streaming apps ----------
+     Hector 2026-09-18: "anything i click immediately opens safari, i dont want that, i want everything to stay in the lounge", and
+     2026-09-19: "replace social with the Viewer". The links he pastes are kept on this device like the layout (localStorage
+     `lounge_social`, read at unlock, cleaned like anything pasted). His TikTok profile is DRAWN HERE in black from what n8n reads
+     off TikTok's own embed page inside the login (0 extra executions; the page sends the handle it keeps once every 6 hours per
+     device): avatar, counts and the newest covers; a cover plays the video in the Viewer. TikTok's white creator card is gone -
+     every tap inside it linked out to tiktok.com and nothing in a cross-origin frame can be changed (measured 2026-09-18).
+     Instagram posts and reels stay Instagram's card, inside the black Viewer. Netflix, Disney+ and HBO Max refuse to be framed
+     (measured 2026-09-19): their three buttons open the apps, on purpose. The frame's address is BUILT from the id the parser pulls
+     out, never from the pasted text; TikTok's oEmbed (CORS *) names a video and turns a short link into its id. */
+  var K_SO='lounge_social', SO_MAX=40;
   var SO_ID={ttp:/^[A-Za-z0-9_.]{2,24}$/, ttv:/^\d{8,25}$/, ig:/^[A-Za-z0-9_-]{5,40}$/}, SO_IG={p:'post', reel:'reel', tv:'video'};
   function soParse(raw){
     var s=String(raw==null ? '' : raw).trim(), m, x;
@@ -2336,7 +2420,6 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     return {err:'Only TikTok and Instagram links open here.'};
   }
   function soSrc(it){
-    if(it.k==='ttp') return 'https://www.tiktok.com/embed/@'+it.id;
     if(it.k==='ttv') return 'https://www.tiktok.com/player/v1/'+it.id+'?rel=0';
     return 'https://www.instagram.com/'+it.path+'/'+it.id+'/embed/captioned/';
   }
@@ -2345,21 +2428,24 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(x.k==='ig' && !SO_IG[x.path]) return null;
     var c={k:x.k, id:x.id, t:String(x.t||'').slice(0,120), s:String(x.s||'').slice(0,80), at:typeof x.at==='number' && isFinite(x.at) ? x.at : 0};
     if(x.k==='ig') c.path=x.path;
+    if(x.k==='ttv' && typeof x.who==='string' && SO_ID.ttp.test(x.who)) c.who=x.who;
     return c;
   }
   var so=[];
   function soLoad(){   // at unlock, like the layout and the map
     so=[];
     try{ var sv=JSON.parse(localStorage.getItem(K_SO)||'[]'); if(Array.isArray(sv)) sv.forEach(function(x){ var c=soClean(x); if(c && so.length<SO_MAX && !so.some(function(y){ return y.k===c.k && y.id===c.id })) so.push(c) }) }catch(e){}
-    soPaint();
+    ttLoad(); soPaint();
   }
   function soSave(){ try{ localStorage.setItem(K_SO, JSON.stringify(so)) }catch(e){} }
   function soKey(it){ return it.k+':'+it.id }
   function soText(v, n){ return String(v==null ? '' : v).replace(/\s+/g,' ').trim().slice(0, n) }
   function soNote(t, bad){ var n=$('so-note'); n.textContent=t||''; n.classList.toggle('bad', !!bad) }
+  function soProfile(){ for(var i=0;i<so.length;i++) if(so[i].k==='ttp') return so[i]; return null }   // the profile he pasted is his
   function soPaint(){
     var ul=$('so-list'); ul.textContent='';
-    so.slice().sort(function(a,b){ return (a.k==='ttp' ? 0 : 1)-(b.k==='ttp' ? 0 : 1) || b.at-a.at }).forEach(function(it){   // his profile first, then newest
+    so.slice().sort(function(a,b){ return b.at-a.at }).forEach(function(it){   // newest first; his profile is drawn above the list, not in it
+      if(it.k==='ttp') return;
       var li=document.createElement('li'); li.className='so-it'; li.setAttribute('data-k', it.k);
       var b=document.createElement('button'); b.type='button'; b.className='so-open'; b.setAttribute('data-id', soKey(it));
       var tx=document.createElement('span'); tx.className='so-tx';
@@ -2370,6 +2456,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       li.appendChild(b); li.appendChild(x); ul.appendChild(li);
     });
     $('so-empty').hidden=so.length>0;
+    ttPaint();
   }
   function soWithin(pr, ms){ return new Promise(function(ok, no){ var t=setTimeout(function(){ no(new Error('timeout')) }, ms); pr.then(function(v){ clearTimeout(t); ok(v) }, function(e){ clearTimeout(t); no(e) }) }) }
   function soTikTok(url){ return soWithin(fetch('https://www.tiktok.com/oembed?url='+encodeURIComponent(url)).then(function(r){ if(!r.ok) throw new Error('oembed '+r.status); return r.json() }), 8000) }
@@ -2382,10 +2469,10 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       job=soTikTok(p.k==='short' ? p.url : 'https://www.tiktok.com/@'+p.who+'/video/'+p.id).then(function(d){
         var vid=(String(d && d.html || '').match(/data-video-id="(\d{8,25})"/)||[])[1], who=(String(d && d.author_url || '').match(/tiktok\.com\/@([A-Za-z0-9_.]{2,24})/)||[])[1] || p.who;
         if(p.k==='short' && !vid) throw new Error('no video id');
-        return {k:'ttv', id:p.k==='short' ? vid : p.id, t:soText(d && d.title, 120) || 'TikTok video', s:'TikTok video'+(who ? ' · @'+who : '')};
+        return {k:'ttv', id:p.k==='short' ? vid : p.id, who:who||'', t:soText(d && d.title, 120) || 'TikTok video', s:'TikTok video'+(who ? ' · @'+who : '')};
       }, function(err){
         if(p.k==='short') throw err;
-        return {k:'ttv', id:p.id, t:'TikTok video', s:'TikTok video · @'+p.who};   // TikTok did not answer: the link itself is enough to play it
+        return {k:'ttv', id:p.id, who:p.who, t:'TikTok video', s:'TikTok video · @'+p.who};   // TikTok did not answer: the link itself is enough to play it
       });
     } else if(p.k==='ttv') job=Promise.resolve({k:'ttv', id:p.id, t:'TikTok video', s:'TikTok video'});
     else if(p.k==='ttp') job=Promise.resolve({k:'ttp', id:p.id, t:'@'+p.id, s:'TikTok profile'});
@@ -2395,37 +2482,18 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       var c=soClean(Object.assign({at:Date.now()}, it));
       if(!c){ soNote('That link did not give a usable id.', true); return false }
       if(so.some(function(y){ return y.k===c.k && y.id===c.id })){ $('so-url').value=''; soNote('Already here.', false); return false }
+      if(c.k==='ttp') so=so.filter(function(y){ return y.k!=='ttp' });   // one profile: his
       so.unshift(c); if(so.length>SO_MAX) so.length=SO_MAX;
-      soSave(); $('so-url').value=''; soNote('Added. Tap it to open it here.', false); soPaint(); return true;
+      soSave(); $('so-url').value=''; soPaint();
+      if(c.k==='ttp'){ soNote('That is your profile now. Fetching your videos…', false); if(pw && !refreshing) refreshHub() }   // one login call brings them (1 execution)
+      else soNote('Added. Tap it to watch it here.', false);
+      return true;
     }, function(){
       go.disabled=false;
       soNote('TikTok did not say which video that short link is. Open it and copy the address with /video/ in it.', true); return false;
     });
   }
-  function soOpen(it){
-    soClose();
-    var v=$('so-view'), f=document.createElement('iframe');
-    f.title=it.k==='ttp' ? 'TikTok profile @'+it.id : it.k==='ttv' ? 'TikTok video' : 'Instagram '+SO_IG[it.path];
-    f.className='so-f so-'+it.k;
-    f.setAttribute('sandbox', SO_SB);   // their own code in their own origin; it can open a new tab but can never navigate The Lounge
-    f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture'); f.setAttribute('allowfullscreen', '');
-    f.referrerPolicy='strict-origin-when-cross-origin';
-    if(it.k==='ig') f.setAttribute('scrolling', 'no');
-    f.src=soSrc(it);
-    v.appendChild(f); v.hidden=false; $('so-body').hidden=true; $('so-back').hidden=false;
-    v.parentNode.classList.add('viewing');
-  }
-  function soClose(){
-    var v=$('so-view'), f=v.querySelector('iframe'); if(f) f.remove();
-    v.hidden=true; $('so-body').hidden=false; $('so-back').hidden=true; v.parentNode.classList.remove('viewing');
-  }
-  window.addEventListener('message', function(e){   // an embed reports its own height: only from that frame, only from its own site
-    var f=$('so-view').querySelector('iframe');
-    if(!f || e.source!==f.contentWindow || (e.origin!=='https://www.instagram.com' && e.origin!=='https://www.tiktok.com') || f.classList.contains('so-ttv')) return;
-    var d=null; try{ d=typeof e.data==='string' ? JSON.parse(e.data) : e.data }catch(err){ return }
-    var h=!d || typeof d!=='object' ? null : (d.type==='MEASURE' && d.details) ? d.details.height : d.height;
-    if(typeof h==='number' && isFinite(h) && h>=120 && h<=4000) f.style.height=Math.round(h)+'px';
-  });
+  function soOpen(it){ if(it.k==='ttv') vwTikTok(it.id, it.t, it.who); else if(it.k==='ig') vwInsta(it) }
   $('so-add').addEventListener('submit', function(e){ e.preventDefault(); soAdd($('so-url').value) });
   $('so-list').addEventListener('click', function(e){
     if(!e.target.closest) return;
@@ -2433,8 +2501,188 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(x){ var id=x.getAttribute('data-id'); so=so.filter(function(y){ return soKey(y)!==id }); soSave(); soNote('', false); soPaint(); return }
     if(o){ var it=so.filter(function(y){ return soKey(y)===o.getAttribute('data-id') })[0]; if(it) soOpen(it) }
   });
-  $('so-back').addEventListener('click', soClose);
+  /* his TikTok profile, drawn here: what n8n read off TikTok's embed page inside the login (`tiktok` on the login reply), kept on this
+     device for 6 hours (the covers are signed for about two days), asked for again after that or for a new handle */
+  var K_TT='lounge_tiktok', TT_MS=6*60*60*1000, tt=null, ttFail=0;
+  function ttLoad(){ if(tt) return; try{ var s=JSON.parse(localStorage.getItem(K_TT)||'null'); if(s && s.ok===true && s.t && typeof s.handle==='string' && Array.isArray(s.videos)) tt=s }catch(e){} }
+  function ttHandle(){ var p=soProfile(); return p ? p.id : '' }
+  function ttWanted(){ var h=ttHandle(); if(!h) return ''; return (tt && tt.ok===true && String(tt.handle).toLowerCase()===h.toLowerCase() && Date.now()-tt.t<TT_MS) ? '' : h }
+  function ttUser(u){ u=(u && typeof u==='object') ? u : {}; return {name:soText(u.name, 60), avatar:/^https:\/\//.test(String(u.avatar||'')) ? String(u.avatar).slice(0,700) : '', verified:u.verified===true, followers:num(u.followers) ? u.followers : null, likes:num(u.likes) ? u.likes : null} }
+  function setTikTok(x){
+    if(!x || typeof x!=='object') return;   // not asked this time, or an older workflow
+    if(x.ok!==true || !Array.isArray(x.videos)){ ttFail=Date.now(); ttPaint(); return }   // keep what we had; the next login asks again
+    tt={t:Date.now(), ok:true, handle:soText(x.handle, 24) || ttHandle(), user:ttUser(x.user),
+      videos:x.videos.filter(function(v){ return v && /^\d{8,25}$/.test(String(v.id)) && /^https:\/\//.test(String(v.cover||'')) }).slice(0,12)
+        .map(function(v){ return {id:String(v.id), desc:soText(v.desc, 200), cover:String(v.cover).slice(0,700), plays:num(v.plays) ? v.plays : null} })};
+    ttFail=0;
+    try{ localStorage.setItem(K_TT, JSON.stringify(tt)) }catch(e){}
+    ttPaint();
+  }
+  function ttCount(n){ if(!num(n)) return ''; if(n>=1e6) return (n/1e6).toFixed(n>=1e7 ? 0 : 1).replace(/\.0$/,'')+'M'; if(n>=1e3) return (n/1e3).toFixed(n>=1e4 ? 0 : 1).replace(/\.0$/,'')+'K'; return String(n) }
+  function ttPaint(){
+    var box=$('tt-prof'), h=ttHandle(); if(!box) return;
+    box.hidden=!h;
+    if(!h) return;
+    var mine=(tt && String(tt.handle).toLowerCase()===h.toLowerCase()) ? tt : null;
+    $('tt-name').textContent='@'+h+(mine && mine.user.name ? ' · '+mine.user.name : '');
+    $('tt-stats').textContent=mine ? [ttCount(mine.user.followers) ? ttCount(mine.user.followers)+' followers' : '', ttCount(mine.user.likes) ? ttCount(mine.user.likes)+' likes' : ''].filter(Boolean).join(' · ') : '';
+    var av=$('tt-av'); if(mine && mine.user.avatar){ av.src=mine.user.avatar; av.hidden=false } else { av.removeAttribute('src'); av.hidden=true }
+    var g=$('tt-grid'); g.textContent='';
+    (mine ? mine.videos : []).forEach(function(v){
+      var b=document.createElement('button'); b.type='button'; b.className='tt-v'; b.setAttribute('data-id', v.id); b.title=v.desc || 'TikTok video';
+      var im=document.createElement('img'); im.alt=''; im.loading='lazy'; im.referrerPolicy='no-referrer'; im.src=v.cover; b.appendChild(im);
+      if(v.plays!==null){ var p=document.createElement('span'); p.className='tt-p'; p.textContent='▶ '+ttCount(v.plays); b.appendChild(p) }
+      g.appendChild(b);
+    });
+    $('tt-note').textContent = mine ? (ttFail ? 'TikTok did not answer at '+clockText(new Date(ttFail))+'. Showing '+clockText(new Date(mine.t))+'.' : 'Your newest '+mine.videos.length+' videos · tap one to watch it here')
+      : (ttFail ? 'TikTok did not answer. Tap Refresh in News or Inbox to try again.' : 'Your videos arrive with the next login or Refresh.');
+  }
+  $('tt-grid').addEventListener('click', function(e){ var b=e.target.closest ? e.target.closest('button.tt-v') : null; if(!b || !tt) return; var v=tt.videos.filter(function(x){ return x.id===b.getAttribute('data-id') })[0]; if(v) vwTikTok(v.id, v.desc, tt.handle) });
+  $('tt-x').addEventListener('click', function(){ so=so.filter(function(y){ return y.k!=='ttp' }); soSave(); soNote('', false); soPaint() });
   soPaint();
+
+  /* ---------- the Viewer ----------
+     Hector 2026-09-18: "anything i click immediately opens safari, i dont want that, i want everything to stay in the lounge, i want
+     the same to when opening an email, or clicking on one of my news headlines ... i dont care if you pop up a screen on top of the
+     lounge". One dark screen over everything; Close (or Escape, or the lock) puts him back where he was. What opens where, all
+     measured 2026-09-18/19: TikTok videos in TikTok's player and Instagram posts in Instagram's card (plain iframes, no popup
+     permission, so the logos inside them do nothing instead of opening Safari); a YouTube link on the TV; a story from Fox, the BBC,
+     the Jerusalem Post, DW or the Times of Israel as TEXT read by n8n (they refuse to be framed; 1 execution, kept for the tab);
+     Arutz Sheva as itself (it allows framing and draws its text with scripts); an email as n8n hands it over (Gmail refuses framing;
+     1 execution, kept for the tab) inside a sandbox that is not this page's origin, where the email's own scripts were stripped and
+     are refused again by a CSP, and where the one script the page puts in it sends every tapped link BACK here to go through this
+     same policy. Anything else - Mexico News Daily, Gmail itself, most links inside emails - says so and offers Safari on purpose. */
+  var VW_SB='allow-scripts allow-same-origin allow-forms allow-presentation';   // no allow-popups: nothing inside a frame can open a window
+  var VW_READ=/^(www\.)?(foxnews\.com|bbc\.com|bbc\.co\.uk|jpost\.com|dw\.com|timesofisrael\.com)$/i,   // read as text by n8n
+      VW_FRAME=/^(www\.)?israelnationalnews\.com$/i;   // the real page, 0 executions
+  var vwOpen=false, vwReq=0, vwArts={}, vwMails={}, vwMail=null;
+  function vwShow(title, sub, out, outText){
+    $('vw-t').textContent=title||''; $('vw-s').textContent=sub||'';
+    var o=$('vw-out'); if(out && /^https:\/\//.test(out)){ o.href=out; o.textContent=outText||'Open in Safari'; o.hidden=false } else { o.removeAttribute('href'); o.hidden=true }
+    var v=$('viewer'); if(v.hidden){ v.hidden=false; document.body.classList.add('viewing') }
+    vwOpen=true; vwReq++;
+    return vwReq;
+  }
+  function vwBody(fill){ var b=$('vw-body'); b.textContent=''; b.classList.toggle('vw-fill', !!fill); b.scrollTop=0; return b }
+  function vwClose(){ var v=$('viewer'); if(v.hidden) return; vwReq++; vwBody(false); vwMail=null; v.hidden=true; vwOpen=false; document.body.classList.remove('viewing') }
+  function vwFrame(src, cls, title, noscroll){
+    var b=vwBody(true), f=document.createElement('iframe');
+    f.className='vw-f '+cls; f.title=title||''; f.setAttribute('sandbox', VW_SB); f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture'); f.setAttribute('allowfullscreen', '');
+    f.referrerPolicy='strict-origin-when-cross-origin'; if(noscroll) f.setAttribute('scrolling', 'no');
+    f.src=src; b.appendChild(f); return f;
+  }
+  function vwBtn(cls, text, fn){ var b=document.createElement('button'); b.type='button'; b.className=cls; b.textContent=text; b.addEventListener('click', fn); return b }
+  function vwNote(title, text, o){   // a screen that says so: what would not open, and the ways out he takes on purpose
+    o=o||{}; var b=vwBody(false), n=document.createElement('div'); n.className='vw-note';
+    var h=document.createElement('b'); h.textContent=title||''; n.appendChild(h); n.appendChild(document.createTextNode(text||''));
+    var acts=document.createElement('div'); acts.className='vw-acts';
+    if(o.back) acts.appendChild(vwBtn('hb-btn', o.backText||'‹ Back', o.back));
+    if(o.ask) acts.appendChild(vwBtn('hb-btn', 'Ask Jarvis', function(){ vwAsk(o.ask) }));
+    if(o.out && /^https:\/\//.test(o.out)){ var a=document.createElement('a'); a.className='hb-btn'; a.href=o.out; a.target='_blank'; a.rel='noopener'; a.textContent=o.outText||'Open in Safari'; acts.appendChild(a) }
+    if(acts.children.length) n.appendChild(acts);
+    b.appendChild(n); return n;
+  }
+  function vwAsk(text){ if(busy) return; box.value=text; vwClose(); send() }
+  function vwTikTok(id, title, who){ if(!/^\d{8,25}$/.test(String(id))) return; vwShow(soText(title, 140) || 'TikTok video', who ? '@'+who : 'TikTok', 'https://www.tiktok.com/@'+(who||'tiktok')+'/video/'+id); vwFrame('https://www.tiktok.com/player/v1/'+id+'?rel=0', 'vw-ttv', 'TikTok video') }
+  function vwInsta(it){ vwShow(it.t || ('Instagram '+SO_IG[it.path]), 'instagram.com', 'https://www.instagram.com/'+it.path+'/'+it.id+'/'); vwFrame(soSrc(it), 'vw-ig', 'Instagram '+SO_IG[it.path], true) }
+  function ytParse(u){ var m=String(u||'').match(/^https?:\/\/(?:(?:www\.|m\.)?youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|live\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?#\/]|$)/i); return m ? m[1] : '' }
+  // where a link goes: TikTok and Instagram in their players, YouTube on the TV, the news sites as text, Arutz Sheva as itself; anything else says so
+  function vwLink(url, ctx){
+    ctx=ctx||{}; url=String(url||'');
+    var p=soParse(url);
+    if(!p.err){ if(p.k==='ttv'){ vwTikTok(p.id, ctx.title, p.who); return 'tiktok' } if(p.k==='ig'){ vwInsta({k:'ig', id:p.id, path:p.path, t:ctx.title}); return 'instagram' } }
+    var y=ytParse(url); if(y){ vwClose(); tvPlayVideo({id:y, title:ctx.title||'YouTube video'}); if(!isWide()) hubView(true); return 'tv' }
+    var m=url.match(/^https:\/\/([^\/?#:]+)/i), host=m ? m[1].toLowerCase() : '';
+    if(host && VW_READ.test(host)){ vwArticle(url, ctx); return 'article' }
+    if(host && VW_FRAME.test(host)){ vwShow(ctx.title||host, host, url); vwFrame(url, 'vw-web', ctx.title||host); return 'frame' }
+    vwShow(ctx.title||host||'Link', host);
+    vwNote(ctx.title||host||'That link', (host||'That page')+' will not open inside The Lounge.',
+      {out:/^https?:\/\//i.test(url) ? url : '', ask:ctx.title ? 'What is the latest on this'+(ctx.src ? ' '+ctx.src : '')+' story: "'+ctx.title+'"' : '', back:ctx.back, backText:ctx.backText});
+    return 'out';
+  }
+  function vwArticle(url, ctx){
+    var req=vwShow(ctx.title||'Reading…', ctx.src||'', url);
+    function paint(a){
+      if(req!==vwReq) return;   // closed, or something else opened meanwhile
+      if(!a || a.ok!==true || !Array.isArray(a.paras) || !a.paras.length){
+        vwNote(ctx.title||url, (a && a.why) ? 'Could not read it: '+soText(a.why, 120)+'.' : 'Could not read that story.', {out:url, ask:ctx.title ? 'What is the latest on this'+(ctx.src ? ' '+ctx.src : '')+' story: "'+ctx.title+'"' : ''}); return;
+      }
+      var b=vwBody(false), art=document.createElement('article'); art.className='vw-art';
+      var h=document.createElement('h2'); h.textContent=soText(a.title, 300) || ctx.title || ''; art.appendChild(h);
+      var meta=document.createElement('div'); meta.className='vw-meta';
+      var s=document.createElement('b'); s.textContent=ctx.src || (url.match(/^https:\/\/(?:www\.)?([^\/]+)/)||[])[1] || ''; meta.appendChild(s);
+      var by=soText(a.by, 120), at=a.at ? Date.parse(a.at) : NaN;
+      if(by && !/^https?:/i.test(by)) meta.appendChild(document.createTextNode(' · '+by));
+      if(isFinite(at)) meta.appendChild(document.createTextNode(' · '+new Date(at).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})+' '+clockText(new Date(at))));
+      art.appendChild(meta);
+      if(/^https:\/\//.test(String(a.image||''))){ var im=document.createElement('img'); im.className='vw-img'; im.alt=''; im.referrerPolicy='no-referrer'; im.src=String(a.image).slice(0,700); art.appendChild(im) }
+      a.paras.slice(0,80).forEach(function(t){ var p=document.createElement('p'); p.textContent=soText(t, 1500); art.appendChild(p) });
+      var acts=document.createElement('div'); acts.className='vw-acts';
+      acts.appendChild(vwBtn('hb-btn', 'Ask Jarvis', function(){ vwAsk('Tell me more about this'+(ctx.src ? ' '+ctx.src : '')+' story: "'+(soText(a.title, 200) || ctx.title || '')+'"') }));
+      art.appendChild(acts); b.appendChild(art);
+      $('vw-t').textContent=h.textContent;
+    }
+    if(vwArts[url]){ paint(vwArts[url]); return }
+    vwNote(ctx.title||'', 'Reading the story…', {});
+    post({action:'article', password:pw, u:url}).then(function(r){
+      if(r.status===401){ vwClose(); lockOut('Session expired. Enter the passphrase again.'); return null }
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.json();
+    }).then(function(a){ if(!a) return; if(a.ok===true) vwArts[url]=a; paint(a) })
+      .catch(function(){ paint(null) });
+  }
+  function vwEmail(m){   // an inbox item: {id, thread, from, subject, t}
+    if(!m || !/^[0-9a-f]{8,40}$/i.test(String(m.id||''))) return;
+    var req=vwShow(m.subject||'(no subject)', m.from||'', gmailLink(m), 'Open in Gmail');
+    vwMail=m;
+    function head(w){
+      var hd=document.createElement('div'); hd.className='vw-mh';
+      var b=document.createElement('b'); b.textContent=m.subject||'(no subject)'; hd.appendChild(b);
+      var s=document.createElement('span'), when=m.t ? Date.parse(m.t) : NaN;
+      s.textContent=(m.from||'')+(isFinite(when) ? ' · '+new Date(when).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})+' '+clockText(new Date(when)) : '');
+      hd.appendChild(s); w.appendChild(hd);
+    }
+    function paint(d){
+      if(req!==vwReq) return;
+      var b=vwBody(true), w=document.createElement('div'); w.className='vw-mail'; head(w);
+      if(!d || d.ok!==true){ var n=document.createElement('div'); n.className='vw-note'; n.textContent=(d && d.why) ? 'Gmail did not hand it over: '+soText(d.why, 120)+'.' : 'Could not read that email. Try again.'; w.appendChild(n); b.appendChild(w); return }
+      if(d.html){
+        var f=document.createElement('iframe'); f.className='vw-mf'; f.title='Email'; f.setAttribute('sandbox', 'allow-scripts');   // its own opaque origin: no cookies, no storage, nothing of this page; only the one script the page puts in runs
+        f.referrerPolicy='no-referrer'; f.srcdoc=vwMailDoc(String(d.html)); w.appendChild(f);
+      } else { var pre=document.createElement('pre'); pre.className='vw-pre'; pre.textContent=String(d.text||d.snippet||''); w.appendChild(pre) }
+      b.appendChild(w);
+    }
+    if(vwMails[m.id]){ paint(vwMails[m.id]); return }
+    var b0=vwBody(true), w0=document.createElement('div'); w0.className='vw-mail'; head(w0); var n0=document.createElement('div'); n0.className='vw-note'; n0.textContent='Opening…'; w0.appendChild(n0); b0.appendChild(w0);
+    post({action:'email', password:pw, id:m.id}).then(function(r){
+      if(r.status===401){ vwClose(); lockOut('Session expired. Enter the passphrase again.'); return null }
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.json();
+    }).then(function(d){ if(!d) return; if(d.ok===true) vwMails[m.id]=d; paint(d) })
+      .catch(function(){ paint(null) });
+  }
+  function vwMailDoc(html){   // the document the email is shown in: a CSP that refuses any script but the page's own, and that script hands every tapped link back here
+    var nonce=Math.random().toString(36).slice(2, 12)+Math.random().toString(36).slice(2, 12);
+    return '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+      +'<meta http-equiv="Content-Security-Policy" content="default-src * data: blob: \'unsafe-inline\'; script-src \'nonce-'+nonce+'\'; frame-src \'none\'; object-src \'none\'; form-action \'none\'">'
+      +'<base target="_self"><style>body{margin:0;padding:12px;font:15px/1.5 -apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;color:#111;background:#fff;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style>'
+      +'<script nonce="'+nonce+'">document.addEventListener("click",function(e){var a=e.target&&e.target.closest?e.target.closest("a[href]"):null;if(!a)return;e.preventDefault();e.stopPropagation();try{parent.postMessage({lounge:"link",href:String(a.href)},"*")}catch(x){}},true);<\/script>'
+      +'</head><body>'+html+'<\/body><\/html>';   // the closing tags are written with a backslash: the harness build wants exactly one closing body tag in this file
+  }
+  window.addEventListener('message', function(e){
+    var f=$('vw-body').querySelector('iframe'); if(!f || e.source!==f.contentWindow) return;   // only the frame on screen
+    var d=e.data;
+    if(f.classList.contains('vw-mf')){   // a link tapped inside the email: back through the policy (that frame's origin reads "null")
+      if(d && typeof d==='object' && d.lounge==='link' && typeof d.href==='string'){ var m=vwMail; vwLink(d.href, {title:'', back:m ? function(){ vwEmail(m) } : null, backText:'‹ Back to the email'}) }
+      return;
+    }
+    if(!f.classList.contains('vw-ig') || e.origin!=='https://www.instagram.com') return;   // Instagram's card reports its own height: only from that frame and that site
+    var x=null; try{ x=typeof d==='string' ? JSON.parse(d) : d }catch(err){ return }
+    var h=!x || typeof x!=='object' ? null : (x.type==='MEASURE' && x.details) ? x.details.height : x.height;
+    if(typeof h==='number' && isFinite(h) && h>=120 && h<=6000) f.style.height=Math.round(h)+'px';
+  });
+  $('vw-close').addEventListener('click', vwClose);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && vwOpen) vwClose() });
 
   /* ---------- live news TV ----------
      YouTube's own player, created when you press Play and removed on Stop: until then it downloads nothing and
@@ -2462,9 +2710,9 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     // The four space streams moved to the LIVE CAMERAS widget on 2026-09-17 (Hector: "the space channels i was asking you
     // for i wanted on the live cameras widget ... take em out of tv, and add to live cameras just the ones with space view").
     // Only the ones looking down at Earth went with them; Starbase Live and Space Coast Live are pad cameras on the ground.
-  var K_TV='lounge_tv', tvPick=TV[0];
+  var K_TV='lounge_tv', tvPick=TV[0], tvVideo=null;   // tvVideo: a searched YouTube video on the screen in place of the channel (2026-09-19)
   try{ var tvk=localStorage.getItem(K_TV); TV.forEach(function(c){ if(c.k===tvk) tvPick=c }) }catch(e){}
-  function tvSrc(c){ return 'https://www.youtube.com/embed/'+(c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1'
+  function tvSrc(c){ return 'https://www.youtube.com/embed/'+(tvVideo ? tvVideo.id+'?' : c.vid ? c.vid+'?' : 'live_stream?channel='+c.ch+'&')+'autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1'
     +(/^https?:/.test(location.origin || '') ? '&origin='+encodeURIComponent(location.origin) : '') }   // the iframe API: the Sound button talks to the player   // Hector: the TV starts on his click, muted
   function tvPaint(){
     // grouped like the camera picker (Hector 2026-09-17: "can you arrange the channels the same way you have the live cameras?")
@@ -2484,7 +2732,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
       });
     }
     [].forEach.call(bar.querySelectorAll('.lib-c'), function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-k')===tvPick.k ? 'true' : 'false') });
-    $('tv-play-t').textContent='Play '+tvPick.name; $('tv-pick-t').textContent=tvPick.short;
+    $('tv-play-t').textContent='Play '+tvPick.name; $('tv-pick-t').textContent=tvVideo ? soText(tvVideo.title, 60) : tvPick.short;
   }
   function tvPlay(){
     var scr=$('tv-screen'), f=scr.querySelector('iframe');
@@ -2498,13 +2746,14 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     f.src=tvSrc(tvPick);
     $('tv-err').hidden=true;
     tvMuted=true; $('tv-sound').hidden=false; soundPaint();   // every channel starts muted (Hector: the TV starts on his click, muted)
-    $('tv-play').hidden=true; $('tv-stop').hidden=false; $('tv-note').textContent=tvPick.name;
+    $('tv-play').hidden=true; $('tv-stop').hidden=false; $('tv-note').textContent=tvVideo ? tvVideo.title : tvPick.name; $('tv-res').hidden=true;
     $('tv-screen').parentNode.classList.add('playing');
   }
   function tvStop(){
     var f=$('tv-screen').querySelector('iframe'); if(f) f.remove();
     $('tv-play').hidden=false; $('tv-stop').hidden=true; $('tv-sound').hidden=true; $('tv-note').textContent='Nothing loads until you press Play.';
     $('tv-screen').parentNode.classList.remove('playing');
+    if(tvVideo){ tvVideo=null; tvPaint() }   // back to the channel it had
   }
 
   /* ---------- markets ----------
@@ -2616,7 +2865,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   var K_FUEL='lounge_fuel', FUEL_MS=12*60*60*1000, fuel=null, fuelFail=0;
   function loadFuel(){ if(fuel) return; try{ var f=JSON.parse(localStorage.getItem(K_FUEL)||'null'); if(f && f.ok===true && f.t) fuel=f }catch(e){} }
   function fuelWanted(){ return !(fuel && fuel.ok===true && Date.now()-fuel.t<FUEL_MS) }
-  function loginFields(v){ var f={action:'login', password:v}; if(fuelWanted()) f.fuel='1'; return f }   // the pump prices ride the login once a day
+  function loginFields(v){ var f={action:'login', password:v}; if(fuelWanted()) f.fuel='1'; var th=ttWanted(); if(th) f.tiktok=th; return f }   // the pump prices ride the login once a day; his TikTok profile every 6 hours
   function fnum(v){ return (typeof v==='number' && isFinite(v) && v>0) ? v : null }
   function setFuel(x){
     if(!x || typeof x!=='object') return;   // not asked for this time, or an older workflow
@@ -3316,6 +3565,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     if(!talkShut) toBottom();      // coming back, the newest message is what he wants to see
   });
   $('h-list').addEventListener('click', function(e){
+    var a=e.target.closest ? e.target.closest('a.hl-t') : null;
+    if(a){ e.preventDefault(); vwLink(a.getAttribute('href')||'', {title:a.getAttribute('data-title')||'', src:a.getAttribute('data-src')||''}); return }   // the story opens in the Viewer, never Safari (Hector 2026-09-18)
     var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
     if(!b || busy) return;
     box.value='Tell me more about this headline from '+b.getAttribute('data-src')+': "'+b.getAttribute('data-title')+'"';
@@ -3326,6 +3577,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   $('h-refresh').addEventListener('click', function(e){ refreshHub(e, true) });
   $('ib-refresh').addEventListener('click', refreshHub);
   $('ib-list').addEventListener('click', function(e){
+    var s=e.target.closest ? e.target.closest('a.ib-subj[data-id]') : null;
+    if(s){ e.preventDefault(); var id=s.getAttribute('data-id'), em=inbox && inbox.items.filter(function(x){ return String(x.id)===id })[0]; if(em) vwEmail(em); return }   // the email opens in the Viewer (1 execution, kept for the tab)
     var b=e.target.closest ? e.target.closest('button.hl-ask') : null;
     if(!b || busy) return;
     box.value='Summarize this email in my Primary inbox from '+b.getAttribute('data-from')+': "'+b.getAttribute('data-subject')+'"';
@@ -3500,6 +3753,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   $('tv-ch').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button[data-k]') : null; if(!b) return;
     TV.forEach(function(c){ if(c.k===b.getAttribute('data-k')) tvPick=c });
+    tvVideo=null;   // a channel picked: the searched video steps aside
     try{ localStorage.setItem(K_TV, tvPick.k) }catch(err){}
     tvMenu(false);   // picked: the list closes
     var playing=!!$('tv-screen').querySelector('iframe');
@@ -3526,14 +3780,71 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     var err=d && (d.event==='onError' ? d.info : (d.info && d.info.errorCode)); if(err) tvDead(err);
   });
   function tvDead(code){
-    var name=tvPick.name;
+    var wasVideo=!!tvVideo, name=wasVideo ? tvVideo.title : tvPick.name;
     tvStop();
-    $('tv-err').hidden=false; $('tv-err').textContent='That stream has ended. Pick another channel.';
-    $('tv-note').textContent=name+' is not playing (YouTube error '+code+'). The stream it points at has ended \u2014 pick another channel.';
+    $('tv-err').hidden=false; $('tv-err').textContent=wasVideo ? 'That video will not play here. Pick another.' : 'That stream has ended. Pick another channel.';
+    $('tv-note').textContent=name+' is not playing (YouTube error '+code+').'+(wasVideo ? ' Its owner does not allow it outside YouTube.' : ' The stream it points at has ended \u2014 pick another channel.');
   }
-  function tvMenu(open){ $('tv-ch').hidden=!open; $('tv-pick').setAttribute('aria-expanded', open ? 'true' : 'false') }
+  function tvMenu(open){ $('tv-ch').hidden=!open; $('tv-pick').setAttribute('aria-expanded', open ? 'true' : 'false'); if(open) $('tv-res').hidden=true }
   $('tv-pick').addEventListener('click', function(){ tvMenu($('tv-ch').hidden) });
   tvPaint();
+  /* ---------- YouTube in the TV (Hector 2026-09-19: "fusion the youtube API with TV ... inside of tv the youtube search") ----------
+     The box under the TV's header asks n8n (his YouTube login, search.list + videos.list: 1 execution, about 99 searches a day on
+     the free quota); the results open over the screen like the channel list; a tap plays the video on the TV's own screen, muted at
+     first like a channel, the same Sound button. The last results are kept for the tab (sessionStorage) and the same words again
+     cost nothing. A video that refuses embedding says so through the player's own error, like a dead channel. */
+  var K_YT='lounge_yt', yt={q:'', t:0, items:[]}, ytBusy=false;
+  function ytClean(i){ return !!(i && typeof i==='object' && /^[A-Za-z0-9_-]{11}$/.test(String(i.id)) && typeof i.title==='string' && i.title.trim()) }
+  function ytItem(i){ return {id:String(i.id), title:soText(i.title, 140), channel:soText(i.channel, 60), at:typeof i.at==='string' ? i.at.slice(0,40) : '',
+    thumb:/^https:\/\/i\.ytimg\.com\//.test(String(i.thumb||'')) ? String(i.thumb).slice(0,300) : '', len:num(i.len) ? i.len : null, views:num(i.views) ? i.views : null, live:i.live===true} }
+  function ytLoad(){ try{ var s=JSON.parse(sessionStorage.getItem(K_YT)||'null'); if(s && typeof s.q==='string' && Array.isArray(s.items)) yt={q:s.q.slice(0,120), t:s.t||0, items:s.items.filter(ytClean).map(ytItem).slice(0,20)} }catch(e){} $('tv-q').value=yt.q; ytPaint(false) }
+  function ytLen(s){ if(!num(s)) return ''; var h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=Math.floor(s%60); return (h ? h+':'+twoDigits(m) : String(m))+':'+twoDigits(x) }
+  function ytNote(t){ $('tv-yt-note').textContent=t||'' }
+  function ytSearch(q){
+    q=String(q||'').replace(/\s+/g,' ').trim().slice(0,120);
+    if(!q || ytBusy) return;
+    if(!pw){ ytNote('Unlock first.'); return }
+    if(yt.q===q && yt.items.length){ ytPaint(true); return }   // the same words again: what the tab already has, no execution
+    ytBusy=true; $('tv-q-go').disabled=true; ytNote('Searching YouTube…');
+    post({action:'ytsearch', password:pw, q:q}).then(function(r){
+      if(r.status===401){ lockOut('Session expired. Enter the passphrase again.'); return null }
+      if(!r.ok) throw new Error('http '+r.status);
+      return r.json();
+    }).then(function(d){
+      if(!d) return;
+      if(d.ok!==true) throw new Error(String(d.why||'no answer'));
+      yt={q:q, t:Date.now(), items:(Array.isArray(d.items) ? d.items : []).filter(ytClean).map(ytItem).slice(0,20)};
+      try{ sessionStorage.setItem(K_YT, JSON.stringify(yt)) }catch(e){}
+      ytNote(yt.items.length ? '' : 'YouTube found nothing for that.'); ytPaint(true);
+    }).catch(function(e){ ytNote(/reconnect/i.test(String(e && e.message)) ? 'YouTube needs to be reconnected in n8n (Credentials → YouTube account).' : 'YouTube did not answer. Try again.') })
+      .finally(function(){ ytBusy=false; $('tv-q-go').disabled=false });
+  }
+  function ytPaint(open){
+    var ol=$('tv-res'); ol.textContent='';
+    yt.items.forEach(function(i){
+      var li=document.createElement('li'), b=document.createElement('button'); b.type='button'; b.className='yt-r'; b.setAttribute('data-id', i.id); b.title=i.title;
+      if(i.thumb){ var im=document.createElement('img'); im.className='yt-th'; im.alt=''; im.loading='lazy'; im.referrerPolicy='no-referrer'; im.src=i.thumb; b.appendChild(im) }
+      var tx=document.createElement('span'); tx.className='yt-tx';
+      var t=document.createElement('span'); t.className='yt-t'; t.textContent=i.title; tx.appendChild(t);
+      var m=document.createElement('span'); m.className='yt-m';
+      if(i.live){ var lv=document.createElement('b'); lv.textContent='LIVE'; m.appendChild(lv); m.appendChild(document.createTextNode(' · ')) }
+      m.appendChild(document.createTextNode([i.channel, ytLen(i.len), i.views!==null ? ttCount(i.views)+' views' : '', ago(i.at)].filter(Boolean).join(' · ')));
+      tx.appendChild(m); b.appendChild(tx); li.appendChild(b); ol.appendChild(li);
+    });
+    ol.hidden=!(open && yt.items.length);
+    if(open && yt.items.length) tvMenu(false);
+  }
+  function tvPlayVideo(v){
+    if(!v || !/^[A-Za-z0-9_-]{11}$/.test(String(v.id))) return;
+    tvVideo={id:String(v.id), title:soText(v.title, 140) || 'YouTube video'};
+    $('tv-res').hidden=true; tvMenu(false);
+    if(hub && hub.shut.tv) $('tv-h').click();   // a folded TV opens to play
+    tvPaint(); tvPlay();
+  }
+  $('tv-search').addEventListener('submit', function(e){ e.preventDefault(); ytSearch($('tv-q').value) });
+  $('tv-q').addEventListener('focus', function(){ if(yt.items.length && !$('tv-screen').querySelector('iframe')) ytPaint(true) });   // back in the box: the last results, while nothing plays
+  $('tv-res').addEventListener('click', function(e){ var b=e.target.closest ? e.target.closest('button.yt-r') : null; if(!b) return; var v=yt.items.filter(function(x){ return x.id===b.getAttribute('data-id') })[0]; if(v) tvPlayVideo(v) });
+  ytLoad();
   $('sc-ch').addEventListener('click', function(e){
     var b=e.target.closest ? e.target.closest('button[data-k]') : null; if(!b) return;
     LEAGUES.forEach(function(l){ if(l.k===b.getAttribute('data-k')) scPick=l });
@@ -3656,7 +3967,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms, newsRank:newsRank, newsForBrief:newsForBrief, TV:TV, soParse:soParse,
+  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms, newsRank:newsRank, newsForBrief:newsForBrief, TV:TV, soParse:soParse, ytParse:ytParse, vwLink:vwLink, vwClose:vwClose, vwEmail:vwEmail, ytSearch:ytSearch, tvPlayVideo:tvPlayVideo, get yt(){ return yt }, get tiktok(){ return tt },
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
     get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll, topicEmoji:topicEmoji };

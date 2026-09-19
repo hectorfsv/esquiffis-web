@@ -9,6 +9,7 @@
      persist  a remembered transcript is on screen after a reload
      guard    a reply the guard replaced is marked as such
      hub      the hub: Refresh is one login call, Ask sends a headline and a message to Jarvis, Gmail down keeps the last inbox,
+              the Viewer: his TikTok grid from the login, links, a story and an email read by n8n, YouTube search on the TV,
               the TV loads nothing until Play, the map draws the feeds safely
      hubfail  every hub source is down: the hub says so and the chat still works (runs the ok turn)
      (hub also: Markets from fake metals + currency snapshots, the AI brief through a fake brief path, the camera mosaic)
@@ -26,8 +27,8 @@
   window.onerror=function(m,f,l){ out.push('FAIL  JS ERROR: '+m+' @'+l); flush() };
   function vis(el){ if(!el||el.hidden) return false; var c=getComputedStyle(el);
     if(c.display==='none'||c.visibility==='hidden') return false; var r=el.getBoundingClientRect(); return r.width>0&&r.height>0 }
-  try{ sessionStorage.removeItem('lounge_pw'); sessionStorage.removeItem('lounge_inbox'); localStorage.removeItem('lounge_log'); localStorage.removeItem('lounge_news'); localStorage.removeItem('lounge_tv'); localStorage.removeItem('lounge_hub'); localStorage.removeItem('lounge_brief'); localStorage.removeItem('lounge_cams'); localStorage.removeItem('lounge_map'); localStorage.removeItem('lounge_scores'); localStorage.removeItem('lounge_pet'); localStorage.removeItem('lounge_social') }catch(e){}
-  // Social (2026-09-18): a saved list with junk in it - only the one good link may come back, and markup never becomes markup
+  try{ sessionStorage.removeItem('lounge_pw'); sessionStorage.removeItem('lounge_inbox'); localStorage.removeItem('lounge_log'); localStorage.removeItem('lounge_news'); localStorage.removeItem('lounge_tv'); localStorage.removeItem('lounge_hub'); localStorage.removeItem('lounge_brief'); localStorage.removeItem('lounge_cams'); localStorage.removeItem('lounge_map'); localStorage.removeItem('lounge_scores'); localStorage.removeItem('lounge_pet'); localStorage.removeItem('lounge_social'); localStorage.removeItem('lounge_tiktok'); sessionStorage.removeItem('lounge_yt') }catch(e){}
+  // the Viewer's saved links (2026-09-18/19): a saved list with junk in it - only the one good link may come back, and markup never becomes markup
   if(mode==='arrange') localStorage.setItem('lounge_social', JSON.stringify([{k:'ig', id:'Cabc12345', path:'p', t:'Kept post', s:'p/Cabc12345', at:5}, {k:'ttp', id:'<img src=x onerror=alert(1)>', t:'x'},
     {k:'evil', id:'123456789'}, {k:'ig', id:'Cabc12345', path:'javascript', t:'x'}, {k:'ttv', id:'12', t:'short id'}, {k:'ig', id:'Cabc12345', path:'p', t:'dup'}, 'junk', null]));
   if(mode==='expired') localStorage.setItem('lounge_social', JSON.stringify([{k:'ig', id:'DaK6ri5Cswn', path:'p', t:'Instagram post', s:'p/DaK6ri5Cswn', at:5}]));
@@ -63,10 +64,10 @@
     {id:'24', text:'Water the plants', at:at(5*24), recurrence:'weekly', notes:'The ones on the porch too', set:new Date(Date.now()-14*86400000).toISOString(), cron:true},
     {id:'25', text:'', at:at(1), recurrence:'none', notes:'', set:null, cron:false}]};
   var INBOX={ok:true,unread:6,unreadMore:false,items:[
-    {id:'a1',thread:'199a1b2c3d4e5f60',from:'Masterbuilt',subject:'Your Gravity Series order shipped',snippet:'Tracking inside. Arriving Thursday.',t:ago(12),unread:true},
-    {id:'a2',thread:'199a1b2c3d4e5f61',from:'Mom',subject:'Sunday dinner <b>bold</b>',snippet:'Bring the brisket',t:ago(95),unread:false},
-    {id:'a3',thread:'javascript:alert(1)',from:'Evil',subject:'Not a link',snippet:'',t:null,unread:true},
-    {id:'a4',thread:'199a1b2c3d4e5f63',from:42,subject:'dropped',snippet:'',t:ago(3),unread:true}]};
+    {id:'18f0a1b2c3d4e501',thread:'199a1b2c3d4e5f60',from:'Masterbuilt',subject:'Your Gravity Series order shipped',snippet:'Tracking inside. Arriving Thursday.',t:ago(12),unread:true},
+    {id:'18f0a1b2c3d4e502',thread:'199a1b2c3d4e5f61',from:'Mom',subject:'Sunday dinner <b>bold</b>',snippet:'Bring the brisket',t:ago(95),unread:false},
+    {id:'18f0a1b2c3d4e503',thread:'javascript:alert(1)',from:'Evil',subject:'Not a link',snippet:'',t:null,unread:true},
+    {id:'18f0a1b2c3d4e504',thread:'199a1b2c3d4e5f63',from:42,subject:'dropped',snippet:'',t:ago(3),unread:true}]};
   var logins=0;
   // markets: gold-api live prices, and the currency snapshots for today and the day before
   var METAL={XAU:4310.8, XAG:63.999, XPT:1790, XPD:1326, HG:6.376775};
@@ -217,14 +218,15 @@
       return /latest/.test(url) ? res(200,SNAP_TODAY) : /2026-09-14/.test(url) ? res(200,SNAP_YDAY) : res(404,'') }
     var b=o&&o.body, a=(b&&b.get)?b.get('action'):'', pwd=(b&&b.get)?b.get('password'):'';
     if(a==='brief'){ briefCalls.push({heads:(b&&b.get)?b.get('headlines'):null}); return pwd==='right' ? res(200, (FAIL_HUB || mode==='guard') ? {ok:false, points:[], n:0} : BRIEF) : res(401,{error:'unauthorized'}) }
-    if(a!=='last') calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, fuel:(b&&b.get)?b.get('fuel'):null, json:!!(o&&o.headers)});
+    if(a!=='last') calls.push({a:a, msg:(b&&b.get)?b.get('message'):null, src:(b&&b.get)?b.get('source'):null, fuel:(b&&b.get)?b.get('fuel'):null, tiktok:(b&&b.get)?b.get('tiktok'):null, q:(b&&b.get)?b.get('q'):null, u:(b&&b.get)?b.get('u'):null, id:(b&&b.get)?b.get('id'):null, json:!!(o&&o.headers)});
     if(a==='login'){
       if(pwd!=='right') return res(401,{error:'unauthorized'});
       logins++;
       if(FAIL_HUB) return res(200,{ok:true});   // an older workflow: no headlines, no inbox
       // in hub mode the Refresh finds Gmail down
       var askFuel=(b&&b.get) ? b.get('fuel')==='1' : false;   // the pump prices ride the login only when the page asks (once a day); guard mode: n8n could not read them
-      return res(200,{ok:true,history:(mode==='persist' ? HIST : {ok:true, items:[]}),headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX, reminders:(mode==='hub' && logins>1) ? {ok:false, items:[]} : REMS, fuel:askFuel ? (mode==='guard' ? {ok:true,aaa:{ok:false,why:'test'},propane:{ok:false,why:'test'}} : FUEL) : null});
+      return res(200,{ok:true,history:(mode==='persist' ? HIST : {ok:true, items:[]}),headlines:HEADS,inbox:(mode==='hub' && logins>1) ? {ok:false,unread:null,unreadMore:false,items:[]} : INBOX, reminders:(mode==='hub' && logins>1) ? {ok:false, items:[]} : REMS, fuel:askFuel ? (mode==='guard' ? {ok:true,aaa:{ok:false,why:'test'},propane:{ok:false,why:'test'}} : FUEL) : null,
+        tiktok:(b&&b.get&&b.get('tiktok')) ? (mode==='guard' ? {ok:false, handle:b.get('tiktok'), why:'test'} : TIKTOK) : null});   // his TikTok profile rides the login only when the page sends the handle
     }
     // Hector 2026-09-17: his iPhone dropped a real turn while n8n answered it. `action=last` reads the answer back.
     if(a==='last'){
@@ -238,6 +240,17 @@
       if(k===2) return res(200,{ok:true, text:'The weather in Santa Clarita is 88 degrees.', at:new Date(Date.now()-1000).toISOString(), asked:'what is the weather in santa clarita'});
       return res(200,{ok:true, text:LOSTANS, at:new Date(Date.now()-1000).toISOString(), asked:'hello there'});
     }
+    // the Viewer's three actions (2026-09-19), each 1 execution; every hub source down = fail-open answers
+    if(a==='ytsearch'){ if(pwd!=='right') return res(401,{error:'unauthorized'}); var yq=(b&&b.get)?b.get('q'):'';
+      return res(200, FAIL_HUB ? {ok:false, q:yq, items:[], why:'The credential "YouTube account" needs to be reconnected.'} : Object.assign({}, YT, {q:yq})) }
+    if(a==='article'){ if(pwd!=='right') return res(401,{error:'unauthorized'}); var au=(b&&b.get)?b.get('u'):'';
+      if(FAIL_HUB) return res(200, {ok:false, u:au, why:'timeout of 9000ms exceeded'});
+      if(/bbc\.com\/news\/9/.test(au)) return res(200, Object.assign({}, ARTICLE, {u:au, title:'The linked story'}));
+      return res(200, Object.assign({}, ARTICLE, {u:au})) }
+    if(a==='email'){ if(pwd!=='right') return res(401,{error:'unauthorized'}); var mid=(b&&b.get)?b.get('id'):'';
+      if(FAIL_HUB) return res(200, {ok:false, why:'Requested entity was not found.'});
+      if(mid==='18f0a1b2c3d4e502') return res(200, {ok:true, id:mid, thread:'199a1b2c3d4e5f61', from:'Mom <mom@example.com>', subject:'Sunday dinner', at:ago(95), html:'', text:'Bring the brisket.\nLove, Mom'});
+      return res(200, {ok:true, id:mid, thread:'199a1b2c3d4e5f60', from:'Masterbuilt <no-reply@masterbuilt.com>', subject:'Your Gravity Series order shipped', at:ago(12), html:MAILHTML, text:''}) }
     if(a==='chat'){
       // iOS killed the request: a real fetch rejects with a TypeError, not an AbortError
       if(mode==='lost') return Promise.reject(new TypeError('Load failed'));
@@ -258,6 +271,24 @@
     {r:'me', m:'what did I ask yesterday', t:'2026-09-14T10:00:00Z'},
     {r:'me', m:'set the smoker to 250 when I leave', t:'2026-09-16T17:04:00Z'},
     {r:'jarvis', m:'Done - 250F, and I will remind you at 16:30.', t:'2026-09-16T17:04:06Z'}]};
+  // the Viewer (2026-09-19): his TikTok profile as n8n reads it off TikTok's embed page - one video without a cover and one with a bad id must be dropped
+  var TIKTOK={ok:true, t:'2026-09-19T20:00:00.000Z', handle:'Pitmaster_H', user:{name:'Hector', avatar:'https://p16-sign.tiktokcdn-us.com/av.jpeg', verified:false, followers:1234567, likes:4560000, bio:'pit master'}, videos:[
+    {id:'7400000000000000101', desc:'Brisket at 3am <b>bold</b>', cover:'https://p16-sign.tiktokcdn-us.com/c1.jpeg', plays:314700, w:720, h:1280},
+    {id:'7400000000000000102', desc:'Pork belly burnt ends', cover:'https://p16-sign.tiktokcdn-us.com/c2.jpeg', plays:1200, w:720, h:1280},
+    {id:'7400000000000000103', desc:'', cover:'https://p16-sign.tiktokcdn-us.com/c3.jpeg', plays:null, w:720, h:1280},
+    {id:'7400000000000000104', desc:'no cover', cover:'', plays:5, w:720, h:1280},
+    {id:'bad', desc:'bad id', cover:'https://p16-sign.tiktokcdn-us.com/c5.jpeg', plays:5, w:720, h:1280}]};
+  // a YouTube search as n8n answers it: a title with markup, a thumbnail from elsewhere (dropped), a live stream, a junk id (dropped)
+  var YT={ok:true, q:'dodgers', partial:false, items:[
+    {id:'tBH8lqTo73g', title:'Giants vs. Dodgers Game Highlights (9/18/26) <b>x</b>', channel:'Los Angeles Dodgers', at:ago(180), thumb:'https://i.ytimg.com/vi/tBH8lqTo73g/mqdefault.jpg', len:698, views:75000, live:false},
+    {id:'DkboKc2K4p4', title:'4+1 The Unbelievable Comeback', channel:'Los Angeles Dodgers', at:ago(780), thumb:'https://evil.example/x.jpg', len:1490, views:197000, live:false},
+    {id:'R6FJRKDsvsE', title:'Dodgers live pregame', channel:'MLB', at:ago(5), thumb:'https://i.ytimg.com/vi/R6FJRKDsvsE/mqdefault.jpg', len:null, views:null, live:true},
+    {id:'notanid', title:'junk', channel:'x', at:'', thumb:'', len:1, views:1, live:false}]};
+  // a story as n8n reads it (markup inside a paragraph must stay text)
+  var ARTICLE={ok:true, u:'https://www.bbc.com/news/1', title:'BBC one, the full story', by:'Jane Reporter', at:ago(90), image:'https://ichef.bbci.co.uk/news/1024/a.jpg',
+    paras:['First paragraph of the story.', 'Second paragraph <img src=x onerror="window.__pwned=6">.', 'Third paragraph.', 'Fourth.']};
+  // an email as n8n hands it over: designed, with a link to a news site and one to a site that refuses framing; its own scripts were stripped by n8n
+  var MAILHTML='<div style="font-family:Arial"><h1>Your order shipped</h1><p>Track it <a href="https://www.bbc.com/news/9">here</a> or <a href="https://example.com/track/1">on the site</a>.</p><img src="https://example.com/pixel.gif" width=1 height=1></div>';
   function layout(tag){
     var d=document.documentElement;
     T(d.scrollWidth<=innerWidth, tag+': no horizontal overflow ('+d.scrollWidth+'<='+innerWidth+')');
@@ -630,7 +661,7 @@
       T(ibs.length===3 && /Masterbuilt/.test(ibs[0].textContent) && /order shipped/.test(ibs[0].textContent) && /Tracking inside/.test(ibs[0].textContent) && /12m/.test(ibs[0].textContent), 'inbox: sender, subject, snippet and age ('+(ibs[0]&&ibs[0].textContent)+')');
       var a0=ibs[0] && ibs[0].querySelector('a.ib-subj');
       T(!!a0 && a0.href==='https://mail.google.com/mail/u/0/#all/199a1b2c3d4e5f60' && a0.target==='_blank' && /noopener/.test(a0.rel), 'inbox: a message opens in Gmail in a new tab ('+(a0&&a0.href)+')');
-      T(ibs.length===3 && !ibs[2].querySelector('a') && !$('ib-list').querySelector('b') && /<b>bold<\/b>/.test(ibs[1].textContent), 'inbox: a bad thread id is not a link, and markup in a subject stays text');
+      T(ibs.length===3 && !!ibs[2].querySelector('a.ib-subj[data-id]') && ibs[2].querySelector('a').getAttribute('href')==='#' && !ibs[2].querySelector('a[target]') && !$('ib-list').querySelector('b') && /<b>bold<\/b>/.test(ibs[1].textContent), 'inbox: a bad thread id gets no Gmail link but the subject still opens in the Viewer, and markup in a subject stays text');
       T(JSON.stringify(localStorage).indexOf('Masterbuilt')<0 && (sessionStorage.getItem('lounge_inbox')||'').indexOf('Masterbuilt')>-1, 'inbox: kept for this tab only, never in localStorage');
       T(/Updated/.test($('ib-note').textContent) && /every 2 hours/.test($('ib-note').textContent), 'inbox: says when it was read, and that it refreshes every 2 hours ('+$('ib-note').textContent+')');
       remindersOK();
@@ -753,14 +784,14 @@
     if(!WIDE) $('now').click();
     var soIt=[].slice.call($('so-list').querySelectorAll('.so-it'));
     T(soIt.length===1 && /Kept post/.test(soIt[0].textContent) && !$('so-list').querySelector('img'),
-      'social: a tampered saved list keeps only the one good link, and markup in it stays text ('+soIt.length+')');
+      'viewer: a tampered saved list keeps only the one good link, and markup in it stays text ('+soIt.length+')');
     (function(){   // a quiet moment: nothing else in this mode talks to n8n, so any call here would be Social's
       var c0=calls.length, o0=hubCalls.filter(function(k){ return k==='ttoembed' }).length;
       $('so-url').value='https://www.tiktok.com/@pitmaster_h/video/7400000000000000001'; var f=$('so-add'); if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', {cancelable:true}));
       setTimeout(function(){
         var o1=hubCalls.filter(function(k){ return k==='ttoembed' }).length, nc=calls.slice(c0).map(function(c){ return c.a });
         T(o1===o0+1 && nc.length===0 && !!$('so-list').querySelector('[data-id="ttv:7400000000000000001"]'),
-          'social: a link is named by asking TikTok directly - no n8n execution (n8n calls: '+(nc.join(',')||'none')+', TikTok asked '+(o1-o0)+')');
+          'viewer: a link is named by asking TikTok directly - no n8n execution (n8n calls: '+(nc.join(',')||'none')+', TikTok asked '+(o1-o0)+')');
       }, 80);
     })();
     T(ord('map')<ord('tv') && ord('tv')<ord('time') && ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('inbox')<ord('news'),
@@ -1461,87 +1492,239 @@
   }
   // the TV: nothing from YouTube until Play; one player; Stop removes it
   // Hector 2026-09-18: "let's start with tik tok and instagram to be able to open posts or link for now ... all this is for the lounge"
-  function socialOK(){
-    var st=tile('social'), c0=calls.length;
-    if(!st){ T(false, 'social: the tile exists'); return T(true, 'social: all checks ran') }
-    T(st.querySelector('.hb-fold').textContent==='Social' && !st.querySelector('iframe'), 'social: a Social widget, nothing framed from TikTok or Instagram before a tap');
+  function viewerOK(){
+    var st=tile('viewer'), c0=calls.length;
+    if(!st){ T(false, 'viewer: the tile exists'); return T(true, 'viewer: all checks ran') }
+    var swapped=false; if(!WIDE && !vis(st)){ $('now').click(); swapped=true }   // a phone: the hub on screen for the tile's own checks, then back (hubfail's chat checks follow at once)
+    T(st.querySelector('.hb-fold').textContent==='Viewer' && !document.querySelector('#vw-body iframe') && $('viewer').hidden, 'viewer: a Viewer widget, the Viewer closed, nothing framed in it before a tap');
     if(st.classList.contains('shut')) $('so-h').click();
-    T(vis($('so-empty')) && /TikTok profile link/.test(tx('so-empty')) && !$('so-list').children.length, 'social: empty, it says what to paste');
+    T(vis($('so-empty')) && /TikTok profile link/.test(tx('so-empty')) && !$('so-list').children.length && $('tt-prof').hidden, 'viewer: empty, it says what to paste; no profile yet');
+    var apps=[].map.call(st.querySelectorAll('a.so-app'), function(a){ return a.hostname+':'+a.target+':'+a.rel });
+    T(apps.join()==='www.netflix.com:_blank:noopener,www.disneyplus.com:_blank:noopener,www.hbomax.com:_blank:noopener', 'viewer: Netflix, Disney+ and HBO Max are three plain links that open their apps ('+apps.join()+')');
     var fs=parseFloat(getComputedStyle($('so-url')).fontSize);
-    T(fs>=16, 'social: the link box is 16px or more, so iOS never zooms the page into it ('+fs+'px)');
+    T(fs>=16, 'viewer: the link box is 16px or more, so iOS never zooms the page into it ('+fs+'px)');
     function add(v){ $('so-url').value=v; var f=$('so-add'); if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', {cancelable:true})) }
     function keys(){ return [].map.call($('so-list').querySelectorAll('.so-open'), function(b){ return b.getAttribute('data-id') }) }
     add('javascript:alert(1)'); var e1=tx('so-note');
     add('https://tiktok.com.evil.example/@pitmaster_h'); var e2=tx('so-note');
     add('https://www.instagram.com/pitmaster_h/'); var e3=tx('so-note');
     T(/Only TikTok and Instagram/.test(e1) && /Only TikTok and Instagram/.test(e2) && /will not open a profile/.test(e3) && $('so-note').classList.contains('bad') && !keys().length,
-      'social: a script, a look-alike domain and an Instagram profile are refused, each with the reason ('+e3+')');
+      'viewer: a script, a look-alike domain and an Instagram profile are refused, each with the reason ('+e3+')');
+    if(swapped) $('now').click();   // the conversation back where the flow left it; the rest of these checks need no tile on screen
     add('https://www.instagram.com/p/DaK6ri5Cswn/?igsh=MTIzNDU2');
     setTimeout(function(){
-      T(keys().join()==='ig:DaK6ri5Cswn' && /Instagram post/.test(tx('so-list')), 'social: an Instagram post is added from its share link ('+keys().join()+')');
+      T(keys().join()==='ig:DaK6ri5Cswn' && /Instagram post/.test(tx('so-list')), 'viewer: an Instagram post is added from its share link ('+keys().join()+')');
+      var l0=calls.length;
       add('tiktok.com/@Pitmaster_H?_t=8abcdef&_r=1');
       setTimeout(function(){
-        T(keys()[0]==='ttp:Pitmaster_H' && /@Pitmaster_H/.test(tx('so-list')) && /TikTok profile/.test(tx('so-list')), 'social: his TikTok profile goes to the top, whatever order it was added in ('+keys().join()+')');
-        var o0=hubCalls.filter(function(k){ return k==='ttoembed' }).length;
-        add('https://www.tiktok.com/@pitmaster_h/video/7400000000000000001?is_from_webapp=1&sender_device=pc');
+        var lg=calls.slice(l0).filter(function(c){ return c.a==='login' });
+        T(!$('tt-prof').hidden && /@Pitmaster_H/.test(tx('tt-name')) && keys().indexOf('ttp:Pitmaster_H')<0, 'viewer: his TikTok profile is drawn above the list, not in it');
+        T(lg.length===1 && lg[0].tiktok==='Pitmaster_H', 'viewer: pasting his profile asks n8n once, through the login, with the handle ('+lg.map(function(c){ return c.a+':'+c.tiktok }).join()+')');
         setTimeout(function(){
-          var o1=hubCalls.filter(function(k){ return k==='ttoembed' }).length, vb=$('so-list').querySelector('[data-id="ttv:7400000000000000001"]');
-          T(o1===o0+1 && !!vb && vb.querySelector('.so-t').textContent==='Brisket at 3am on the Gravity #bbq' && /@pitmaster_h/.test(vb.querySelector('.so-s').textContent),
-            'social: a TikTok video is named by TikTok itself - its title and its account ('+(vb ? vb.textContent : 'missing')+')');
-          add('https://vm.tiktok.com/ZMshort1/');
+          var covers=$('tt-grid').querySelectorAll('button.tt-v');
+          if(FAIL_HUB){
+            T(covers.length===0 && /next login or Refresh/.test(tx('tt-note')), 'viewer: an older workflow (no profile on the login): the grid stays empty and says so ('+tx('tt-note')+')');
+            viewerLinksOK(c0); return;
+          }
+          T(covers.length===3 && [].every.call(covers, function(b){ return /^https:\/\/p16-sign\.tiktokcdn-us\.com\//.test(b.querySelector('img').src) }) && /1\.2M followers/.test(tx('tt-stats')) && /4\.6M likes/.test(tx('tt-stats')) && /Hector/.test(tx('tt-name')),
+            'viewer: the login brought his profile - name, counts and 3 covers, the one without a cover and the bad id dropped ('+covers.length+', '+tx('tt-stats')+')');
+          T(/315K/.test(covers[0] ? covers[0].textContent : '') && /1\.2K/.test(covers[1] ? covers[1].textContent : '') && !$('tt-grid').querySelector('b') && covers[0].title==='Brisket at 3am <b>bold</b>', 'viewer: a cover shows its plays (315K, 1.2K); markup in a caption stays text ('+(covers[0] ? covers[0].textContent : '')+')');
+          var sv=[]; try{ sv=JSON.parse(localStorage.getItem('lounge_tiktok')||'null') }catch(e){}
+          T(!!sv && sv.handle==='Pitmaster_H' && sv.videos.length===3, 'viewer: the profile is kept on this device for the next unlock');
+          var t0=calls.length; $('ib-refresh').click();
+          T(calls[t0] && calls[t0].a==='login' && calls[t0].tiktok===null, 'viewer: a Refresh right after does not ask TikTok again - it is kept 6 hours');
+          covers[0].click();
+          var vf=$('vw-body').querySelector('iframe'), sb=vf ? (vf.getAttribute('sandbox')||'') : '';
+          T(!$('viewer').hidden && vis($('viewer')) && !!vf && vf.src==='https://www.tiktok.com/player/v1/7400000000000000101?rel=0' && /allow-scripts/.test(sb) && !/allow-popups/.test(sb) && !/allow-top-navigation/.test(sb),
+            'viewer: a cover opens the Viewer with TikTok\'s player, in a sandbox that can open no window and never navigates The Lounge ('+(vf ? vf.src : 'none')+')');
+          var vr=R($('viewer')); T(vr.l<=0 && vr.t<=0 && vr.r>=innerWidth-1 && vr.b>=innerHeight-1, 'viewer: it covers the whole screen ('+Math.round(vr.r-vr.l)+'x'+Math.round(vr.b-vr.t)+')');
+          T(/Brisket at 3am/.test(tx('vw-t')) && !$('vw-t').querySelector('b') && /@Pitmaster_H/.test(tx('vw-s')) && $('vw-out').href==='https://www.tiktok.com/@Pitmaster_H/video/7400000000000000101' && $('vw-out').target==='_blank' && /noopener/.test($('vw-out').rel),
+            'viewer: the caption, the account, and Safari only as a button he presses on purpose ('+tx('vw-t')+')');
+          $('vw-close').click();
+          T($('viewer').hidden && !document.querySelector('#vw-body iframe'), 'viewer: Close takes the player away');
+          covers[1].click(); document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape'}));
+          T($('viewer').hidden, 'viewer: Escape closes it too');
+          viewerLinksOK(c0);
+        }, 80);
+      }, 80);
+    }, 60);
+  }
+  function viewerLinksOK(c0){
+    function add(v){ $('so-url').value=v; var f=$('so-add'); if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', {cancelable:true})) }
+    function keys(){ return [].map.call($('so-list').querySelectorAll('.so-open'), function(b){ return b.getAttribute('data-id') }) }
+    var o0=hubCalls.filter(function(k){ return k==='ttoembed' }).length;
+    add('https://www.tiktok.com/@pitmaster_h/video/7400000000000000001?is_from_webapp=1&sender_device=pc');
+    setTimeout(function(){
+      var o1=hubCalls.filter(function(k){ return k==='ttoembed' }).length, vb=$('so-list').querySelector('[data-id="ttv:7400000000000000001"]');
+      T(o1===o0+1 && !!vb && vb.querySelector('.so-t').textContent==='Brisket at 3am on the Gravity #bbq' && /@pitmaster_h/.test(vb.querySelector('.so-s').textContent),
+        'viewer: a TikTok video is named by TikTok itself - its title and its account ('+(vb ? vb.textContent : 'missing')+')');
+      add('https://vm.tiktok.com/ZMshort1/');
+      setTimeout(function(){
+        T(keys().indexOf('ttv:7411111111111111111')>-1, 'viewer: the short link the share button gives becomes its video');
+        var n=keys().length; add('vm.tiktok.com/ZMdead00');
+        setTimeout(function(){
+          T(keys().length===n && /did not say which video/.test(tx('so-note')) && $('so-note').classList.contains('bad') && !$('so-go').disabled, 'viewer: a short link TikTok cannot resolve is refused, and it says what to paste instead');
+          add('https://www.instagram.com/p/DaK6ri5Cswn/');
           setTimeout(function(){
-            T(keys().indexOf('ttv:7411111111111111111')>-1, 'social: the short link the share button gives becomes its video');
-            var n=keys().length; add('vm.tiktok.com/ZMdead00');
-            setTimeout(function(){
-              T(keys().length===n && /did not say which video/.test(tx('so-note')) && $('so-note').classList.contains('bad') && !$('so-go').disabled,
-                'social: a short link TikTok cannot resolve is refused, and it says what to paste instead');
-              add('https://www.instagram.com/p/DaK6ri5Cswn/');
-              setTimeout(function(){
-                T(keys().length===n && /Already here/.test(tx('so-note')), 'social: the same post twice is kept once');
-                add('https://www.instagram.com/reel/Cxyz123abcd/?utm_source=ig_web_copy_link');
-                setTimeout(function(){ socialOpenOK(c0) }, 60);
-              }, 60);
-            }, 60);
+            T(keys().length===n && /Already here/.test(tx('so-note')), 'viewer: the same post twice is kept once');
+            add('https://www.instagram.com/reel/Cxyz123abcd/?utm_source=ig_web_copy_link');
+            setTimeout(function(){ viewerOpenOK(c0) }, 60);
           }, 60);
         }, 60);
       }, 60);
     }, 60);
   }
-  function socialOpenOK(c0){
-    if(!WIDE && !vis(tile('social'))) $('now').click();   // other hub checks run meanwhile and can swap a phone back to the conversation
-    var st=tile('social'), raw=localStorage.getItem('lounge_social')||'', sv=[]; try{ sv=JSON.parse(raw) }catch(e){}
-    T(sv.length===5 && !/igsh|_t=|utm_|is_from|javascript|evil/.test(raw) && /Instagram reel/.test(tx('so-list')), 'social: five kept on this device, the share tracking stripped ('+sv.length+')');
-    var nf=document.querySelectorAll('iframe[src*="tiktok"],iframe[src*="instagram"]').length, nc=calls.slice(c0).map(function(c){ return c.a+(c.msg ? ':'+String(c.msg).slice(0,24) : '') });
-    T(nf===0, 'social: adding five links framed nothing from TikTok or Instagram ('+nf+')');   // the n8n count lives in arrange mode: here the hub suite's own Ask turns run at the same time
+  function viewerOpenOK(c0){
+    if(mode==='hub' && !WIDE && !vis(tile('viewer'))) $('now').click();   // hub mode: other checks run meanwhile and can swap a phone back to the conversation (hubfail's chat checks must keep it)
+    var st=tile('viewer'), raw=localStorage.getItem('lounge_social')||'', sv=[]; try{ sv=JSON.parse(raw) }catch(e){}
+    T(sv.length===5 && !/igsh|_t=|utm_|is_from|javascript|evil/.test(raw) && /Instagram reel/.test(tx('so-list')), 'viewer: five kept on this device, his profile among them, the share tracking stripped ('+sv.length+')');
+    T(document.querySelectorAll('iframe[src*="tiktok"],iframe[src*="instagram"]').length===0, 'viewer: adding links framed nothing');
     $('so-list').querySelector('[data-id="ig:DaK6ri5Cswn"]').click();
-    var fs=st.querySelectorAll('iframe'), f=fs[0], sb=f ? (f.getAttribute('sandbox')||'') : '';
-    T(fs.length===1 && f.src==='https://www.instagram.com/p/DaK6ri5Cswn/embed/captioned/' && /allow-scripts/.test(sb) && !/allow-top-navigation/.test(sb) && f.referrerPolicy==='strict-origin-when-cross-origin',
-      'social: a tap opens the post inside the tile, in a sandbox that cannot navigate The Lounge ('+(f ? f.src : 'none')+')');
-    T($('so-body').hidden && !$('so-back').hidden && vis($('so-view')), 'social: the list steps aside and Back is in the header');
+    var f=$('vw-body').querySelector('iframe'), sb=f ? (f.getAttribute('sandbox')||'') : '';
+    T(!$('viewer').hidden && !!f && f.src==='https://www.instagram.com/p/DaK6ri5Cswn/embed/captioned/' && /allow-scripts/.test(sb) && !/allow-popups/.test(sb) && !/allow-top-navigation/.test(sb) && f.referrerPolicy==='strict-origin-when-cross-origin' && !st.querySelector('iframe'),
+      'viewer: a tap opens the post in the Viewer, not in the tile, in a sandbox with no popups ('+(f ? f.src : 'none')+')');
     function post(data, origin, src){ window.dispatchEvent(new MessageEvent('message', {data:data, origin:origin, source:src})) }
     var h0=f ? f.style.height : 'x';
     if(f){ post(JSON.stringify({type:'MEASURE', details:{height:777}}), 'https://evil.example', f.contentWindow); post(JSON.stringify({type:'MEASURE', details:{height:778}}), 'https://www.instagram.com', window) }
     var h1=f ? f.style.height : 'y';
     if(f) post(JSON.stringify({type:'MEASURE', details:{height:779}}), 'https://www.instagram.com', f.contentWindow);
-    T(!!f && h1===h0 && f.style.height==='779px', 'social: the post takes the height Instagram reports - only from its own frame and its own site ('+h0+' -> '+(f ? f.style.height : '')+')');
-    $('so-back').click();
-    T(!st.querySelector('iframe') && !$('so-body').hidden && $('so-back').hidden, 'social: Back removes it and the list is back');
+    T(!!f && h1===h0 && f.style.height==='779px', 'viewer: the post takes the height Instagram reports - only from its own frame and its own site ('+h0+' -> '+(f ? f.style.height : '')+')');
+    $('vw-close').click();
     $('so-list').querySelector('[data-id="ttv:7400000000000000001"]').click();
-    var v=st.querySelector('iframe'), vr=R(v), tr=R(st), ratio=(vr.r-vr.l)/Math.max(1, vr.b-vr.t);
-    T(!!v && v.src==='https://www.tiktok.com/player/v1/7400000000000000001?rel=0' && Math.abs(ratio-9/16)<.03 && vr.b<=tr.b+1 && vr.r<=tr.r+1,
-      'social: a TikTok video plays in TikTok\'s own player, 9:16, inside the tile ('+Math.round(vr.r-vr.l)+'x'+Math.round(vr.b-vr.t)+')');
-    $('so-h').click();
-    T(!st.querySelector('iframe'), 'social: folding the tile removes what was playing, like the TV');
-    $('so-h').click();
+    var v=$('vw-body').querySelector('iframe'), vr=R(v), br=R($('vw-body')), ratio=(vr.r-vr.l)/Math.max(1, vr.b-vr.t);
+    T(!!v && v.src==='https://www.tiktok.com/player/v1/7400000000000000001?rel=0' && Math.abs(ratio-9/16)<.03 && vr.b<=br.b+1 && vr.t>=br.t-1 && vr.r<=br.r+1,
+      'viewer: a saved TikTok plays in TikTok\'s player, 9:16, as tall as the screen ('+Math.round(vr.r-vr.l)+'x'+Math.round(vr.b-vr.t)+')');
+    $('vw-close').click();
     var rx=$('so-list').querySelector('.so-x[data-id="ig:Cxyz123abcd"]'); if(rx) rx.click();
     var sv2=[]; try{ sv2=JSON.parse(localStorage.getItem('lounge_social')||'[]') }catch(e){}
-    T(!!rx && !$('so-list').querySelector('[data-id="ig:Cxyz123abcd"]') && sv2.length===4, 'social: × removes one, here and in what is kept');
-    var pb=$('so-list').querySelector('[data-id="ttp:Pitmaster_H"]'); if(pb) pb.click();
-    var pf=st.querySelector('iframe');
-    T(!!pf && pf.src==='https://www.tiktok.com/embed/@Pitmaster_H', 'social: his TikTok profile opens as TikTok\'s own profile card');
-    $('so-back').click();
-    T(!document.querySelector('iframe[src*="tiktok"],iframe[src*="instagram"]'), 'social: nothing left framed');
-    T(true, 'social: all checks ran');
+    T(!!rx && !$('so-list').querySelector('[data-id="ig:Cxyz123abcd"]') && sv2.length===4, 'viewer: × removes one, here and in what is kept');
+    $('tt-x').click();
+    var sv3=[]; try{ sv3=JSON.parse(localStorage.getItem('lounge_social')||'[]') }catch(e){}
+    T($('tt-prof').hidden && sv3.length===3 && !sv3.some(function(x){ return x.k==='ttp' }), 'viewer: × on the profile removes it and its grid');
+    newsViewerOK(c0);
+  }
+  function newsViewerOK(c0){
+    if(FAIL_HUB){   // every source down: no headline on the list, so a story is opened by its link, and n8n cannot read it
+      var f0=calls.length, fr=window.__lounge.vwLink('https://www.bbc.com/news/down', {title:'A BBC story', src:'BBC'});
+      T(fr==='article' && calls.length===f0+1 && calls[f0].a==='article' && !$('viewer').hidden, 'viewer: a BBC link asks n8n for the story ('+fr+')');
+      setTimeout(function(){
+        var fn=$('vw-body').querySelector('.vw-note');
+        T(!!fn && /Could not read it: timeout/.test(fn.textContent) && !!fn.querySelector('a.hb-btn[target="_blank"]') && !!fn.querySelector('button') && /A BBC story/.test(tx('vw-t')), 'viewer: a story n8n could not read says so, with Safari and Jarvis as the ways out');
+        $('vw-close').click(); mailViewerOK();
+      }, 60);
+      return;
+    }
+    var a=$('h-list').querySelector('a.hl-t[data-src="BBC"]'), mx=$('h-list').querySelector('a.hl-t[data-src="Mexico News Daily"]');
+    if(!a || !mx){ T(false, 'viewer: a BBC and a Mexico News Daily headline are on the list'); return T(true, 'viewer: all checks ran') }
+    var n0=calls.length; a.click();
+    T(!$('viewer').hidden && calls.length===n0+1 && calls[n0].a==='article' && calls[n0].u===a.href && /Reading/.test(tx('vw-body')) && $('vw-out').href===a.href && $('vw-out').target==='_blank',
+      'viewer: a headline opens in the Viewer and asks n8n for the story, once ('+(calls[n0] && calls[n0].a)+')');
+    setTimeout(function(){
+      var art=$('vw-body').querySelector('article.vw-art'), ps=art ? art.querySelectorAll('p') : [];
+      T(!!art && /BBC one, the full story/.test(tx('vw-t')) && ps.length===4 && /Second paragraph/.test(ps[1].textContent) && !art.querySelector('p img') && window.__pwned===undefined && /BBC/.test(art.querySelector('.vw-meta').textContent) && /Jane Reporter/.test(art.querySelector('.vw-meta').textContent),
+        'viewer: the story is drawn as text - title, source, byline, 4 paragraphs, markup in one stays text ('+ps.length+')');
+      T(!!art && !!art.querySelector('img.vw-img') && /^https:\/\/ichef\.bbci\.co\.uk\//.test(art.querySelector('img.vw-img').src) && !!art.querySelector('.vw-acts button'), 'viewer: its picture and an Ask Jarvis button');
+      $('vw-close').click(); var n1=calls.length; a.click();
+      T(calls.length===n1 && !!$('vw-body').querySelector('article.vw-art'), 'viewer: the same story again comes from what the tab kept - no execution');
+      $('vw-close').click(); var n2=calls.length; mx.click();
+      var note=$('vw-body').querySelector('.vw-note'), out=note ? note.querySelector('a.hb-btn') : null, ask=note ? note.querySelector('button') : null;
+      T(!$('viewer').hidden && calls.length===n2 && !!note && /will not open inside The Lounge/.test(note.textContent) && !!out && out.href===mx.href && out.target==='_blank' && /noopener/.test(out.rel) && !!ask && /Ask Jarvis/.test(ask.textContent),
+        'viewer: Mexico News Daily says so without asking n8n, and offers Safari and Jarvis on purpose');
+      $('vw-close').click();
+      mailViewerOK();
+    }, 60);
+  }
+  function mailViewerOK(){
+    if(FAIL_HUB){   // no inbox on the list: an email is opened by its id, and Gmail does not hand it over
+      var e0=calls.length; window.__lounge.vwEmail({id:'18f0a1b2c3d4e501', thread:'199a1b2c3d4e5f60', from:'Masterbuilt', subject:'Your Gravity Series order shipped', t:ago(12)});
+      T(!$('viewer').hidden && calls.length===e0+1 && calls[e0].a==='email' && /Gravity Series/.test(tx('vw-t')), 'viewer: an email asks n8n once');
+      setTimeout(function(){
+        T(/Gmail did not hand it over/.test(tx('vw-body')) && !$('vw-body').querySelector('iframe') && /Masterbuilt/.test(tx('vw-body')), 'viewer: an email n8n could not read says so, under its sender and subject');
+        $('vw-close').click(); ytOK();
+      }, 60);
+      return;
+    }
+    var s1=$('ib-list').querySelector('a.ib-subj[data-id="18f0a1b2c3d4e501"]'), s2=$('ib-list').querySelector('a.ib-subj[data-id="18f0a1b2c3d4e502"]');
+    T(!!s1 && !!s2 && $('ib-list').querySelectorAll('a.ib-subj[data-id]').length===3, 'viewer: every inbox subject opens here, the Gmail link kept as its href');
+    if(!s1 || !s2) return T(true, 'viewer: all checks ran');
+    var n0=calls.length; s1.click();
+    T(!$('viewer').hidden && calls.length===n0+1 && calls[n0].a==='email' && calls[n0].id==='18f0a1b2c3d4e501' && /Opening/.test(tx('vw-body')) && /Gravity Series/.test(tx('vw-t')) && $('vw-out').textContent==='Open in Gmail' && /mail\.google\.com\/mail\/u\/0\/#all\/199a1b2c3d4e5f60$/.test($('vw-out').href),
+      'viewer: a subject opens the email in the Viewer, asks n8n once, Gmail is a button');
+    setTimeout(function(){
+      var f=$('vw-body').querySelector('iframe.vw-mf'), sd=f ? (f.srcdoc||f.getAttribute('srcdoc')||'') : '';
+      T(!!f && f.getAttribute('sandbox')==='allow-scripts' && f.referrerPolicy==='no-referrer' && /Content-Security-Policy/.test(sd) && /script-src 'nonce-/.test(sd) && /Your order shipped/.test(sd) && /parent\.postMessage/.test(sd) && !/onerror/.test(sd),
+        'viewer: the email sits in its own sandbox (not this page\'s origin), under a CSP that refuses its scripts, with the page\'s link relay in it');
+      T(/Your Gravity Series order shipped/.test(tx('vw-body')) && /Masterbuilt/.test(tx('vw-body')), 'viewer: sender and subject above it');
+      function post(data, origin, src){ window.dispatchEvent(new MessageEvent('message', {data:data, origin:origin, source:src})) }
+      var n1=calls.length;
+      post({lounge:'link', href:'https://www.bbc.com/news/9'}, 'null', window);
+      T(calls.length===n1 && !!$('vw-body').querySelector('iframe.vw-mf'), 'viewer: a link message that is not from the email\'s own frame is ignored');
+      post({lounge:'link', href:'https://www.bbc.com/news/9'}, 'null', f.contentWindow);
+      T(calls.length===n1+1 && calls[n1].a==='article' && calls[n1].u==='https://www.bbc.com/news/9', 'viewer: a link tapped inside the email comes back through the Lounge - a BBC link is read as a story');
+      setTimeout(function(){
+        T(/The linked story/.test(tx('vw-t')) && !!$('vw-body').querySelector('article.vw-art'), 'viewer: ...and shows as text');
+        $('vw-close').click(); var n2=calls.length; s1.click();
+        T(calls.length===n2 && !!$('vw-body').querySelector('iframe.vw-mf'), 'viewer: the same email again comes from what the tab kept - no execution');
+        var f2=$('vw-body').querySelector('iframe.vw-mf');
+        post({lounge:'link', href:'https://example.com/track/1'}, 'null', f2.contentWindow);
+        var note=$('vw-body').querySelector('.vw-note'), back=note ? note.querySelector('button') : null, out=note ? note.querySelector('a.hb-btn') : null;
+        T(calls.length===n2 && !!note && /example\.com will not open inside The Lounge/.test(note.textContent) && !!out && out.href==='https://example.com/track/1' && out.target==='_blank' && !!back && /Back to the email/.test(back.textContent),
+          'viewer: a link to a site that refuses says so, offers Safari, and a way back to the email');
+        back.click();
+        T(calls.length===n2 && !!$('vw-body').querySelector('iframe.vw-mf'), 'viewer: Back brings the email back from what the tab kept');
+        post({lounge:'link', href:'javascript:alert(1)'}, 'null', $('vw-body').querySelector('iframe.vw-mf').contentWindow);
+        var jn=$('vw-body').querySelector('.vw-note');
+        T(!!jn && !jn.querySelector('a') && window.__pwned===undefined, 'viewer: a javascript: link from an email gets no button at all');
+        $('vw-close').click();
+        var n3=calls.length; s2.click();
+        setTimeout(function(){
+          var pre=$('vw-body').querySelector('pre.vw-pre');
+          T(calls.length===n3+1 && !!pre && /Bring the brisket/.test(pre.textContent) && !$('vw-body').querySelector('iframe'), 'viewer: a plain-text email is drawn in the Lounge\'s own type, no frame');
+          $('vw-close').click();
+          ytOK();
+        }, 60);
+      }, 60);
+    }, 60);
+  }
+  function ytOK(){
+    if(mode==='hub' && !WIDE && !vis(tile('tv'))) $('now').click();
+    var q=$('tv-q'), fs=q ? parseFloat(getComputedStyle(q).fontSize) : 0, lbl0=tx('tv-pick-t');   // the channel's name before anything plays
+    T(!!q && fs>=16 && !!q.closest('.hb-tv') && $('tv-res').hidden && !$('tv-screen').querySelector('iframe'), 'TV: a YouTube search box in the TV, 16px, the results closed, nothing playing ('+fs+'px)');
+    function search(v){ q.value=v; var f=$('tv-search'); if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', {cancelable:true})) }
+    var n0=calls.length; search('  dodgers   highlights ');
+    T(calls.length===n0+1 && calls[n0].a==='ytsearch' && calls[n0].q==='dodgers highlights' && $('tv-q-go').disabled && /Searching/.test(tx('tv-yt-note')), 'TV: Search asks n8n once, the words tidied');
+    setTimeout(function(){
+      if(FAIL_HUB){
+        T($('tv-res').hidden && /reconnected in n8n/.test(tx('tv-yt-note')) && !$('tv-q-go').disabled, 'TV: YouTube refused (credential expired): it says what to do in n8n ('+tx('tv-yt-note')+')');
+        return T(true, 'viewer: all checks ran');
+      }
+      var rows=$('tv-res').querySelectorAll('button.yt-r'), rR=R($('tv-res')), sR=R($('tv-screen'));
+      T(!$('tv-res').hidden && rows.length===3 && Math.abs(rR.t-sR.t)<=2 && Math.abs(rR.b-sR.b)<=2 && tx('tv-yt-note')==='', 'TV: 3 results open over the screen, the junk id dropped ('+rows.length+')');
+      var m0=rows[0] ? rows[0].querySelector('.yt-m').textContent : '';
+      T(!!rows[0] && rows[0].querySelector('.yt-t').textContent==='Giants vs. Dodgers Game Highlights (9/18/26) <b>x</b>' && !rows[0].querySelector('.yt-t b') && /Los Angeles Dodgers/.test(m0) && /11:38/.test(m0) && /75K views/.test(m0) && /3 ?h/.test(m0),
+        'TV: a result shows its title (markup as text), channel, length, views and age ('+m0+')');
+      var m2=rows[2] ? rows[2].querySelector('.yt-m').textContent : '';
+      T(!!rows[0] && !!rows[0].querySelector('img.yt-th') && /^https:\/\/i\.ytimg\.com\//.test(rows[0].querySelector('img.yt-th').src) && !rows[1].querySelector('img') && /LIVE/.test(m2) && !/\d+:\d\d/.test(m2),
+        'TV: thumbnails only from YouTube; a live result says LIVE and has no length ('+m2+')');
+      var sy=null; try{ sy=JSON.parse(sessionStorage.getItem('lounge_yt')||'null') }catch(e){}
+      T(!!sy && sy.q==='dodgers highlights' && sy.items.length===3, 'TV: the results are kept for the tab');
+      rows[0].click();
+      var f=$('tv-screen').querySelector('iframe');
+      T(!!f && /^https:\/\/www\.youtube\.com\/embed\/tBH8lqTo73g\?autoplay=1&mute=1&playsinline=1&rel=0&enablejsapi=1/.test(f.src) && $('tv-res').hidden && !$('tv-sound').hidden && /Giants vs\. Dodgers/.test(tx('tv-pick-t')) && !$('tv-stop').hidden && tile('tv').classList.contains('playing'),
+        'TV: a result plays on the TV screen, muted with the Sound button, the results closed, the title in the header ('+(f ? f.src : 'none')+')');
+      $('tv-stop').click();
+      T(!$('tv-screen').querySelector('iframe') && tx('tv-pick-t')===lbl0 && $('tv-sound').hidden, 'TV: Stop takes it away and the channel comes back ('+tx('tv-pick-t')+')');
+      var n1=calls.length; search('dodgers highlights');
+      T(calls.length===n1 && !$('tv-res').hidden, 'TV: the same words again show the kept results - no execution');
+      $('tv-pick').click();
+      T($('tv-res').hidden && !$('tv-ch').hidden, 'TV: opening the channel list closes the results');
+      $('tv-pick').click();
+      var n2=calls.length, r2=window.__lounge.vwLink('https://youtu.be/DkboKc2K4p4?t=10', {title:'A YouTube link'});
+      var f2=$('tv-screen').querySelector('iframe');
+      T(r2==='tv' && !!f2 && /embed\/DkboKc2K4p4\?/.test(f2.src) && $('viewer').hidden && calls.length===n2 && /A YouTube link/.test(tx('tv-pick-t')), 'TV: a YouTube link from anywhere plays on the TV, not in the Viewer, no execution');
+      $('tv-stop').click();
+      T(true, 'viewer: all checks ran');
+    }, 60);
   }
   function tvOK(){
     var scr=$('tv-screen');
@@ -1551,7 +1734,7 @@
     T(!!$('tv-pick') && $('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='false' && $('tv-pick-t').textContent==='FOX LiveNOW' && !!$('tv-ch').closest('#tv-screen') && !!$('tv-pick').closest('.hb-h'),
       'TV: the channel is one button in the widget header (FOX LiveNOW), the list closed');
     var tvT=R(tile('tv')), scrR=R(scr);
-    T(vis(scr) && (scrR.b-scrR.t)/(tvT.b-tvT.t)>=.7, 'TV: the screen takes most of the widget ('+Math.round((scrR.b-scrR.t)/(tvT.b-tvT.t)*100)+'%)');
+    T(vis(scr) && (scrR.b-scrR.t)/(tvT.b-tvT.t)>=.6, 'TV: the screen takes most of the widget - the header and the YouTube search row are the rest ('+Math.round((scrR.b-scrR.t)/(tvT.b-tvT.t)*100)+'%)');
     $('tv-pick').click();
     var mR=R($('tv-ch'));
     T(!$('tv-ch').hidden && $('tv-pick').getAttribute('aria-expanded')==='true' && Math.abs(mR.t-scrR.t)<=2 && Math.abs(mR.b-scrR.b)<=2 && Math.abs(mR.l-scrR.l)<=2, 'TV: the channel list opens over the screen, not under it');
@@ -1655,7 +1838,7 @@
     petOK('chat', true);
     floorOK('chat-empty');
     hubOK();
-    if(mode==='hub') issOK(); else if(mode==='hubfail') issFailOK();
+    if(mode==='hub') issOK(); else if(mode==='hubfail'){ issFailOK(); viewerOK() }   // hubfail: the Viewer's fail-open paths
     layout('chat-empty');
     tapeOK('chat');
     if(mode==='arrange'){ arrangeOK(); floorOK('arrange'); layout('arrange'); holdOK(); return done(); }
@@ -1677,7 +1860,7 @@
         T($('h-refresh').textContent==='Refresh' && !$('h-refresh').disabled && !$('ib-refresh').disabled, 'and both Refresh buttons are ready again');
         T($('ib-list').querySelectorAll('li').length===3 && /did not answer/.test($('ib-note').textContent), 'Gmail down on Refresh: the last inbox stays, and it says so ('+$('ib-note').textContent+')');
         tvOK();
-        camsOK(); skyOK(); socialOK();
+        camsOK(); skyOK(); viewerOK();
         if(WIDE){ fullOK(); grabOK(); }
         // "the stuff than can be refresh auto without execution from N8N, do it": 16 minutes on, the browser refreshes by itself
         // (the map's event feeds are not among them while their layers are off - Hector 2026-09-16, a clean map)
@@ -1793,9 +1976,9 @@
         im.src=f; });
     })();
     if(mode==='expired'){   // a post open when the session expires: the lock screen must take it away (unfolded first, so folding cannot be what closed it)
-      if(tile('social') && tile('social').classList.contains('shut')) $('so-h').click();
+      if(tile('viewer') && tile('viewer').classList.contains('shut')) $('so-h').click();
       var sob=$('so-list').querySelector('.so-open'); if(sob) sob.click();
-      T(!!document.querySelector('.hb-soc iframe[src*="instagram"]'), 'social: an Instagram post is open when the session expires');
+      T(!$('viewer').hidden && !!document.querySelector('#vw-body iframe[src*="instagram"]'), 'viewer: an Instagram post is open in the Viewer when the session expires');
     }
     $('box').value='hello there';
     $('send').click();
@@ -1858,7 +2041,7 @@
       T(sessionStorage.getItem('lounge_pw')===null, 'and the passphrase is forgotten');
       T(sessionStorage.getItem('lounge_inbox')===null && $('ib-list').children.length===0, 'and so is the inbox');
       T(sessionStorage.getItem('lounge_rem')===null && $('rm-list').children.length===0, 'and so are the reminders');
-      T(!document.querySelector('iframe[src*="instagram"],iframe[src*="tiktok"]'), 'and nothing from TikTok or Instagram stays framed behind the lock screen');
+      T($('viewer').hidden && !document.querySelector('iframe[src*="instagram"],iframe[src*="tiktok"]'), 'and the Viewer is closed: nothing from TikTok or Instagram stays framed behind the lock screen');
       T(vis($('vc-stage')) && $('now').hidden, 'back on the lock screen: VaderClawd on screen, the hub readout gone');
       return done();
     }
