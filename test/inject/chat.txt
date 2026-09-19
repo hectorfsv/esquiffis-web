@@ -797,6 +797,16 @@
     T(ord('map')<ord('tv') && ord('tv')<ord('time') && ord('time')<ord('weather') && ord('weather')<ord('dodgers') && ord('inbox')<ord('news'),
       'a saved layout comes back: map, TV, then the rest in their usual order');
     T(tile('map').getAttribute('data-size')==='L' && tile('tv').getAttribute('data-size')==='M', 'saved sizes kept, a bad size ignored');
+    // 2026-09-19: a layout saved under an older look measures its heights again and NOTHING else - the old page threw every column and row
+    // away and repacked the hub in reading order, which is what scrambled his desktop ("WHY IS EVERYTHING UNORGANIZED!?")
+    var EL=window.__lounge, hl=EL.hub;
+    T(typeof EL.hubRelook==='function' && hl.look===EL.LOOK, 'the page stamps an older layout with the current look through hubRelook (look '+hl.look+')');
+    var LK={look:3, order:['tv','map'], col:{tv:41, map:1}, row:{tv:80, map:0}, h:{tv:300, map:400}, hs:{map:36}};
+    var relooked=typeof EL.hubRelook==='function' && EL.hubRelook(LK);
+    var bak=null; try{ bak=JSON.parse(localStorage.getItem('lounge_hub_look3')||'null') }catch(e){}
+    T(relooked===true && LK.look===EL.LOOK && LK.col.tv===41 && LK.row.tv===80 && LK.col.map===1 && LK.row.map===0 && !('tv' in LK.h) && !('map' in LK.hs) && EL.hubRelook(LK)===false,
+      'hubRelook: the look stamp moves, heights are forgotten, columns and rows are untouched, a current layout is left alone');
+    T(!!bak && bak.look===3 && bak.col.tv===41 && bak.h.tv===300, 'hubRelook: the layout as it was is kept on the device first (lounge_hub_look3)');
     // the saved map setting: Satellite, Quakes and Radar come back; the retired 3D/Globe views, the unknown layer and the not-quite-true one do not
     var mb=$('map-base'), ml=$('map-lay'), mcs=window.__mapCalls;
     function prs(g){ return g ? [].filter.call(g.children, function(c){ return c.getAttribute('aria-pressed')==='true' }).map(function(c){ return c.textContent }).join() : 'no chips' }
@@ -1499,8 +1509,7 @@
     T(st.querySelector('.hb-fold').textContent==='Viewer' && !document.querySelector('#vw-body iframe') && $('viewer').hidden, 'viewer: a Viewer widget, the Viewer closed, nothing framed in it before a tap');
     if(st.classList.contains('shut')) $('so-h').click();
     T(vis($('so-empty')) && /TikTok profile link/.test(tx('so-empty')) && !$('so-list').children.length && $('tt-prof').hidden, 'viewer: empty, it says what to paste; no profile yet');
-    var apps=[].map.call(st.querySelectorAll('a.so-app'), function(a){ return a.hostname+':'+a.target+':'+a.rel });
-    T(apps.join()==='www.netflix.com:_blank:noopener,www.disneyplus.com:_blank:noopener,www.hbomax.com:_blank:noopener', 'viewer: Netflix, Disney+ and HBO Max are three plain links that open their apps ('+apps.join()+')');
+    T(!st.querySelector('.so-apps') && !st.querySelector('a[href*="netflix"]'), 'viewer: no streaming row (Hector: "get rid of the streaming section")');
     var fs=parseFloat(getComputedStyle($('so-url')).fontSize);
     T(fs>=16, 'viewer: the link box is 16px or more, so iOS never zooms the page into it ('+fs+'px)');
     function add(v){ $('so-url').value=v; var f=$('so-add'); if(f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', {cancelable:true})) }

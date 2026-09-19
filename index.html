@@ -390,7 +390,8 @@ button{cursor:pointer}
 .so-x{flex:none;width:28px;height:28px;font-size:18px;line-height:1;color:var(--ink-faint)}
 .so-x:hover{color:var(--red-hot)}
 /* the Viewer tile (Hector 2026-09-19: "replace social with the Viewer"): his TikTok profile drawn here in black - avatar, counts and
-   the newest covers from the login - the links he pastes, and the three streaming apps. A tap opens the Viewer, never Safari. */
+   the newest covers from the login - and the links he pastes. A tap opens the Viewer, never Safari. (A Streaming row of app links was
+   here for an hour on 2026-09-19; Hector: "get rid of the streaming section".) */
 .tt-prof{display:flex;flex-direction:column;gap:8px}
 .tt-head{display:flex;align-items:center;gap:10px;min-width:0}
 .tt-av{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;background:#111}
@@ -402,11 +403,6 @@ button{cursor:pointer}
 .tt-v img{display:block;width:100%;height:100%;object-fit:cover}
 .tt-v .tt-p{position:absolute;left:5px;bottom:4px;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.03em;color:#fff;text-shadow:0 1px 3px #000}
 .tt-v:hover img{filter:brightness(1.12)}
-.so-apps{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding-top:8px;border-top:1px solid var(--rule)}
-.so-apps .mk-cap{margin:0 4px 0 0}
-.so-app{font-family:var(--mono);font-size:var(--fx);font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);text-decoration:none;border:1px solid var(--rule);background:rgba(0,0,0,.3);padding:var(--bp)}
-.so-app:hover{color:var(--ink);border-color:var(--rule-hot)}
-.so-apps .h-note{margin:0;flex-basis:100%}
 .hub .hb-soc.sized .so-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}   /* ".hub" first: .hub .hb.sized>*{flex:none} sits LATER in this sheet at the same weight and won - measured, a video overran its tile */
 .hb-soc.shut .so-body{display:none}
 .hb-soc.shut .hb-h{margin-bottom:0}
@@ -1036,7 +1032,6 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
                 <p id="so-note" class="h-note so-note" aria-live="polite"></p>
                 <p id="so-empty" class="so-empty">Paste your TikTok profile link once and your newest videos show up here, in black. Any TikTok or Instagram post or reel works too. Everything opens in the Viewer, never in Safari.</p>
                 <ul id="so-list" class="so-list"></ul>
-                <div class="so-apps"><span class="mk-cap">Streaming</span><a class="so-app" href="https://www.netflix.com/" target="_blank" rel="noopener">Netflix</a><a class="so-app" href="https://www.disneyplus.com/" target="_blank" rel="noopener">Disney+</a><a class="so-app" href="https://www.hbomax.com/" target="_blank" rel="noopener">HBO Max</a><span class="h-note">They refuse to open inside another page (measured): these open their apps.</span></div>
               </div>
             </section>
             <section class="hb hb-tv" data-w="tv" aria-labelledby="tv-h">
@@ -2126,6 +2121,17 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
     return d;
   }
   function hubSave(){ try{ localStorage.setItem(K_HUB, JSON.stringify(hub)) }catch(e){} }
+  /* The tiles changed shape since this layout was measured (LOOK moved): measure the HEIGHTS again and nothing else. Every widget
+     keeps its column and row exactly where he put it; a tile that grew pushes what it now covers straight down (hubSettle), a gap
+     he left stays a gap. The old version (round 21) also threw away every column and row and repacked the hub in reading order -
+     that is what hit him on 2026-09-19 when the TV grew a search row ("WHY IS EVERYTHING UNORGANIZED!?"), and it is never done again. */
+  function hubRelook(h){
+    if(!h || h.look===LOOK) return false;
+    try{ localStorage.setItem(K_HUB+'_look'+(h.look||0), JSON.stringify(h)) }catch(e){}   // the layout as it was, kept on the device: a mishap here is recoverable next time
+    h.look=LOOK;
+    (h.order||[]).forEach(function(w){ delete h.h[w]; delete h.hs[w] });
+    return true;
+  }
   function tile(w){ return $('hub').querySelector('.hb[data-w="'+w+'"]') }
   function shown(w){ var t=tile(w); return !!t && !t.hidden && hub.hidden.indexOf(w)<0 }
   // how many columns the hub grid has right now: 12 on his desktop, 6 when narrower, 1 on a phone
@@ -2133,10 +2139,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   function hubInit(){
     if(hubReady) return;
     hubReady=true; hub=hubLoad(); soLoad();
-    if(hub.look!==LOOK){   // the tiles changed shape since this layout was measured (round 21): keep his order and widths, measure the rest again
-      hub.look=LOOK; hub.order=visualOrder();
-      hub.order.forEach(function(w){ delete hub.h[w]; delete hub.hs[w]; delete hub.col[w]; delete hub.row[w] });
-    }
+    hubRelook(hub);
     hubSettle(null);   // a layout saved with tiles on top of each other opens untangled
     placeTools();
     WIDGETS.forEach(function(x){
@@ -2393,8 +2396,8 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
      off TikTok's own embed page inside the login (0 extra executions; the page sends the handle it keeps once every 6 hours per
      device): avatar, counts and the newest covers; a cover plays the video in the Viewer. TikTok's white creator card is gone -
      every tap inside it linked out to tiktok.com and nothing in a cross-origin frame can be changed (measured 2026-09-18).
-     Instagram posts and reels stay Instagram's card, inside the black Viewer. Netflix, Disney+ and HBO Max refuse to be framed
-     (measured 2026-09-19): their three buttons open the apps, on purpose. The frame's address is BUILT from the id the parser pulls
+     Instagram posts and reels stay Instagram's card, inside the black Viewer. (Netflix, Disney+ and HBO Max refuse to be framed,
+     measured 2026-09-19, and a row of app links for them was removed the same day on his word.) The frame's address is BUILT from the id the parser pulls
      out, never from the pasted text; TikTok's oEmbed (CORS *) names a video and turns a short link into its id. */
   var K_SO='lounge_social', SO_MAX=40;
   var SO_ID={ttp:/^[A-Za-z0-9_.]{2,24}$/, ttv:/^\d{8,25}$/, ig:/^[A-Za-z0-9_-]{5,40}$/}, SO_IG={p:'post', reel:'reel', tv:'video'};
@@ -3967,7 +3970,7 @@ body.hub-resizing,body.hub-dragging{user-select:none;-webkit-user-select:none}
   if(pw) enter(false); else if(window.matchMedia && matchMedia('(pointer:fine)').matches) $('pw').focus();
 
   // for the test harness only: read state without touching the DOM contract
-  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms, newsRank:newsRank, newsForBrief:newsForBrief, TV:TV, soParse:soParse, ytParse:ytParse, vwLink:vwLink, vwClose:vwClose, vwEmail:vwEmail, ytSearch:ytSearch, tvPlayVideo:tvPlayVideo, get yt(){ return yt }, get tiktok(){ return tt },
+  window.__lounge={ get log(){return log}, get busy(){return busy}, base:BASE, hubTick:hubTick, get petBox(){ return petBox }, get carrying(){ return !!carrying }, feedPlatforms:feedPlatforms, newsRank:newsRank, newsForBrief:newsForBrief, TV:TV, soParse:soParse, ytParse:ytParse, vwLink:vwLink, vwClose:vwClose, vwEmail:vwEmail, ytSearch:ytSearch, hubRelook:hubRelook, LOOK:LOOK, tvPlayVideo:tvPlayVideo, get yt(){ return yt }, get tiktok(){ return tt },
     popupFor:popupFor, get darkStyle(){ return darkStyle }, paintSky:paintSky, clockText:clockText,
     issCompute:issCompute, loadSatLib:loadSatLib, get quotes(){ return quotes }, get fuel(){ return fuel }, get issList(){ return issList },
     get hub(){ return hub }, get tvSent(){ return tvSent.slice() }, applyHub:applyHub, hubSettle:hubSettle, hubFreeNear:hubFreeNear, hubBoxes:hubBoxes, alignAll:alignAll, topicEmoji:topicEmoji };
