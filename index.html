@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- No viewport-fit=cover (Hector 2026-09-18, iPhone 18 Pro Max): as a home-screen app iOS 26 blurs and shades whatever page
+     content sits under the status bar, and the lit header strip read as "blurry" at the top no matter what was painted
+     there; the status-bar-style tags are ignored by that container. With the page inset from the bar, iOS fills the bar
+     with theme-color itself and the strip starts below it with nothing drawn over it. Desktop: no change (no insets).
+     Phone landscape: the notch side gets a thin band in the page's own black. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A0708">
 <title>The Lounge</title>
@@ -19,13 +24,10 @@
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180-v2.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="The Lounge">
-<!-- The home-screen app gets an OPAQUE status bar (Hector 2026-09-18, iPhone 18 Pro Max: "still blurry on the top"): as a
-     home-screen app iOS 26 blurs whatever page content sits under the status bar, which smeared the header strip's top edge
-     into a fade that Safari, on the same page, does not show. With the bar opaque nothing of the page is under it, so there
-     is nothing to blur; env(safe-area-inset-top) reads 0 in the app and the strip starts at the top with its clean edge.
-     Safari ignores both tags. -->
+<!-- apple-mobile-web-app-status-bar-style=black was tried 2026-09-18 for the same fade and IGNORED by iOS 26's web-app
+     container (the page stayed under a translucent bar after a fresh Add to Home Screen) - do not try it again; the
+     viewport meta above is the fix. -->
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
