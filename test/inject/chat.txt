@@ -693,11 +693,14 @@
     var rt=tile('rem'); if(!rt){ T(false, 'reminders: the tile exists'); return }
     var rows=[].slice.call($('rm-list').querySelectorAll('button.rm'));
     T(rows.length===4 && rows.map(function(b){ return b.getAttribute('data-id') }).join()==='23,22,24,21', 'reminders: four pending, by time, the one with no text dropped ('+rows.map(function(b){ return b.getAttribute('data-id') }).join()+')');
-    T(rows.length===4 && rows[0].classList.contains('over') && /^Overdue /.test(rows[0].querySelector('.rm-when').textContent) && rows[1].classList.contains('due') && /^(Today|Tomorrow) \d\d:\d\d$/.test(rows[1].querySelector('.rm-when').textContent) && !rows[3].classList.contains('due'),
-      'reminders: the overdue one is marked and first, the one in 3 hours is today, later ones plain ('+(rows[0]&&rows[0].querySelector('.rm-when').textContent)+' / '+(rows[1]&&rows[1].querySelector('.rm-when').textContent)+' / '+(rows[3]&&rows[3].querySelector('.rm-when').textContent)+')');
+    // the brisket is "in 3 h": today before 21:00, tomorrow after it - the suite ran at 22:06 on 2026-09-18 and 80
+    // "failures" were this line and the count below expecting Today; the expectation follows the clock now
+    var soonToday=new Date(Date.now()+3*3600000).getDate()===new Date().getDate();
+    T(rows.length===4 && rows[0].classList.contains('over') && /^Overdue /.test(rows[0].querySelector('.rm-when').textContent) && rows[1].classList.contains('due')===soonToday && /^(Today|Tomorrow) \d\d:\d\d$/.test(rows[1].querySelector('.rm-when').textContent) && !rows[3].classList.contains('due'),
+      'reminders: the overdue one is marked and first, the one in 3 hours is '+(soonToday?'today':'tomorrow (after 21:00)')+', later ones plain ('+(rows[0]&&rows[0].querySelector('.rm-when').textContent)+' / '+(rows[1]&&rows[1].querySelector('.rm-when').textContent)+' / '+(rows[3]&&rows[3].querySelector('.rm-when').textContent)+')');
     T(rows.length===4 && /Take the brisket out/.test(rows[1].textContent) && /notes/.test(rows[1].querySelector('.rm-x').textContent) && /weekly/.test(rows[2].querySelector('.rm-x').textContent) && !rows[3].querySelector('.rm-x'),
       'reminders: the text, a notes mark where there are notes, the recurrence where it repeats');
-    T($('rm-count').textContent==='2 today' && !$('rm-list').querySelector('b'), 'reminders: the count shows what is due today; markup in a reminder stays text ('+$('rm-count').textContent+')');
+    T($('rm-count').textContent===(soonToday?2:1)+' today' && !$('rm-list').querySelector('b'), 'reminders: the count shows what is due today; markup in a reminder stays text ('+$('rm-count').textContent+', expected '+(soonToday?2:1)+')');
     T(JSON.stringify(localStorage).indexOf('porch')<0 && (sessionStorage.getItem('lounge_rem')||'').indexOf('porch')>-1, 'reminders: kept for this tab only, never in localStorage');   // 'porch' is only in a reminder's notes (a saved transcript says 'brisket' too)
     T(/Updated/.test($('rm-note').textContent) && /every 2 hours/.test($('rm-note').textContent), 'reminders: says when they were read and that they refresh every 2 hours');
     if(mode!=='arrange'){

@@ -42,9 +42,10 @@ title(){ "$CHR" --headless --disable-gpu --hide-scrollbars --virtual-time-budget
   --window-size="$1","$2" --dump-dom "$3" 2>/dev/null | tr -d '\n' | sed -n 's/.*<title>§\(.*\)§<\/title>.*/\1/p'; }
 WHAT="${1:-all}"; PASS=0; FAIL=0
 if [ "$WHAT" = all ] || [ "$WHAT" = chat ]; then
-  echo "CHAT  (10 modes x 4 viewports)"
+  echo "CHAT  (10 modes x 5 viewports)"
+  # 440x956 = his iPhone 18 Pro Max (measured off a screenshot 2026-09-18: 1320x2868 at 3x); 393 = the old 15 Pro
   for m in ok badpw expired persist guard hub hubfail arrange lost timeout; do
-    for v in "393 700" "393 852" "852 393" "2026 1037"; do set -- $v
+    for v in "393 700" "393 852" "440 956" "852 393" "2026 1037"; do set -- $v
       budget=8000; [ "$m" = timeout ] && budget=140000; [ "$m" = hub ] && budget=30000   # hub: VaderClawd's climb and drop take real (virtual) seconds
       R=$(title "$1" "$2" "file://$B/c.html?t=$m" $budget)
       p=$(printf '%s' "$R" | grep -o PASS | wc -l | tr -d ' '); f=$(printf '%s' "$R" | grep -o FAIL | wc -l | tr -d ' ')

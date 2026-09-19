@@ -107,8 +107,16 @@ button{cursor:pointer}
 .app:not(.chatting) .art img{left:50%;top:-28%}   /* the card is short: Vader sits a little higher so the passphrase and VaderClawd stay off his face */
 
 /* ---------- header ---------- */
-.head{position:relative;flex:none;display:flex;align-items:center;gap:10px;
+.head{position:relative;isolation:isolate;flex:none;display:flex;align-items:center;gap:10px;
   padding:5px max(14px,env(safe-area-inset-right)) 5px max(14px,env(safe-area-inset-left));padding-top:max(5px,env(safe-area-inset-top));min-height:49px;
+  border-bottom:1px solid transparent;background:var(--void)}
+/* The lit strip starts UNDER the status bar, never behind it (Hector 2026-09-18, on his iPhone 18 Pro Max: "the fade-out
+   top looks weird"). iOS shades the top of every page so the clock and battery stay readable; over the lit strip that
+   shade read as the strip fading into black. The part of the header under the status bar is the page's own black now,
+   so there is nothing for iOS to shade, and the strip begins 5px above the content - the 5px of padding it always had.
+   The strip carries the translucent bottom rule too (the header keeps a transparent one for the geometry), so the rule
+   blends over the strip as it always did. env() is 0 on a desktop, where this renders byte-identical (pixel-compared). */
+.head::before{content:'';position:absolute;left:0;right:0;bottom:-1px;top:max(0px,calc(env(safe-area-inset-top) - 5px));z-index:-1;pointer-events:none;
   border-bottom:1px solid var(--rule);background:linear-gradient(90deg,rgba(224,27,27,.10),transparent 62%),var(--panel-hi)}
 .who{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
 .face{width:38px;height:38px;object-fit:cover;flex:none;display:block;border:1px solid var(--rule)}
